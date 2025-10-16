@@ -1,1 +1,188 @@
-test
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>異常記錄表</title>
+<style>
+:root{
+  --bg:#0a0a0f;--panel:#111827;--accent:#00fff0;--text:#e5e7eb;--sub:#9ca3af;
+}
+html,body{margin:0;background:var(--bg);color:var(--text);
+font-family:system-ui,"Microsoft JhengHei",sans-serif;}
+.wrap{max-width:420px;margin:40px auto;background:var(--panel);
+border-radius:16px;padding:24px;box-shadow:0 0 20px rgba(0,255,240,.15);}
+h1{text-align:center;color:var(--accent);font-size:20px;margin:0 0 16px;}
+.row{margin-bottom:14px;}
+label{display:block;font-size:14px;color:var(--sub);margin-bottom:4px;}
+input,select,textarea{width:100%;border:none;border-radius:6px;
+padding:8px;font-size:15px;background:#1f2937;color:var(--text);}
+button{width:100%;padding:10px;font-size:16px;border:none;
+border-radius:8px;background:var(--accent);color:#000;font-weight:600;}
+.collapsed{opacity:.4;pointer-events:none;height:0;overflow:hidden;}
+.inline{display:flex;gap:6px;}
+.inline>*{flex:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>異常記錄表</h1>
+
+  <!-- 2 -->
+  <div class="row inline">
+    <div><label>日期</label><input id="date_display" readonly></div>
+    <div><label>班別</label><input id="shift_display" readonly></div>
+    <div><label>機台</label><input id="machine_id"></div>
+  </div>
+
+  <!-- 3 -->
+  <div class="row inline">
+    <div><label>產品型態</label><select id="product_type"></select></div>
+    <div><label>料號</label><input id="part_no"></div>
+  </div>
+
+  <!-- 4 -->
+  <div class="row inline">
+    <div><label>FA</label><select id="fa_stage"></select></div>
+    <div><label>批號</label><input id="lot_no"></div>
+  </div>
+
+  <!-- 5~10 -->
+  <div id="axisRows"></div>
+
+  <!-- 11~13 -->
+  <div class="row"><label>切板手A</label><input id="cutter_a"></div>
+  <div class="row"><label>檢驗者</label><input id="inspector"></div>
+  <div class="row"><label>切板手B</label><input id="cutter_b"></div>
+
+  <!-- 14 -->
+  <div class="row inline">
+    <div><label><input type="checkbox" id="rework_confirm"> 重工確認</label></div>
+    <div><input id="reworker" placeholder="重工者"></div>
+  </div>
+
+  <!-- 15 -->
+  <div class="row inline">
+    <label><input type="checkbox" id="scrap_yes"> 報廢</label>
+    <label><input type="checkbox" id="scrap_keep"> 續留</label>
+  </div>
+
+  <!-- 16~17 -->
+  <div class="row"><label>備註</label><textarea id="remark" rows="3"></textarea></div>
+  <div class="row"><label>複檢員</label><input id="reviewer"></div>
+
+  <div class="row"><button id="submitBtn">送出</button></div>
+</div>
+
+<script>
+// === 最小 JS 骨架 ===
+// 初始化、互鎖、半隱藏展開
+document.addEventListener('DOMContentLoaded',()=>{
+  initDateShift();
+  buildAxisRows(6);
+  bindEvents();
+});
+
+// 由 config.js 取得日期與班別
+function initDateShift(){
+  if (typeof window.config_getDateShift==='function'){
+    const ds = window.config_getDateShift(); // {date:'YYYY/MM/DD',shift:'A'}
+    date_display.value = ds.date;
+    shift_display.value = ds.shift;
+  }
+}
+
+// 建立軸別列
+function buildAxisRows(n){
+  const box = document.getElementById('axisRows');
+  for(let i=1;i<=n;i++){
+    const row=document.createElement('div');
+    row.className='row axisRow'+(i>1?' collapsed':'');
+    row.dataset.idx=i;
+    row.innerHTML=`
+      <div class="inline">
+        <label><input type="checkbox" id="axis_enabled_${i}"> 軸${i}</label>
+        <select id="axis_${i}"></select>
+        <select id="cat_${i}"></select>
+        <input id="qty_${i}" type="number" min="0" placeholder="數量">
+      </div>`;
+    box.appendChild(row);
+  }
+}
+
+// 綁定主要事件
+function bindEvents(){
+  // 軸列互鎖展開
+  document.querySelectorAll('[id^=axis_enabled_]').forEach(cb=>{
+    cb.addEventListener('change',e=>{
+      const idx=Number(e.target.id.split('_').pop());
+      const row=document.querySelector('.axisRow[data-idx="'+idx+'"]');
+      const next=document.querySelector('.axisRow[data-idx="'+(idx+1)+'"]');
+      if(e.target.checked){
+        row.classList.remove('collapsed');
+        if(next) next.classList.remove('collapsed');
+      }else{
+        // 收回後方列
+        for(let j=idx+1;j<=6;j++){
+          document.querySelector('.axisRow[data-idx="'+j+'"]')
+            ?.classList.add('collapsed');
+          document.getElementById('axis_enabled_'+j).checked=false;
+        }
+      }
+    });
+  });
+
+  // 互鎖：報廢 vs 續留
+  scrap_yes.addEventListener('change',()=>{if(scrap_yes.checked) scrap_keep.checked=false;});
+  scrap_keep.addEventListener('change',()=>{if(scrap_keep.checked) scrap_yes.checked=false;});
+
+  // 重工者啟用
+  rework_confirm.addEventListener('change',()=>{
+    reworker.disabled=!rework_confirm.checked;
+    if(!rework_confirm.checked) reworker.value='';
+  });
+
+  // 送出
+  submitBtn.addEventListener('click',onSubmit);
+}
+
+// 收集與提交
+function onSubmit(){
+  const data={
+    date:date_display.value,
+    shift:shift_display.value,
+    machine_id:machine_id.value.trim(),
+    product_type:product_type.value,
+    part_no:part_no.value.trim(),
+    fa_stage:fa_stage.value,
+    lot_no:lot_no.value.trim(),
+    lines:collectLines(),
+    cutter_a:cutter_a.value.trim(),
+    inspector:inspector.value.trim(),
+    cutter_b:cutter_b.value.trim(),
+    rework_confirm:rework_confirm.checked,
+    reworker:reworker.value.trim(),
+    scrap:scrap_yes.checked?'SCRAP':(scrap_keep.checked?'KEEP':''),
+    remark:remark.value.trim(),
+    reviewer:reviewer.value.trim()
+  };
+  console.log(data);
+  alert('已收集資料，請在正式版中串接送出邏輯');
+}
+
+function collectLines(){
+  const arr=[];
+  for(let i=1;i<=6;i++){
+    const en=document.getElementById('axis_enabled_'+i);
+    if(!en||!en.checked) continue;
+    arr.push({
+      axis:document.getElementById('axis_'+i).value,
+      cat:document.getElementById('cat_'+i).value,
+      qty:Number(document.getElementById('qty_'+i).value||0)
+    });
+  }
+  return arr;
+}
+</script>
+</body>
+</html>
