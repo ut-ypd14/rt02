@@ -1,188 +1,407 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>異常記錄表</title>
 <style>
 :root{
-  --bg:#0a0a0f;--panel:#111827;--accent:#00fff0;--text:#e5e7eb;--sub:#9ca3af;
+  --bg:#0b0f14; --panel:#0f172a; --panel-2:#111827;
+  --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --line:#233044;
 }
+*{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);
-font-family:system-ui,"Microsoft JhengHei",sans-serif;}
-.wrap{max-width:420px;margin:40px auto;background:var(--panel);
-border-radius:16px;padding:24px;box-shadow:0 0 20px rgba(0,255,240,.15);}
-h1{text-align:center;color:var(--accent);font-size:20px;margin:0 0 16px;}
-.row{margin-bottom:14px;}
-label{display:block;font-size:14px;color:var(--sub);margin-bottom:4px;}
-input,select,textarea{width:100%;border:none;border-radius:6px;
-padding:8px;font-size:15px;background:#1f2937;color:var(--text);}
-button{width:100%;padding:10px;font-size:16px;border:none;
-border-radius:8px;background:var(--accent);color:#000;font-weight:600;}
-.collapsed{opacity:.4;pointer-events:none;height:0;overflow:hidden;}
-.inline{display:flex;gap:6px;}
-.inline>*{flex:1;}
+  font-family:system-ui,"PingFang TC","Microsoft JhengHei",sans-serif}
+.container{max-width:760px;margin:6vh auto;padding:0 16px}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel-2));
+  border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 32px rgba(2,6,23,.35)}
+.header{padding:22px 18px 8px;text-align:center;border-bottom:1px solid var(--line)}
+.title{font-size:22px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
+.subtitle{margin-top:6px;color:var(--muted);font-size:12px}
+
+.form{padding:18px}
+.row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:12px}
+.block{background:#0e1522;border:1px solid var(--line);border-radius:10px;padding:10px}
+.block label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+.block input,.block select,.block textarea{
+  width:100%;background:#0c1220;border:1px solid #223049;color:var(--text);
+  border-radius:8px;padding:10px 12px;font-size:14px}
+.block input[readonly]{text-align:center;background:#0b1220;color:#cbd5e1}
+
+.center{ text-align:center }
+
+.col-3{grid-column:span 3} .col-4{grid-column:span 4}
+.col-5{grid-column:span 5} .col-6{grid-column:span 6}
+.col-8{grid-column:span 8} .col-9{grid-column:span 9} .col-12{grid-column:span 12}
+
+.axis-row{display:grid;grid-template-columns: 100px 1fr 1fr 120px auto; gap:8px}
+.axis-row .chk{display:flex;align-items:center;justify-content:center}
+.axis-row .chk input{transform:scale(1.1)}
+.axis-title{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+
+.collapsed{max-height:0;overflow:hidden;opacity:.0;pointer-events:none;transition:max-height .25s ease,opacity .25s ease}
+.expanded{max-height:200px;opacity:1;transition:max-height .25s ease,opacity .25s ease}
+
+.help{color:var(--muted);font-size:12px;margin-top:6px}
+.actions{display:flex;gap:10px;margin-top:8px}
+.btn{flex:1;background:var(--accent);color:#001017;border:none;border-radius:10px;padding:12px;font-weight:700;font-size:15px;cursor:pointer}
+.btn.secondary{background:#1f2937;color:#cbd5e1;border:1px solid var(--line)}
+
+@media (max-width:640px){
+  .axis-row{grid-template-columns: 70px 1fr 1fr 100px}
+  .axis-row .chk{display:none}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>異常記錄表</h1>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <div class="title">異常記錄表</div>
+      <div class="subtitle">Abnormal Record Form</div>
+    </div>
 
-  <!-- 2 -->
-  <div class="row inline">
-    <div><label>日期</label><input id="date_display" readonly></div>
-    <div><label>班別</label><input id="shift_display" readonly></div>
-    <div><label>機台</label><input id="machine_id"></div>
+    <div class="form">
+      <!-- 2) 日期 班別 機台 -->
+      <div class="row">
+        <div class="block col-4">
+          <label>日期</label>
+          <input id="date_display" readonly class="center" />
+        </div>
+        <div class="block col-4">
+          <label>班別</label>
+          <input id="shift_display" readonly class="center" />
+        </div>
+        <div class="block col-4">
+          <label>機台</label>
+          <input id="machine_id" placeholder="請輸入機台代號" />
+        </div>
+      </div>
+
+      <!-- 3) 產品型態 料號 -->
+      <div class="row">
+        <div class="block col-6">
+          <label>產品型態</label>
+          <select id="product_type"></select>
+        </div>
+        <div class="block col-6">
+          <label>料號</label>
+          <input id="part_no" placeholder="7 碼料號" />
+        </div>
+      </div>
+
+      <!-- 4) FA 批號 -->
+      <div class="row">
+        <div class="block col-6">
+          <label>FA</label>
+          <select id="fa_stage"></select>
+        </div>
+        <div class="block col-6">
+          <label>批號</label>
+          <input id="lot_no" placeholder="請輸入批號" />
+        </div>
+      </div>
+
+      <!-- 5–10) 軸別、類別、數量 ×6（軸6無勾選） -->
+      <div class="row">
+        <div class="block col-12">
+          <label>軸別 / 類別 / 數量</label>
+
+          <!-- 軸1 -->
+          <div class="axis-row expanded" data-idx="1">
+            <div class="chk"><input type="checkbox" id="axis_enabled_1" /></div>
+            <div class="axis-title">軸1</div>
+            <select id="axis_1"></select>
+            <select id="cat_1"></select>
+            <input id="qty_1" type="number" min="0" placeholder="數量" />
+          </div>
+
+          <!-- 軸2~5：預設半隱藏，勾選展開 -->
+          <div class="axis-row collapsed" data-idx="2">
+            <div class="chk"><input type="checkbox" id="axis_enabled_2" /></div>
+            <div class="axis-title">軸2</div>
+            <select id="axis_2"></select>
+            <select id="cat_2"></select>
+            <input id="qty_2" type="number" min="0" placeholder="數量" />
+          </div>
+
+          <div class="axis-row collapsed" data-idx="3">
+            <div class="chk"><input type="checkbox" id="axis_enabled_3" /></div>
+            <div class="axis-title">軸3</div>
+            <select id="axis_3"></select>
+            <select id="cat_3"></select>
+            <input id="qty_3" type="number" min="0" placeholder="數量" />
+          </div>
+
+          <div class="axis-row collapsed" data-idx="4">
+            <div class="chk"><input type="checkbox" id="axis_enabled_4" /></div>
+            <div class="axis-title">軸4</div>
+            <select id="axis_4"></select>
+            <select id="cat_4"></select>
+            <input id="qty_4" type="number" min="0" placeholder="數量" />
+          </div>
+
+          <div class="axis-row collapsed" data-idx="5">
+            <div class="chk"><input type="checkbox" id="axis_enabled_5" /></div>
+            <div class="axis-title">軸5</div>
+            <select id="axis_5"></select>
+            <select id="cat_5"></select>
+            <input id="qty_5" type="number" min="0" placeholder="數量" />
+          </div>
+
+          <!-- 軸6：無勾選。仍採「需要時呈現」邏輯，會跟著軸5啟用或輸入即展開 -->
+          <div class="axis-row collapsed" data-idx="6">
+            <div class="chk"><!-- 空白，不放 checkbox --></div>
+            <div class="axis-title">軸6</div>
+            <select id="axis_6"></select>
+            <select id="cat_6"></select>
+            <input id="qty_6" type="number" min="0" placeholder="數量" />
+          </div>
+
+          <div class="help">提示：勾選軸1–5展開下一列；軸6無勾選，輸入內容或前一列啟用時自動顯示。</div>
+        </div>
+      </div>
+
+      <!-- 11) 標題,切板手 -->
+      <div class="row">
+        <div class="block col-6">
+          <label class="center">切板手</label>
+          <input id="cutter_a" placeholder="輸入切板手代號" class="center" />
+        </div>
+        <!-- 12) 標題,檢驗者 -->
+        <div class="block col-6">
+          <label class="center">檢驗者</label>
+          <input id="inspector" placeholder="輸入檢驗者代號" class="center" />
+        </div>
+      </div>
+
+      <!-- 14) 重工確認,重工者 -->
+      <div class="row">
+        <div class="block col-4">
+          <label>重工確認</label>
+          <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+            <input type="checkbox" id="rework_confirm" />
+            <span class="muted">需要重工</span>
+          </div>
+        </div>
+        <div class="block col-8">
+          <label>重工者</label>
+          <input id="reworker" placeholder="重工者代號" disabled />
+        </div>
+      </div>
+
+      <!-- 15) 報廢,續留（互鎖） -->
+      <div class="row">
+        <div class="block col-6">
+          <label>報廢</label>
+          <div class="center"><input type="checkbox" id="scrap_yes" /></div>
+        </div>
+        <div class="block col-6">
+          <label>續留</label>
+          <div class="center"><input type="checkbox" id="scrap_keep" /></div>
+        </div>
+      </div>
+
+      <!-- 16) 備註 -->
+      <div class="row">
+        <div class="block col-12">
+          <label>備註</label>
+          <textarea id="remark" rows="3" placeholder="填寫補充說明"></textarea>
+        </div>
+      </div>
+
+      <!-- 17) 複檢員 -->
+      <div class="row">
+        <div class="block col-6">
+          <label class="center">複檢員</label>
+          <input id="reviewer" class="center" placeholder="輸入複檢員代號" />
+        </div>
+        <div class="block col-6 actions">
+          <button class="btn secondary" id="btnPreview">預覽</button>
+          <button class="btn" id="btnSubmit">送出</button>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <!-- 3 -->
-  <div class="row inline">
-    <div><label>產品型態</label><select id="product_type"></select></div>
-    <div><label>料號</label><input id="part_no"></div>
-  </div>
-
-  <!-- 4 -->
-  <div class="row inline">
-    <div><label>FA</label><select id="fa_stage"></select></div>
-    <div><label>批號</label><input id="lot_no"></div>
-  </div>
-
-  <!-- 5~10 -->
-  <div id="axisRows"></div>
-
-  <!-- 11~13 -->
-  <div class="row"><label>切板手A</label><input id="cutter_a"></div>
-  <div class="row"><label>檢驗者</label><input id="inspector"></div>
-  <div class="row"><label>切板手B</label><input id="cutter_b"></div>
-
-  <!-- 14 -->
-  <div class="row inline">
-    <div><label><input type="checkbox" id="rework_confirm"> 重工確認</label></div>
-    <div><input id="reworker" placeholder="重工者"></div>
-  </div>
-
-  <!-- 15 -->
-  <div class="row inline">
-    <label><input type="checkbox" id="scrap_yes"> 報廢</label>
-    <label><input type="checkbox" id="scrap_keep"> 續留</label>
-  </div>
-
-  <!-- 16~17 -->
-  <div class="row"><label>備註</label><textarea id="remark" rows="3"></textarea></div>
-  <div class="row"><label>複檢員</label><input id="reviewer"></div>
-
-  <div class="row"><button id="submitBtn">送出</button></div>
 </div>
 
 <script>
-// === 最小 JS 骨架 ===
-// 初始化、互鎖、半隱藏展開
-document.addEventListener('DOMContentLoaded',()=>{
-  initDateShift();
-  buildAxisRows(6);
-  bindEvents();
+// ==== 最小 JS 骨架：初始化、互鎖、半隱藏 ====
+document.addEventListener('DOMContentLoaded', () => {
+  initDateShift();          // 由 config.js 提供
+  initSelectOptions();      // 由 config.js 提供
+  bindAxisToggles();        // 軸1–5 勾選展開；軸6跟隨/輸入即展開
+  bindMutualLocks();        // 報廢 vs 續留；重工勾選 → 重工者啟用
+  bindAxis6AutoReveal();    // 軸6無勾選時的自動展開條件
+  bindActions();            // 預覽 / 送出（僅收集資料）
 });
 
-// 由 config.js 取得日期與班別
+// 日期與班別
 function initDateShift(){
-  if (typeof window.config_getDateShift==='function'){
-    const ds = window.config_getDateShift(); // {date:'YYYY/MM/DD',shift:'A'}
-    date_display.value = ds.date;
-    shift_display.value = ds.shift;
+  if (typeof window.config_getDateShift === 'function'){
+    const {date, shift} = window.config_getDateShift(); // {date:'YYYY/MM/DD', shift:'A'}
+    document.getElementById('date_display').value = date || '';
+    document.getElementById('shift_display').value = shift || '';
   }
 }
 
-// 建立軸別列
-function buildAxisRows(n){
-  const box = document.getElementById('axisRows');
-  for(let i=1;i<=n;i++){
-    const row=document.createElement('div');
-    row.className='row axisRow'+(i>1?' collapsed':'');
-    row.dataset.idx=i;
-    row.innerHTML=`
-      <div class="inline">
-        <label><input type="checkbox" id="axis_enabled_${i}"> 軸${i}</label>
-        <select id="axis_${i}"></select>
-        <select id="cat_${i}"></select>
-        <input id="qty_${i}" type="number" min="0" placeholder="數量">
-      </div>`;
-    box.appendChild(row);
+// 下拉資料來源
+function initSelectOptions(){
+  const fill = (elId, list) => {
+    const el = document.getElementById(elId);
+    if (!el || !Array.isArray(list)) return;
+    el.innerHTML = '<option value="" disabled selected>請選擇</option>' +
+      list.map(v=>`<option value="${v}">${v}</option>`).join('');
+  };
+
+  if (typeof window.config_getProductTypes==='function'){
+    fill('product_type', window.config_getProductTypes());
+  }
+  if (typeof window.config_getFAStages==='function'){
+    fill('fa_stage', window.config_getFAStages());
+  }
+  if (typeof window.config_getAxes==='function'){
+    const axes = window.config_getAxes();
+    for(let i=1;i<=6;i++) fill(`axis_${i}`, axes);
+  }
+  if (typeof window.config_getCategories==='function'){
+    const cats = window.config_getCategories();
+    for(let i=1;i<=6;i++) fill(`cat_${i}`, cats);
   }
 }
 
-// 綁定主要事件
-function bindEvents(){
-  // 軸列互鎖展開
-  document.querySelectorAll('[id^=axis_enabled_]').forEach(cb=>{
-    cb.addEventListener('change',e=>{
-      const idx=Number(e.target.id.split('_').pop());
-      const row=document.querySelector('.axisRow[data-idx="'+idx+'"]');
-      const next=document.querySelector('.axisRow[data-idx="'+(idx+1)+'"]');
-      if(e.target.checked){
-        row.classList.remove('collapsed');
-        if(next) next.classList.remove('collapsed');
+// 軸列互鎖：1–5 勾選控制；收回後方列
+function bindAxisToggles(){
+  for(let i=1;i<=5;i++){
+    const cb = document.getElementById('axis_enabled_'+i);
+    const row = document.querySelector(`.axis-row[data-idx="${i}"]`);
+    const next = document.querySelector(`.axis-row[data-idx="${i+1}"]`);
+    if(!cb || !row) continue;
+    cb.addEventListener('change', ()=>{
+      if(cb.checked){
+        expand(row);
+        if(next) expand(next); // 預告下一列
       }else{
-        // 收回後方列
-        for(let j=idx+1;j<=6;j++){
-          document.querySelector('.axisRow[data-idx="'+j+'"]')
-            ?.classList.add('collapsed');
-          document.getElementById('axis_enabled_'+j).checked=false;
+        // 收回後方列與勾選
+        for(let j=i+1;j<=5;j++){
+          collapseRow(j);
+          const cbj = document.getElementById('axis_enabled_'+j);
+          if(cbj) cbj.checked = false;
         }
+        // 軸6也一起收回
+        collapseRow(6);
+        clearAxisRow(i); // 可選：清本列欄位
       }
     });
-  });
-
-  // 互鎖：報廢 vs 續留
-  scrap_yes.addEventListener('change',()=>{if(scrap_yes.checked) scrap_keep.checked=false;});
-  scrap_keep.addEventListener('change',()=>{if(scrap_keep.checked) scrap_yes.checked=false;});
-
-  // 重工者啟用
-  rework_confirm.addEventListener('change',()=>{
-    reworker.disabled=!rework_confirm.checked;
-    if(!rework_confirm.checked) reworker.value='';
-  });
-
-  // 送出
-  submitBtn.addEventListener('click',onSubmit);
+  }
 }
 
-// 收集與提交
-function onSubmit(){
-  const data={
-    date:date_display.value,
-    shift:shift_display.value,
-    machine_id:machine_id.value.trim(),
-    product_type:product_type.value,
-    part_no:part_no.value.trim(),
-    fa_stage:fa_stage.value,
-    lot_no:lot_no.value.trim(),
-    lines:collectLines(),
-    cutter_a:cutter_a.value.trim(),
-    inspector:inspector.value.trim(),
-    cutter_b:cutter_b.value.trim(),
-    rework_confirm:rework_confirm.checked,
-    reworker:reworker.value.trim(),
-    scrap:scrap_yes.checked?'SCRAP':(scrap_keep.checked?'KEEP':''),
-    remark:remark.value.trim(),
-    reviewer:reviewer.value.trim()
-  };
-  console.log(data);
-  alert('已收集資料，請在正式版中串接送出邏輯');
-}
+// 軸6：無勾選；當軸5被勾選或本列任一欄有輸入 → 展開
+function bindAxis6AutoReveal(){
+  const row6 = document.querySelector('.axis-row[data-idx="6"]');
+  if(!row6) return;
 
-function collectLines(){
-  const arr=[];
-  for(let i=1;i<=6;i++){
-    const en=document.getElementById('axis_enabled_'+i);
-    if(!en||!en.checked) continue;
-    arr.push({
-      axis:document.getElementById('axis_'+i).value,
-      cat:document.getElementById('cat_'+i).value,
-      qty:Number(document.getElementById('qty_'+i).value||0)
+  // 當軸5勾選時一併展開6
+  const cb5 = document.getElementById('axis_enabled_5');
+  if(cb5){
+    cb5.addEventListener('change', ()=>{
+      if(cb5.checked) expand(row6); else collapseRow(6);
     });
   }
-  return arr;
+  // 軸6任一欄變動即展開
+  ['axis_6','cat_6','qty_6'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('input', ()=>expand(row6));
+    el.addEventListener('change', ()=>expand(row6));
+  });
 }
+
+// 報廢/續留互鎖 + 重工者啟用
+function bindMutualLocks(){
+  const scrapYes = document.getElementById('scrap_yes');
+  const scrapKeep = document.getElementById('scrap_keep');
+  const rework = document.getElementById('rework_confirm');
+  const reworker = document.getElementById('reworker');
+
+  if(scrapYes && scrapKeep){
+    scrapYes.addEventListener('change', ()=>{ if(scrapYes.checked) scrapKeep.checked=false; });
+    scrapKeep.addEventListener('change', ()=>{ if(scrapKeep.checked) scrapYes.checked=false; });
+  }
+  if(rework && reworker){
+    const sync = ()=>{
+      reworker.disabled = !rework.checked;
+      if(!rework.checked) reworker.value='';
+    };
+    rework.addEventListener('change', sync);
+    sync();
+  }
+}
+
+// 動作：預覽 / 送出（此處只 console 顯示資料）
+function bindActions(){
+  document.getElementById('btnPreview')?.addEventListener('click', ()=>{
+    console.log(collectData());
+    alert('預覽已輸出到 console');
+  });
+  document.getElementById('btnSubmit')?.addEventListener('click', ()=>{
+    console.log(collectData());
+    alert('已收集資料，依需求串接送出流程');
+  });
+}
+
+// 展開/收起工具
+function expand(el){ el.classList.remove('collapsed'); el.classList.add('expanded'); }
+function collapseRow(idx){
+  const el = document.querySelector(`.axis-row[data-idx="${idx}"]`);
+  if(el){ el.classList.remove('expanded'); el.classList.add('collapsed'); }
+}
+function clearAxisRow(idx){
+  ['axis_','cat_','qty_'].forEach(p=>{
+    const el = document.getElementById(p+idx);
+    if(el){ if(p==='qty_') el.value=''; else el.selectedIndex=0; }
+  });
+}
+
+// 收集資料
+function collectData(){
+  const lines=[];
+  for(let i=1;i<=6;i++){
+    // 軸6沒有勾選，判斷是否空白
+    if(i<=5){
+      const cb = document.getElementById('axis_enabled_'+i);
+      if(!cb || !cb.checked) continue;
+    }else{
+      const a = val(`axis_${i}`), c = val(`cat_${i}`), q = num(`qty_${i}`);
+      if(!(a||c||q)) { /* 全空則跳過 */ continue; }
+    }
+    lines.push({
+      axis: val(`axis_${i}`),
+      cat:  val(`cat_${i}`),
+      qty:  num(`qty_${i}`)
+    });
+  }
+  return {
+    date: val('date_display'),
+    shift: val('shift_display'),
+    machine_id: val('machine_id'),
+    product_type: val('product_type'),
+    part_no: val('part_no'),
+    fa_stage: val('fa_stage'),
+    lot_no: val('lot_no'),
+    lines,
+    cutter_a: val('cutter_a'),
+    inspector: val('inspector'),
+    rework_confirm: document.getElementById('rework_confirm')?.checked || false,
+    reworker: val('reworker'),
+    scrap: document.getElementById('scrap_yes')?.checked ? 'SCRAP' :
+           (document.getElementById('scrap_keep')?.checked ? 'KEEP' : ''),
+    remark: val('remark'),
+    reviewer: val('reviewer')
+  };
+}
+function val(id){ return (document.getElementById(id)?.value || '').trim(); }
+function num(id){ const v = Number(document.getElementById(id)?.value||0); return isFinite(v)?v:0; }
 </script>
 </body>
 </html>
