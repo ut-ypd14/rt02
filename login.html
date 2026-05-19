@@ -167,7 +167,6 @@
     "use strict";
 
     const APP_VERSION = "v0.1.0";
-    const GAS_URL = "請貼上你的 GAS /exec 網址";
     const MSG_SOURCE = "PI_PERSONNEL_GAS_V001";
     const STORAGE_LOGIN = "PI_LOGIN_DRAFT_V001";
     const STORAGE_SHORT_AUTH = "PI_SHORT_AUTH_V001";
@@ -196,7 +195,7 @@
     });
 
     function isGasUrlReady() {
-      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(GAS_URL);
+      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(api_url);
     }
 
     function normalizeId(value) {
@@ -296,7 +295,7 @@
 
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = GAS_URL;
+      form.action = api_url;
       form.target = "gasFrame";
       form.enctype = "application/x-www-form-urlencoded";
       form.acceptCharset = "UTF-8";
