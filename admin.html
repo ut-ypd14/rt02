@@ -248,7 +248,7 @@
     });
 
     function isGasUrlReady() {
-      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(GAS_URL);
+      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(api_url);
     }
 
     function normalizeId(value) {
@@ -470,7 +470,7 @@
 
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = GAS_URL;
+      form.action = api_url;
       form.target = "gasFrame";
       form.enctype = "application/x-www-form-urlencoded";
       form.acceptCharset = "UTF-8";
