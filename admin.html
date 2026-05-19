@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>人員後台管理 v0.1.0</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #17202a;
+      --muted: #6b7280;
+      --line: #d8dee9;
+      --main: #0f766e;
+      --danger: #b91c1c;
+      --warn: #b45309;
+      --ok: #047857;
+      --shadow: 0 8px 24px rgba(15, 23, 42, .10);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      padding: 14px;
+      padding-bottom: calc(22px + env(safe-area-inset-bottom));
+    }
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .top {
+      margin: 4px 0 12px;
+    }
+    .title {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+    .ver {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .hide { display: none !important; }
+    label {
+      display: block;
+      font-weight: 700;
+      margin: 12px 0 6px;
+      font-size: 15px;
+    }
+    input, select, button {
+      width: 100%;
+      min-height: 48px;
+      font-size: 17px;
+      border-radius: 14px;
+      font-family: inherit;
+    }
+    input, select {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--main);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, .15);
+    }
+    button {
+      border: 0;
+      padding: 12px;
+      font-weight: 800;
+      background: var(--main);
+      color: #fff;
+      margin-top: 12px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button.secondary {
+      background: #334155;
+    }
+    button.ghost {
+      color: var(--main);
+      border: 1px solid var(--main);
+      background: #fff;
+    }
+    button.warn {
+      background: var(--warn);
+    }
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 560px) {
+      .row.two { grid-template-columns: 1fr 1fr; }
+      .row.three { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .msg {
+      min-height: 24px;
+      margin-top: 10px;
+      font-size: 15px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .msg.warn { color: var(--warn); }
+    .pill {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #e0f2f1;
+      color: #115e59;
+      font-size: 13px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin-top: 8px;
+    }
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 14px 0;
+    }
+    iframe {
+      width: 1px;
+      height: 1px;
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1 class="title">人員後台管理</h1>
+      <div class="ver">版本 v0.1.0｜手機瀏覽器相容版｜admin 欄只讀不寫</div>
+    </div>
+
+    <section id="gateCard" class="card">
+      <div id="gateText" class="msg">正在確認管理權限...</div>
+      <button id="goLoginBtn" class="secondary hide" type="button">前往帳密輸入</button>
+      <button id="retryBtn" class="ghost hide" type="button">重新確認</button>
+    </section>
+
+    <section id="appCard" class="card hide">
+      <div>
+        <strong>目前管理者</strong>
+        <div id="adminInfo" class="pill"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <label for="targetId">人員工號</label>
+      <div class="row two">
+        <input id="targetId" type="text" inputmode="latin" autocomplete="off" autocapitalize="characters" maxlength="5" placeholder="5碼英數，例如 A1234">
+        <button id="queryBtn" type="button">查詢</button>
+      </div>
+
+      <div id="editArea" class="hide">
+        <label for="targetPass">密碼</label>
+        <input id="targetPass" type="text" inputmode="latin" autocomplete="off" autocapitalize="none" maxlength="32" placeholder="英數">
+
+        <label for="targetName">中文名字</label>
+        <input id="targetName" type="text" autocomplete="off" placeholder="至少 2 個字元">
+
+        <label for="targetShift">預設班別</label>
+        <select id="targetShift">
+          <option value="">請選擇</option>
+          <option value="A">A 班</option>
+          <option value="B">B 班</option>
+          <option value="C">C 班</option>
+        </select>
+
+        <div id="targetAdminNote" class="note"></div>
+
+        <button id="saveBtn" type="button">新增 / 修改人員</button>
+        <button id="clearBtn" class="ghost" type="button">清空輸入</button>
+      </div>
+
+      <div id="mainMsg" class="msg"></div>
+    </section>
+  </div>
+
+  <iframe id="gasFrame" name="gasFrame" title="gasFrame"></iframe>
+
+  <script>
+    "use strict";
+
+    const APP_VERSION = "v0.1.0";
+    const GAS_URL = "請貼上你的 GAS /exec 網址";
+    const LOGIN_FORM_URL = "02_帳密輸入_v0.1.0.html";
+    const MSG_SOURCE = "PI_PERSONNEL_GAS_V001";
+    const STORAGE_LOGIN = "PI_LOGIN_DRAFT_V001";
+
+    const $ = (id) => document.getElementById(id);
+
+    let pendingAction = "";
+    let adminDraft = null;
+    let currentTargetExists = false;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      $("goLoginBtn").addEventListener("click", goLogin);
+      $("retryBtn").addEventListener("click", checkAdmin);
+      $("queryBtn").addEventListener("click", queryUser);
+      $("saveBtn").addEventListener("click", saveUser);
+      $("clearBtn").addEventListener("click", clearEdit);
+      $("targetId").addEventListener("input", () => {
+        $("targetId").value = normalizeId($("targetId").value);
+      });
+      checkAdmin();
+    });
+
+    window.addEventListener("message", (event) => {
+      const data = event.data || {};
+      if (!data || data.source !== MSG_SOURCE) return;
+      handleGasMessage(data);
+    });
+
+    function isGasUrlReady() {
+      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(GAS_URL);
+    }
+
+    function normalizeId(value) {
+      return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+    }
+
+    function normalizePass(value) {
+      return String(value || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 32);
+    }
+
+    function validId(value) {
+      return /^[A-Z0-9]{5}$/.test(value);
+    }
+
+    function validPass(value) {
+      return /^[A-Za-z0-9]+$/.test(value);
+    }
+
+    function validName(value) {
+      return String(value || "").trim().length > 1;
+    }
+
+    function validShift(value) {
+      return /^(A|B|C)$/.test(value);
+    }
+
+    function setGate(text, type) {
+      const el = $("gateText");
+      el.textContent = text || "";
+      el.className = "msg " + (type || "");
+    }
+
+    function setMsg(text, type) {
+      const el = $("mainMsg");
+      el.textContent = text || "";
+      el.className = "msg " + (type || "");
+    }
+
+    function loadLoginDraft() {
+      try {
+        const raw = localStorage.getItem(STORAGE_LOGIN);
+        if (!raw) return null;
+        const draft = JSON.parse(raw);
+        const id = normalizeId(draft.id);
+        const pass = String(draft.pass || "");
+        if (!validId(id) || !validPass(pass)) return null;
+        return { id, pass };
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function clearLoginDraft() {
+      try {
+        localStorage.removeItem(STORAGE_LOGIN);
+      } catch (err) {}
+    }
+
+    function checkAdmin() {
+      $("appCard").classList.add("hide");
+      $("goLoginBtn").classList.add("hide");
+      $("retryBtn").classList.add("hide");
+      setGate("正在確認管理權限...", "");
+
+      if (!isGasUrlReady()) {
+        setGate("尚未設定 GAS_URL，請先把 GAS /exec 網址填入本檔案。", "err");
+        $("retryBtn").classList.remove("hide");
+        return;
+      }
+
+      adminDraft = loadLoginDraft();
+      if (!adminDraft) {
+        setGate("找不到帳密草稿，請先登入。", "warn");
+        $("goLoginBtn").classList.remove("hide");
+        return;
+      }
+
+      postToGas("auth_check", {
+        id: adminDraft.id,
+        pass: adminDraft.pass,
+        require_admin: "TRUE"
+      });
+    }
+
+    function goLogin() {
+      const returnUrl = location.href.split("#")[0];
+      location.href = LOGIN_FORM_URL + "?return=" + encodeURIComponent(returnUrl);
+    }
+
+    function showApp(payload) {
+      $("gateCard").classList.add("hide");
+      $("appCard").classList.remove("hide");
+      $("adminInfo").textContent = payload.id + "｜" + payload.name + "｜" + payload.default_shift + "班";
+      setMsg("管理權限確認完成。", "ok");
+    }
+
+    function queryUser() {
+      setMsg("", "");
+      const targetId = normalizeId($("targetId").value);
+      $("targetId").value = targetId;
+
+      if (!validId(targetId)) {
+        setMsg("工號需為 5 碼英數。", "err");
+        return;
+      }
+
+      const draft = loadLoginDraft();
+      if (!draft) {
+        setMsg("帳密草稿不存在，請重新登入。", "err");
+        return;
+      }
+
+      postToGas("get_user", {
+        id: draft.id,
+        pass: draft.pass,
+        target_id: targetId
+      });
+    }
+
+    function fillTarget(payload) {
+      currentTargetExists = !!payload.exists;
+      $("editArea").classList.remove("hide");
+
+      $("targetId").value = normalizeId(payload.target_id || $("targetId").value);
+      $("targetPass").value = payload.target_pass || "";
+      $("targetName").value = payload.target_name || "";
+      $("targetShift").value = payload.target_shift || "";
+
+      if (payload.exists) {
+        $("targetAdminNote").textContent = "目前此人員 admin 欄位：" + (payload.target_admin ? "TRUE" : "FALSE") + "。此欄只顯示，不會由表單寫入。";
+        setMsg("已載入人員資料，可修改密碼、姓名、預設班別。", "ok");
+      } else {
+        $("targetAdminNote").textContent = "新建人員時只會寫入 A:D；admin 欄需人工開啟試算表設定。";
+        setMsg("查無此工號，可直接新增。", "warn");
+      }
+    }
+
+    function saveUser() {
+      setMsg("", "");
+      const draft = loadLoginDraft();
+      if (!draft) {
+        setMsg("帳密草稿不存在，請重新登入。", "err");
+        return;
+      }
+
+      const targetId = normalizeId($("targetId").value);
+      const targetPass = normalizePass($("targetPass").value);
+      const targetName = String($("targetName").value || "").trim();
+      const targetShift = $("targetShift").value;
+
+      $("targetId").value = targetId;
+      $("targetPass").value = targetPass;
+      $("targetName").value = targetName;
+
+      if (!validId(targetId)) {
+        setMsg("工號需為 5 碼英數。", "err");
+        return;
+      }
+      if (!validPass(targetPass)) {
+        setMsg("密碼只能使用英數，且不得空白。", "err");
+        return;
+      }
+      if (!validName(targetName)) {
+        setMsg("中文名字不得為空，且需超過 1 個字元。", "err");
+        return;
+      }
+      if (!validShift(targetShift)) {
+        setMsg("預設班別只能為 A、B、C。", "err");
+        return;
+      }
+
+      postToGas("save_user", {
+        id: draft.id,
+        pass: draft.pass,
+        target_id: targetId,
+        target_pass: targetPass,
+        target_name: targetName,
+        target_shift: targetShift
+      });
+    }
+
+    function clearEdit() {
+      currentTargetExists = false;
+      $("targetId").value = "";
+      $("targetPass").value = "";
+      $("targetName").value = "";
+      $("targetShift").value = "";
+      $("targetAdminNote").textContent = "";
+      $("editArea").classList.add("hide");
+      setMsg("", "");
+    }
+
+    function setBusy(isBusy, action) {
+      pendingAction = isBusy ? action : "";
+      $("queryBtn").disabled = isBusy;
+      $("saveBtn").disabled = isBusy;
+      $("retryBtn").disabled = isBusy;
+      if (isBusy && action !== "auth_check") setMsg("處理中...", "warn");
+    }
+
+    function postToGas(action, payload) {
+      if (!isGasUrlReady()) {
+        if (action === "auth_check") {
+          setGate("尚未設定 GAS_URL，請先把 GAS /exec 網址填入本檔案。", "err");
+        } else {
+          setMsg("尚未設定 GAS_URL，請先把 GAS /exec 網址填入本檔案。", "err");
+        }
+        return;
+      }
+
+      setBusy(true, action);
+
+      const params = new URLSearchParams();
+      params.set("action", action);
+      params.set("client_version", APP_VERSION);
+      Object.keys(payload || {}).forEach((key) => {
+        params.set(key, payload[key]);
+      });
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = GAS_URL;
+      form.target = "gasFrame";
+      form.enctype = "application/x-www-form-urlencoded";
+      form.acceptCharset = "UTF-8";
+      form.style.display = "none";
+
+      params.forEach((value, key) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      window.setTimeout(() => {
+        if (form.parentNode) form.parentNode.removeChild(form);
+      }, 0);
+    }
+
+    function handleGasMessage(data) {
+      const action = data.action || pendingAction;
+      const payload = data.payload || {};
+      setBusy(false, "");
+
+      if (payload.status !== "ok") {
+        if (payload.msg === "auth_failed" || payload.msg === "admin_required") {
+          clearLoginDraft();
+        }
+
+        if (action === "auth_check") {
+          $("gateCard").classList.remove("hide");
+          $("appCard").classList.add("hide");
+          setGate(errorText(payload.msg), "err");
+          $("goLoginBtn").classList.remove("hide");
+          $("retryBtn").classList.remove("hide");
+        } else {
+          setMsg(errorText(payload.msg), "err");
+        }
+        return;
+      }
+
+      if (action === "auth_check") {
+        if (payload.admin !== true) {
+          clearLoginDraft();
+          setGate("此帳號沒有後台管理權。", "err");
+          $("goLoginBtn").classList.remove("hide");
+          return;
+        }
+        showApp(payload);
+        return;
+      }
+
+      if (action === "get_user") {
+        fillTarget(payload);
+        return;
+      }
+
+      if (action === "save_user") {
+        currentTargetExists = true;
+        $("targetAdminNote").textContent = "已儲存 A:D。admin 欄未由 GAS 寫入。";
+        setMsg(payload.mode === "insert" ? "新增完成。" : "修改完成。", "ok");
+      }
+    }
+
+    function errorText(msg) {
+      const map = {
+        get_disabled: "GET 已停用。",
+        bad_action: "未知的 action。",
+        auth_failed: "帳號或密碼錯誤，請重新登入。",
+        admin_required: "沒有後台管理權。",
+        invalid_id: "工號需為 5 碼英數。",
+        invalid_pass: "密碼只能使用英數，且不得空白。",
+        invalid_name: "中文名字不得為空，且需超過 1 個字元。",
+        invalid_shift: "預設班別只能為 A、B、C。",
+        sheet_not_found: "找不到人員主檔 Sheet。",
+        config_missing: "GAS 尚未設定 SPREADSHEET_ID。",
+        lock_timeout: "系統忙碌，請稍後再試。",
+        server_error: "GAS 執行錯誤。"
+      };
+      return map[msg] || ("處理失敗：" + (msg || "unknown"));
+    }
+  </script>
+</body>
+</html>
