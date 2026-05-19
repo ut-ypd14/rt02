@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>帳密輸入 v0.1.0</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #17202a;
+      --muted: #6b7280;
+      --line: #d8dee9;
+      --main: #2563eb;
+      --danger: #b91c1c;
+      --warn: #b45309;
+      --ok: #047857;
+      --shadow: 0 8px 24px rgba(15, 23, 42, .10);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      padding: 14px;
+      padding-bottom: calc(22px + env(safe-area-inset-bottom));
+    }
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    .title {
+      margin: 8px 0 4px;
+      font-size: 26px;
+      line-height: 1.25;
+      font-weight: 850;
+    }
+    .ver {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-weight: 800;
+      margin: 14px 0 6px;
+      font-size: 16px;
+    }
+    input, button {
+      width: 100%;
+      min-height: 52px;
+      font-size: 19px;
+      border-radius: 15px;
+      font-family: inherit;
+    }
+    input {
+      border: 1px solid var(--line);
+      padding: 11px 13px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--main);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
+    }
+    button {
+      border: 0;
+      padding: 13px;
+      font-weight: 850;
+      background: var(--main);
+      color: #fff;
+      margin-top: 16px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button.ghost {
+      color: var(--main);
+      border: 1px solid var(--main);
+      background: #fff;
+    }
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .msg {
+      min-height: 24px;
+      margin-top: 12px;
+      font-size: 15px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+    .msg.warn { color: var(--warn); }
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin-top: 10px;
+    }
+    .hide { display: none !important; }
+    .draftBox {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    iframe {
+      width: 1px;
+      height: 1px;
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">帳密輸入</h1>
+    <div class="ver">版本 v0.1.0｜手機瀏覽器相容版｜POST-only</div>
+
+    <section class="card">
+      <label for="idInput">工號</label>
+      <input id="idInput" type="text" inputmode="latin" autocomplete="username" autocapitalize="characters" maxlength="5" placeholder="5碼英數，例如 A1234">
+
+      <label for="passInput">密碼</label>
+      <input id="passInput" type="password" inputmode="latin" autocomplete="current-password" autocapitalize="none" maxlength="32" placeholder="英數">
+
+      <button id="loginBtn" type="button">驗證登入</button>
+      <button id="clearBtn" class="ghost" type="button">清除本機草稿</button>
+
+      <div id="msg" class="msg"></div>
+      <div id="draftBox" class="draftBox hide"></div>
+
+      <div class="note">
+        驗證成功後會保存本機草稿：login_draft = {id, pass}，並新增 short_auth_draft 作為短暫直接通行權。短暫通行權只供單純輸入表單減少讀表使用，後台管理仍需重新驗證 admin。
+      </div>
+    </section>
+  </div>
+
+  <iframe id="gasFrame" name="gasFrame" title="gasFrame"></iframe>
+
+  <script>
+    "use strict";
+
+    const APP_VERSION = "v0.1.0";
+    const GAS_URL = "請貼上你的 GAS /exec 網址";
+    const MSG_SOURCE = "PI_PERSONNEL_GAS_V001";
+    const STORAGE_LOGIN = "PI_LOGIN_DRAFT_V001";
+    const STORAGE_SHORT_AUTH = "PI_SHORT_AUTH_V001";
+    const SHORT_AUTH_MS = 2 * 60 * 60 * 1000;
+
+    const $ = (id) => document.getElementById(id);
+
+    let pendingAction = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      $("loginBtn").addEventListener("click", login);
+      $("clearBtn").addEventListener("click", clearDrafts);
+      $("idInput").addEventListener("input", () => {
+        $("idInput").value = normalizeId($("idInput").value);
+      });
+      $("passInput").addEventListener("input", () => {
+        $("passInput").value = normalizePass($("passInput").value);
+      });
+      loadExistingDraft();
+    });
+
+    window.addEventListener("message", (event) => {
+      const data = event.data || {};
+      if (!data || data.source !== MSG_SOURCE) return;
+      handleGasMessage(data);
+    });
+
+    function isGasUrlReady() {
+      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(GAS_URL);
+    }
+
+    function normalizeId(value) {
+      return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+    }
+
+    function normalizePass(value) {
+      return String(value || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 32);
+    }
+
+    function validId(value) {
+      return /^[A-Z0-9]{5}$/.test(value);
+    }
+
+    function validPass(value) {
+      return /^[A-Za-z0-9]+$/.test(value);
+    }
+
+    function setMsg(text, type) {
+      const el = $("msg");
+      el.textContent = text || "";
+      el.className = "msg " + (type || "");
+    }
+
+    function loadExistingDraft() {
+      try {
+        const raw = localStorage.getItem(STORAGE_LOGIN);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        const id = normalizeId(draft.id);
+        const pass = normalizePass(draft.pass);
+        if (validId(id)) $("idInput").value = id;
+        if (validPass(pass)) $("passInput").value = pass;
+
+        $("draftBox").classList.remove("hide");
+        $("draftBox").textContent = "已偵測到本機帳密草稿：" + id + "。可直接重新驗證，或清除草稿後重登。";
+      } catch (err) {}
+    }
+
+    function clearDrafts() {
+      try {
+        localStorage.removeItem(STORAGE_LOGIN);
+        localStorage.removeItem(STORAGE_SHORT_AUTH);
+      } catch (err) {}
+      $("idInput").value = "";
+      $("passInput").value = "";
+      $("draftBox").classList.add("hide");
+      setMsg("已清除本機草稿。", "ok");
+    }
+
+    function login() {
+      setMsg("", "");
+
+      if (!isGasUrlReady()) {
+        setMsg("尚未設定 GAS_URL，請先把 GAS /exec 網址填入本檔案。", "err");
+        return;
+      }
+
+      const id = normalizeId($("idInput").value);
+      const pass = normalizePass($("passInput").value);
+
+      $("idInput").value = id;
+      $("passInput").value = pass;
+
+      if (!validId(id)) {
+        setMsg("工號需為 5 碼英數。", "err");
+        return;
+      }
+
+      if (!validPass(pass)) {
+        setMsg("密碼只能使用英數，且不得空白。", "err");
+        return;
+      }
+
+      postToGas("login", {
+        id: id,
+        pass: pass
+      });
+    }
+
+    function setBusy(isBusy, action) {
+      pendingAction = isBusy ? action : "";
+      $("loginBtn").disabled = isBusy;
+      $("clearBtn").disabled = isBusy;
+      if (isBusy) setMsg("驗證中...", "warn");
+    }
+
+    function postToGas(action, payload) {
+      setBusy(true, action);
+
+      const params = new URLSearchParams();
+      params.set("action", action);
+      params.set("client_version", APP_VERSION);
+      Object.keys(payload || {}).forEach((key) => {
+        params.set(key, payload[key]);
+      });
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = GAS_URL;
+      form.target = "gasFrame";
+      form.enctype = "application/x-www-form-urlencoded";
+      form.acceptCharset = "UTF-8";
+      form.style.display = "none";
+
+      params.forEach((value, key) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      window.setTimeout(() => {
+        if (form.parentNode) form.parentNode.removeChild(form);
+      }, 0);
+    }
+
+    function handleGasMessage(data) {
+      const action = data.action || pendingAction;
+      const payload = data.payload || {};
+      setBusy(false, "");
+
+      if (action !== "login") return;
+
+      if (payload.status !== "ok") {
+        try {
+          localStorage.removeItem(STORAGE_SHORT_AUTH);
+        } catch (err) {}
+        setMsg(errorText(payload.msg), "err");
+        return;
+      }
+
+      saveDrafts(payload);
+      setMsg("驗證成功，已建立帳密草稿與短暫通行草稿。", "ok");
+
+      const returnUrl = new URLSearchParams(location.search).get("return");
+      if (returnUrl) {
+        window.setTimeout(() => {
+          location.href = returnUrl;
+        }, 350);
+      }
+    }
+
+    function saveDrafts(payload) {
+      const now = Date.now();
+      const loginDraft = {
+        id: payload.id,
+        pass: $("passInput").value,
+        saved_at: now,
+        version: APP_VERSION
+      };
+
+      const shortAuthDraft = {
+        id: payload.id,
+        name: payload.name,
+        default_shift: payload.default_shift,
+        auth_time: now,
+        expire_time: now + SHORT_AUTH_MS,
+        scope: "input",
+        version: APP_VERSION
+      };
+
+      localStorage.setItem(STORAGE_LOGIN, JSON.stringify(loginDraft));
+      localStorage.setItem(STORAGE_SHORT_AUTH, JSON.stringify(shortAuthDraft));
+
+      $("draftBox").classList.remove("hide");
+      $("draftBox").textContent =
+        "目前登入：" + payload.id + "｜" + payload.name + "｜" + payload.default_shift + "班\n" +
+        "短暫通行權有效至：" + formatTime(shortAuthDraft.expire_time);
+    }
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      const pad = (n) => String(n).padStart(2, "0");
+      return d.getFullYear() + "/" + pad(d.getMonth() + 1) + "/" + pad(d.getDate()) + " " +
+        pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+    }
+
+    function errorText(msg) {
+      const map = {
+        get_disabled: "GET 已停用。",
+        bad_action: "未知的 action。",
+        auth_failed: "帳號或密碼錯誤。",
+        invalid_id: "工號需為 5 碼英數。",
+        invalid_pass: "密碼只能使用英數，且不得空白。",
+        sheet_not_found: "找不到人員主檔 Sheet。",
+        config_missing: "GAS 尚未設定 SPREADSHEET_ID。",
+        server_error: "GAS 執行錯誤。"
+      };
+      return map[msg] || ("處理失敗：" + (msg || "unknown"));
+    }
+  </script>
+</body>
+</html>
