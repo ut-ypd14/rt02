@@ -59,13 +59,6 @@ function routePing_(p) {
   });
 }
 
-
-
-
-
-
-
-
 function json_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
