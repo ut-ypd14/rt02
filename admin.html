@@ -1,493 +1,161 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="format-detection" content="telephone=no">
-  <title>人員管理 v0.1.2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>人員管理 v0.1.3</title>
+  <script src="./config.js"></script>
   <style>
-    :root {
-      --bg: #f4f6f8;
-      --card: #ffffff;
-      --text: #17202a;
-      --muted: #667085;
-      --line: #d0d7de;
-      --main: #0f766e;
-      --danger: #b91c1c;
-      --warn: #b45309;
-      --ok: #047857;
-      --shadow: 0 8px 24px rgba(15, 23, 42, .10);
-      --radius: 18px;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
-      -webkit-text-size-adjust: 100%;
-    }
-    body {
-      padding: 14px;
-      padding-bottom: calc(22px + env(safe-area-inset-bottom));
-    }
-    .wrap {
-      width: 100%;
-      max-width: 680px;
-      margin: 0 auto;
-    }
-    .title {
-      margin: 8px 0 4px;
-      font-size: 25px;
-      line-height: 1.25;
-      font-weight: 850;
-    }
-    .ver {
-      color: var(--muted);
-      font-size: 13px;
-      margin-bottom: 10px;
-    }
-    .server {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: #fff;
-      font-size: 14px;
-      color: var(--muted);
-    }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--warn);
-      flex: 0 0 auto;
-    }
-    .dot.ok { background: var(--ok); }
-    .dot.err { background: var(--danger); }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-      margin-bottom: 14px;
-    }
-    .hide { display: none !important; }
-    label {
-      display: block;
-      font-weight: 800;
-      margin: 12px 0 6px;
-      font-size: 15px;
-    }
-    input, select, button {
-      width: 100%;
-      min-height: 50px;
-      font-size: 18px;
-      border-radius: 14px;
-      font-family: inherit;
-    }
-    input, select {
-      border: 1px solid var(--line);
-      padding: 10px 12px;
-      background: #fff;
-      color: var(--text);
-      outline: none;
-    }
-    input:focus, select:focus {
-      border-color: var(--main);
-      box-shadow: 0 0 0 3px rgba(15, 118, 110, .15);
-    }
-    button {
-      border: 0;
-      padding: 12px;
-      font-weight: 850;
-      background: var(--main);
-      color: #fff;
-      margin-top: 12px;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    button.ghost {
-      color: var(--main);
-      border: 1px solid var(--main);
-      background: #fff;
-    }
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-    .msg {
-      min-height: 24px;
-      margin-top: 12px;
-      font-size: 15px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .msg.ok { color: var(--ok); }
-    .msg.err { color: var(--danger); }
-    .msg.warn { color: var(--warn); }
-    .note {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.55;
-      margin-top: 10px;
-    }
-    .adminInfo {
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: #ecfdf5;
-      color: #065f46;
-      font-size: 14px;
-      line-height: 1.55;
-      margin-bottom: 12px;
-    }
-    iframe {
-      width: 1px;
-      height: 1px;
-      position: absolute;
-      left: -9999px;
-      top: -9999px;
-      border: 0;
-    }
+    :root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--ok:#166534;--warn:#92400e;--bad:#991b1b;--main:#2563eb;--main2:#1d4ed8;}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;font-size:16px;line-height:1.45;}
+    .wrap{width:100%;max-width:620px;margin:0 auto;padding:14px 12px 28px;}
+    .status{border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 12px;margin-bottom:12px;font-size:14px;color:var(--muted);}
+    .status.ok{color:var(--ok);border-color:#bbf7d0;background:#f0fdf4}.status.bad{color:var(--bad);border-color:#fecaca;background:#fef2f2}.status.warn{color:var(--warn);border-color:#fde68a;background:#fffbeb}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.06);padding:18px;margin-bottom:12px;}
+    h1{font-size:22px;margin:0 0 4px}.ver{font-size:13px;color:var(--muted);margin-bottom:14px}.small{font-size:14px;color:var(--muted)}
+    label{display:block;font-weight:700;margin:14px 0 7px;}
+    input,select,button{width:100%;font:inherit;border-radius:14px;}
+    input,select{border:1px solid #d1d5db;background:#fff;padding:13px 12px;min-height:48px;outline:none;}
+    input:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
+    button{border:0;background:var(--main);color:#fff;font-weight:800;min-height:50px;padding:12px 14px;margin-top:16px;}
+    button:active{background:var(--main2)}button:disabled{opacity:.55}.ghost{background:#eef2ff;color:#1e40af;margin-top:10px}.danger{background:#fee2e2;color:#991b1b;margin-top:10px}
+    .msg{margin-top:14px;font-size:15px;color:var(--muted);word-break:break-word;}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.msg.warn{color:var(--warn)}
+    .grid{display:grid;grid-template-columns:1fr;gap:0}.hide{display:none!important}
+    iframe.bridge{width:0;height:0;border:0;position:absolute;left:-9999px;top:-9999px;}
+    @media (min-width:560px){.grid.two{grid-template-columns:1fr 1fr;gap:12px}.grid.two label{margin-top:14px}}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1 class="title">人員管理</h1>
-    <div class="ver">版本 v0.1.2｜手機瀏覽器相容版｜POST-only</div>
+    <div id="gasStatus" class="status warn">GAS 伺服狀態：檢查中...</div>
 
-    <div class="server" aria-live="polite">
-      <span id="gasDot" class="dot"></span>
-      <span id="gasText">GAS 伺服狀態：檢查中...</span>
-    </div>
-
-    <section id="gateCard" class="card">
-      <div id="gateMsg" class="msg warn">正在檢查本機草稿...</div>
+    <section class="card">
+      <h1>人員管理</h1>
+      <div class="ver">admin.html v0.1.3</div>
+      <div id="authBox" class="status warn">管理權限驗證中...</div>
+      <div id="managerInfo" class="small"></div>
     </section>
 
-    <section id="manageCard" class="card hide">
-      <div id="adminInfo" class="adminInfo"></div>
+    <section id="adminPanel" class="card hide">
+      <form id="saveForm" autocomplete="off">
+        <div class="grid two">
+          <div>
+            <label for="target_id">人員工號</label>
+            <input id="target_id" name="target_id" inputmode="latin" maxlength="5" placeholder="5 碼英數" required>
+          </div>
+          <div>
+            <label for="target_shift">人員班別</label>
+            <select id="target_shift" name="target_shift" required>
+              <option value="">請選擇</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+        </div>
 
-      <label for="targetId">工號</label>
-      <input id="targetId" type="text" inputmode="latin" autocomplete="off" autocapitalize="characters" maxlength="5" placeholder="5碼英數，例如 A1234">
+        <label for="target_name">中文名字</label>
+        <input id="target_name" name="target_name" placeholder="至少 2 個字元" required>
 
-      <label for="targetPass">密碼</label>
-      <input id="targetPass" type="text" inputmode="latin" autocomplete="off" autocapitalize="none" maxlength="32" placeholder="英數">
+        <label for="target_pass">密碼</label>
+        <input id="target_pass" name="target_pass" inputmode="latin" placeholder="新增必填；修改留空代表不改">
 
-      <label for="targetName">中文名字</label>
-      <input id="targetName" type="text" autocomplete="off" placeholder="不得空白，字元需大於 1">
-
-      <label for="targetShift">預設班別</label>
-      <select id="targetShift">
-        <option value="">請選擇</option>
-        <option value="A">A 班</option>
-        <option value="B">B 班</option>
-        <option value="C">C 班</option>
-      </select>
-
-      <button id="saveBtn" type="button">新增 / 修改人員</button>
-      <button id="clearBtn" class="ghost" type="button">清空輸入</button>
-      <button id="loginBtn" class="ghost" type="button">重新登入</button>
-
-      <div id="mainMsg" class="msg"></div>
-      <div class="note">前端只檢查欄位格式是否可送出；帳密、admin 權限、人員新增或覆寫均由 GAS 判斷。admin 欄只讀不寫。</div>
+        <button id="btnSave" type="submit">新增 / 修改人員</button>
+        <button id="btnLogout" class="danger" type="button">清除草稿並返回登入</button>
+      </form>
+      <div class="small" style="margin-top:10px;">admin 欄位僅由試算表手動修改，前端與 GAS 不寫入。</div>
+      <div id="msg" class="msg"></div>
     </section>
   </div>
 
-  <iframe id="statusFrame" name="statusFrame" title="statusFrame"></iframe>
-  <iframe id="postFrame" name="postFrame" title="postFrame"></iframe>
+  <iframe id="gasFrame" name="gasFrame" class="bridge" title="gas bridge"></iframe>
 
-  <script>
-    "use strict";
+<script>
+(function(){
+  'use strict';
 
-    const APP_VERSION = "v0.1.2";
-    const LOGIN_FORM_URL = "login.html";
-    const STORAGE_LOGIN = "PI_LOGIN_DRAFT_V001";
-    const STORAGE_SHORT_AUTH = "PI_SHORT_AUTH_V001";
+  var VERSION = 'v0.1.3';
+  var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
+  var SHORT_KEY = 'PI_SHORT_AUTH_V001';
+  var REQ_PREFIX = 'pi_' + Date.now() + '_';
+  var reqSeq = 0;
+  var pending = {};
+  var manager = null;
+  var frameName = 'gasFrame';
 
-    const $ = (id) => document.getElementById(id);
-    let pendingAction = "";
-    let statusTimer = 0;
-    let adminDraft = null;
+  var elGas = document.getElementById('gasStatus');
+  var elAuth = document.getElementById('authBox');
+  var elManager = document.getElementById('managerInfo');
+  var elPanel = document.getElementById('adminPanel');
+  var elForm = document.getElementById('saveForm');
+  var elMsg = document.getElementById('msg');
+  var elTargetId = document.getElementById('target_id');
+  var elTargetPass = document.getElementById('target_pass');
+  var elTargetName = document.getElementById('target_name');
+  var elTargetShift = document.getElementById('target_shift');
+  var btnSave = document.getElementById('btnSave');
+  var btnLogout = document.getElementById('btnLogout');
 
-    document.addEventListener("DOMContentLoaded", () => {
-      $("targetId").addEventListener("input", () => {
-        $("targetId").value = normalizeId($("targetId").value);
-      });
-      $("targetPass").addEventListener("input", () => {
-        $("targetPass").value = normalizePass($("targetPass").value);
-      });
-      $("saveBtn").addEventListener("click", saveUser);
-      $("clearBtn").addEventListener("click", clearEdit);
-      $("loginBtn").addEventListener("click", goLoginNow);
+  function setMsg(text, cls){ elMsg.className = 'msg' + (cls ? ' ' + cls : ''); elMsg.textContent = text || ''; }
+  function setGas(text, cls){ elGas.className = 'status' + (cls ? ' ' + cls : ''); elGas.textContent = text; }
+  function setAuth(text, cls){ elAuth.className = 'status' + (cls ? ' ' + cls : ''); elAuth.textContent = text; }
+  function now(){ return Date.now(); }
+  function getApiUrl(){ if (typeof api_url === 'string' && api_url) return api_url; return ''; }
+  function normalizeId(v){ return String(v || '').trim().toUpperCase(); }
+  function normalizePass(v){ return String(v || '').trim(); }
+  function normalizeName(v){ return String(v || '').trim(); }
+  function isId(v){ return /^[A-Z0-9]{5}$/.test(v); }
+  function isPassOrBlank(v){ return v === '' || /^[A-Za-z0-9]+$/.test(v); }
+  function isName(v){ return normalizeName(v).length > 1; }
+  function isShift(v){ return /^(A|B|C)$/.test(String(v || '')); }
 
-      checkGasStatus();
-      checkLocalGate();
+  function readJson(key){
+    try { var s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch(err){ return null; }
+  }
+  function clearDrafts(){ localStorage.removeItem(LOGIN_KEY); localStorage.removeItem(SHORT_KEY); }
+
+  function gotoLoginAfter2(text){
+    setAuth(text + '，2 秒後前往登入頁。', 'bad');
+    sessionStorage.setItem('PI_RETURN_TO_V001', 'admin.html');
+    setTimeout(function(){ location.href = 'login.html?return_to=' + encodeURIComponent('admin.html'); }, 2000);
+  }
+
+  function makeReqId(action){ reqSeq += 1; return REQ_PREFIX + action + '_' + reqSeq; }
+
+  function postGas(action, data, timeoutMs){
+    var url = getApiUrl();
+    if (!url) return Promise.reject(new Error('config.js 未提供 api_url'));
+
+    var requestId = makeReqId(action);
+    var body = new URLSearchParams();
+    body.append('action', action);
+    body.append('request_id', requestId);
+    body.append('client_version', VERSION);
+
+    data = data || {};
+    Object.keys(data).forEach(function(k){
+      if (data[k] !== undefined && data[k] !== null) body.append(k, String(data[k]));
     });
 
-    window.addEventListener("message", (event) => {
-      const data = event.data;
-      if (!data || typeof data !== "object") return;
+    return new Promise(function(resolve, reject){
+      var timer = setTimeout(function(){
+        delete pending[requestId];
+        reject(new Error('GAS 伺服器沒有回應'));
+      }, timeoutMs || 15000);
 
-      if (data.action === "server_status") {
-        handleServerStatus(data);
-        return;
-      }
+      pending[requestId] = { resolve: resolve, reject: reject, timer: timer };
 
-      if (data.action === pendingAction) {
-        handleGasMessage(data);
-      }
-    });
+      var form = document.createElement('form');
+      form.method = 'post';
+      form.action = url;
+      form.target = frameName;
+      form.acceptCharset = 'UTF-8';
+      form.style.display = 'none';
 
-    function getApiUrl() {
-      return String(window.api_url || "").trim();
-    }
-
-    function isApiUrlReady() {
-      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(getApiUrl());
-    }
-
-    function normalizeId(value) {
-      return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
-    }
-
-    function normalizePass(value) {
-      return String(value || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 32);
-    }
-
-    function normalizeShift(value) {
-      return String(value || "").toUpperCase().trim();
-    }
-
-    function validId(value) {
-      return /^[A-Z0-9]{5}$/.test(value);
-    }
-
-    function validPass(value) {
-      return /^[A-Za-z0-9]+$/.test(value);
-    }
-
-    function validName(value) {
-      return String(value || "").trim().length > 1;
-    }
-
-    function validShift(value) {
-      return /^(A|B|C)$/.test(value);
-    }
-
-    function setGateMsg(text, type) {
-      const el = $("gateMsg");
-      el.textContent = text || "";
-      el.className = "msg " + (type || "");
-    }
-
-    function setMainMsg(text, type) {
-      const el = $("mainMsg");
-      el.textContent = text || "";
-      el.className = "msg " + (type || "");
-    }
-
-    function setBusy(isBusy) {
-      $("saveBtn").disabled = isBusy;
-      $("clearBtn").disabled = isBusy;
-      $("loginBtn").disabled = isBusy;
-    }
-
-    function setGasStatus(text, type) {
-      $("gasText").textContent = "GAS 伺服狀態：" + text;
-      $("gasDot").className = "dot " + (type || "");
-    }
-
-    function checkGasStatus() {
-      if (!isApiUrlReady()) {
-        setGasStatus("config.js 的 api_url 未設定", "err");
-        return;
-      }
-
-      setGasStatus("檢查中...", "");
-      const api = getApiUrl();
-      const sep = api.indexOf("?") >= 0 ? "&" : "?";
-      $("statusFrame").src = api + sep + "action=server_status&t=" + encodeURIComponent(Date.now());
-
-      clearTimeout(statusTimer);
-      statusTimer = setTimeout(() => {
-        setGasStatus("無回應", "err");
-      }, 7000);
-    }
-
-    function handleServerStatus(data) {
-      clearTimeout(statusTimer);
-      if (data.status === "ok") {
-        setGasStatus("正常", "ok");
-      } else {
-        setGasStatus(data.msg || "異常", "err");
-      }
-    }
-
-    function checkLocalGate() {
-      const loginDraft = readJson(STORAGE_LOGIN);
-      const shortAuth = readJson(STORAGE_SHORT_AUTH);
-      const now = Date.now();
-
-      if (!loginDraft || !validId(normalizeId(loginDraft.id)) || !validPass(String(loginDraft.pass || ""))) {
-        localStorage.removeItem(STORAGE_SHORT_AUTH);
-        redirectLoginDelay("無帳密草稿，2 秒後轉登入。");
-        return;
-      }
-
-      if (!shortAuth || !validId(normalizeId(shortAuth.id)) || Number(shortAuth.expire_at || 0) <= now) {
-        localStorage.removeItem(STORAGE_SHORT_AUTH);
-        redirectLoginDelay("短暫通行草稿失效，2 秒後轉登入。");
-        return;
-      }
-
-      if (normalizeId(shortAuth.id) !== normalizeId(loginDraft.id)) {
-        localStorage.removeItem(STORAGE_SHORT_AUTH);
-        redirectLoginDelay("草稿資料不一致，2 秒後轉登入。");
-        return;
-      }
-
-      if (!isApiUrlReady()) {
-        setGateMsg("config.js 的 api_url 尚未設定或格式錯誤。", "err");
-        return;
-      }
-
-      adminDraft = {
-        id: normalizeId(loginDraft.id),
-        pass: normalizePass(loginDraft.pass)
-      };
-
-      pendingAction = "auth";
-      setGateMsg("草稿有效，正在向 GAS 確認後台管理權...", "warn");
-      postToGas({
-        action: "auth",
-        id: adminDraft.id,
-        pass: adminDraft.pass,
-        require_admin: "TRUE"
-      });
-    }
-
-    function redirectLoginDelay(text) {
-      setGateMsg(text, "warn");
-      setTimeout(goLoginNow, 2000);
-    }
-
-    function goLoginNow() {
-      const back = "admin.html";
-      window.location.href = LOGIN_FORM_URL + "?back=" + encodeURIComponent(back);
-    }
-
-    function handleGasMessage(data) {
-      const action = pendingAction;
-      pendingAction = "";
-      setBusy(false);
-
-      if (action === "auth") {
-        handleAdminAuth(data);
-        return;
-      }
-
-      if (action === "personnel_save") {
-        handleSaveResult(data);
-      }
-    }
-
-    function handleAdminAuth(data) {
-      if (data.status === "ok") {
-        $("gateCard").classList.add("hide");
-        $("manageCard").classList.remove("hide");
-        $("adminInfo").textContent = "目前管理者：" + normalizeId(data.id || adminDraft.id) + "　" + String(data.name || "");
-        return;
-      }
-
-      localStorage.removeItem(STORAGE_SHORT_AUTH);
-      setGateMsg("後台驗證失敗：" + mapMsg(data.msg) + "\n2 秒後轉登入。", "err");
-      setTimeout(goLoginNow, 2000);
-    }
-
-    function saveUser() {
-      if (!adminDraft) {
-        redirectLoginDelay("管理者草稿不存在，2 秒後轉登入。");
-        return;
-      }
-
-      const targetId = normalizeId($("targetId").value);
-      const targetPass = normalizePass($("targetPass").value);
-      const targetName = String($("targetName").value || "").trim();
-      const targetShift = normalizeShift($("targetShift").value);
-
-      $("targetId").value = targetId;
-      $("targetPass").value = targetPass;
-      $("targetName").value = targetName;
-      $("targetShift").value = targetShift;
-
-      if (!validId(targetId)) {
-        setMainMsg("工號格式錯誤：需 5 碼英數。", "err");
-        return;
-      }
-      if (!validPass(targetPass)) {
-        setMainMsg("密碼格式錯誤：只允許英數，且不可空白。", "err");
-        return;
-      }
-      if (!validName(targetName)) {
-        setMainMsg("中文名字不得空白，且字元需大於 1。", "err");
-        return;
-      }
-      if (!validShift(targetShift)) {
-        setMainMsg("預設班別需選擇 A、B、C。", "err");
-        return;
-      }
-      if (!isApiUrlReady()) {
-        setMainMsg("config.js 的 api_url 尚未設定或格式錯誤。", "err");
-        return;
-      }
-
-      pendingAction = "personnel_save";
-      setBusy(true);
-      setMainMsg("送出中...", "warn");
-      postToGas({
-        action: "personnel_save",
-        id: adminDraft.id,
-        pass: adminDraft.pass,
-        target_id: targetId,
-        target_pass: targetPass,
-        target_name: targetName,
-        target_shift: targetShift
-      });
-    }
-
-    function handleSaveResult(data) {
-      if (data.status === "ok") {
-        setMainMsg("已完成：" + (data.mode === "insert" ? "新增" : "修改") + "「" + normalizeId(data.target_id || "") + "」。", "ok");
-        clearEdit(false);
-        return;
-      }
-
-      setMainMsg("儲存失敗：" + mapMsg(data.msg), "err");
-    }
-
-    function postToGas(params) {
-      const api = getApiUrl();
-      const body = new URLSearchParams();
-      Object.keys(params).forEach((key) => body.set(key, params[key]));
-
-      const form = document.createElement("form");
-      form.method = "post";
-      form.action = api;
-      form.target = "postFrame";
-      form.style.display = "none";
-
-      body.forEach((value, key) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
+      body.forEach(function(value, key){
+        var input = document.createElement('input');
+        input.type = 'hidden';
         input.name = key;
         input.value = value;
         form.appendChild(input);
@@ -495,44 +163,109 @@
 
       document.body.appendChild(form);
       form.submit();
-      setTimeout(() => {
-        try { document.body.removeChild(form); } catch (err) {}
-      }, 1000);
-    }
+      setTimeout(function(){ if (form && form.parentNode) form.parentNode.removeChild(form); }, 1000);
+    });
+  }
 
-    function clearEdit(showMessage) {
-      $("targetId").value = "";
-      $("targetPass").value = "";
-      $("targetName").value = "";
-      $("targetShift").value = "";
-      if (showMessage !== false) setMainMsg("已清空輸入。", "ok");
-    }
+  window.addEventListener('message', function(ev){
+    var data = ev.data;
+    if (typeof data === 'string') { try { data = JSON.parse(data); } catch(err) { return; } }
+    if (!data || !data.request_id || !pending[data.request_id]) return;
+    var item = pending[data.request_id];
+    clearTimeout(item.timer);
+    delete pending[data.request_id];
+    item.resolve(data);
+  });
 
-    function readJson(key) {
-      try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : null;
-      } catch (err) {
-        return null;
-      }
-    }
+  function fieldObject(res){
+    var out = {};
+    var fields = Array.isArray(res.fields) ? res.fields : [];
+    var values = Array.isArray(res.values) ? res.values : [];
+    for (var i = 0; i < fields.length; i++) out[fields[i]] = values[i];
+    return out;
+  }
 
-    function mapMsg(msg) {
-      const table = {
-        bad_action: "後端路由錯誤。",
-        invalid_id: "工號格式錯誤。",
-        invalid_pass: "密碼格式錯誤。",
-        invalid_name: "中文名字格式錯誤。",
-        invalid_shift: "預設班別格式錯誤。",
-        auth_failed: "帳號或密碼錯誤。",
-        admin_required: "無後台管理權或權限已變更。",
-        lock_timeout: "系統忙碌，請稍後再試。",
-        config_missing: "GAS 尚未設定試算表 ID。",
-        user_sheet_not_found: "找不到人員主檔 Sheet。",
-        server_error: "伺服器錯誤。"
-      };
-      return table[msg] || msg || "未知錯誤。";
-    }
-  </script>
+  function pingGas(){
+    setGas('GAS 伺服狀態：檢查中...', 'warn');
+    postGas('ping', {}, 12000).then(function(res){
+      if (res && res.status === 'ok') setGas('GAS 伺服狀態：正常', 'ok');
+      else setGas('GAS 伺服狀態：異常', 'bad');
+    }).catch(function(err){ setGas('GAS 伺服狀態：' + err.message, 'bad'); });
+  }
+
+  function validateDrafts(){
+    var login = readJson(LOGIN_KEY);
+    var shortAuth = readJson(SHORT_KEY);
+    if (!login || !login.id || !login.pass) return { ok:false, msg:'無帳密草稿' };
+    if (!shortAuth || !shortAuth.id || !shortAuth.expire_time) return { ok:false, msg:'無短暫通行草稿' };
+    if (String(login.id) !== String(shortAuth.id)) return { ok:false, msg:'草稿資料不一致' };
+    if (Number(shortAuth.expire_time) <= now()) return { ok:false, msg:'短暫通行草稿已失效' };
+    return { ok:true, login:login, shortAuth:shortAuth };
+  }
+
+  function authManager(){
+    var chk = validateDrafts();
+    if (!chk.ok) { gotoLoginAfter2(chk.msg); return; }
+
+    setAuth('管理權限驗證中...', 'warn');
+    postGas('auth', { id: chk.login.id, pass: chk.login.pass }, 15000).then(function(res){
+      if (!res || res.action !== 'auth' || res.status !== 'ok') throw new Error((res && res.msg) ? res.msg : '帳密驗證失敗');
+      var person = fieldObject(res);
+      if (!person.admin) throw new Error('此帳號沒有後台管理權');
+      manager = { id:String(person.id || chk.login.id), pass:String(chk.login.pass), name:String(person.name || ''), shift:String(person.shift || ''), admin:true };
+      setAuth('管理權限驗證通過', 'ok');
+      elManager.textContent = '管理員：' + manager.id + '／' + manager.name + '／班別 ' + manager.shift;
+      elPanel.classList.remove('hide');
+    }).catch(function(err){
+      clearDrafts();
+      gotoLoginAfter2(err.message || '管理權限驗證失敗');
+    });
+  }
+
+  elTargetId.addEventListener('input', function(){ elTargetId.value = normalizeId(elTargetId.value); });
+
+  btnLogout.addEventListener('click', function(){
+    clearDrafts();
+    location.href = 'login.html?return_to=' + encodeURIComponent('admin.html');
+  });
+
+  elForm.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    if (!manager) { setMsg('尚未通過管理權限驗證。', 'bad'); return; }
+
+    var targetId = normalizeId(elTargetId.value);
+    var targetPass = normalizePass(elTargetPass.value);
+    var targetName = normalizeName(elTargetName.value);
+    var targetShift = String(elTargetShift.value || '');
+
+    if (!isId(targetId)) { setMsg('人員工號格式不正確：需 5 碼英數。', 'bad'); return; }
+    if (!isPassOrBlank(targetPass)) { setMsg('密碼格式不正確：僅接受英數，或留空不改。', 'bad'); return; }
+    if (!isName(targetName)) { setMsg('中文名字不得為空，且需大於 1 個字元。', 'bad'); return; }
+    if (!isShift(targetShift)) { setMsg('請選擇人員班別。', 'bad'); return; }
+
+    btnSave.disabled = true;
+    setMsg('送出中...', 'warn');
+
+    postGas('personnel_save', {
+      manager_id: manager.id,
+      manager_pass: manager.pass,
+      target_id: targetId,
+      target_pass: targetPass,
+      target_name: targetName,
+      target_shift: targetShift
+    }, 15000).then(function(res){
+      if (!res || res.action !== 'personnel_save' || res.status !== 'ok') throw new Error((res && res.msg) ? res.msg : '儲存失敗');
+      var row = fieldObject(res);
+      setMsg('儲存成功：' + (row.mode || '') + '／' + (row.id || targetId) + '／班別 ' + (row.shift || targetShift), 'ok');
+      elTargetPass.value = '';
+    }).catch(function(err){
+      setMsg(err.message || '儲存失敗', 'bad');
+    }).then(function(){ btnSave.disabled = false; });
+  });
+
+  pingGas();
+  authManager();
+})();
+</script>
 </body>
 </html>
