@@ -65,12 +65,12 @@
       </form>
       <div id="deleteMsg" class="msg"></div>
     </section>
-    <div class="ver">admin.html v0.1.7</div>
+    <div class="ver">admin.html v0.1.8</div>
   </main>
 <script>
 (function(){
   'use strict';
-  var VERSION = 'admin.html v0.1.7';
+  var VERSION = 'admin.html v0.1.8';
   var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
   var SHORT_KEY = 'PI_SHORT_AUTH_V001';
   var SHORT_AUTH_MS = 13 * 60 * 60 * 1000;
@@ -154,10 +154,9 @@
   }
 
   function writeLoginDraft(user){
-    var id = normalizeId(user.id || loginDraft.id);
+    var id = normalizeId((user && user.id) || loginDraft.id);
     var pass = String(loginDraft.pass || '');
-    var name = String(user.name || loginDraft.name || '');
-    loginDraft = { id:id, pass:pass, name:name };
+    loginDraft = { id:id, pass:pass };
     localStorage.setItem(LOGIN_KEY, JSON.stringify(loginDraft));
   }
 
@@ -165,7 +164,7 @@
     var now = Date.now();
     var data = {
       id: normalizeId(user.id || loginDraft.id),
-      name: String(user.name || loginDraft.name || ''),
+      name: String(user.name || ''),
       shift: String(user.shift || ''),
       admin: user.admin === true || user.admin === 'TRUE' || user.admin === 'true',
       auth_time: now,
@@ -179,7 +178,7 @@
   function loadLoginDraft(){
     var ld = readJson(LOGIN_KEY);
     if (!ld.id || !ld.pass) return false;
-    loginDraft = { id:normalizeId(ld.id), pass:String(ld.pass || ''), name:String(ld.name || '') };
+    loginDraft = { id:normalizeId(ld.id), pass:String(ld.pass || '') };
     return true;
   }
 

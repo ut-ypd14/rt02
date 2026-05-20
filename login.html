@@ -40,12 +40,12 @@
       </form>
       <div id="msg" class="msg"></div>
     </section>
-    <div class="ver">login.html v0.1.6</div>
+    <div class="ver">login.html v0.1.7</div>
   </main>
 <script>
 (function(){
   'use strict';
-  var VERSION = 'login.html v0.1.6';
+  var VERSION = 'login.html v0.1.7';
   var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
   var SHORT_KEY = 'PI_SHORT_AUTH_V001';
   var SHORT_AUTH_MS = 13 * 60 * 60 * 1000;
@@ -111,7 +111,7 @@
   function saveDrafts(id, pass, user){
     var now = Date.now();
     var name = String(user.name || '');
-    localStorage.setItem(LOGIN_KEY, JSON.stringify({ id:id, pass:pass, name:name }));
+    localStorage.setItem(LOGIN_KEY, JSON.stringify({ id:id, pass:pass }));
     localStorage.setItem(SHORT_KEY, JSON.stringify({
       id:id,
       name:name,
