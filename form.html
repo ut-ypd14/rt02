@@ -1,379 +1,1202 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>異常記錄表</title>
-<style>
-:root{
-  --bg:#0b0f14; --panel:#0f172a; --text:#e5e7eb; --muted:#9ca3af;
-  --accent:#22d3ee; --line:#233044;
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);
-  font-family:system-ui,"PingFang TC","Microsoft JhengHei",sans-serif}
-.container{max-width:760px;margin:6vh auto;padding:0 16px}
-.card{background:linear-gradient(180deg,var(--panel),#111827);
-  border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 32px rgba(2,6,23,.35)}
-.header{padding:22px 18px 8px;text-align:center;border-bottom:1px solid var(--line)}
-.title{font-size:22px;font-weight:800;letter-spacing:.12em;color:var(--accent)}
-.subtitle{margin-top:6px;color:var(--muted);font-size:12px}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>巡檢人員點檢確認表</title>
+  <script src="./config.js"></script>
+  <!-- QR 外掛請沿用既有專案載入方式；若已於其它共用檔載入 Html5Qrcode，這裡會自動偵測。 -->
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #152033;
+      --muted: #667085;
+      --line: #d9e2ef;
+      --brand: #255fbc;
+      --brand2: #174c99;
+      --ok: #19a15f;
+      --warn: #f5a524;
+      --bad: #e5484d;
+      --soft-ok: #e9f9f0;
+      --soft-warn: #fff6df;
+      --soft-bad: #ffecec;
+      --focus: #fff3cd;
+      --shadow: 0 10px 28px rgba(15, 23, 42, .10);
+      --radius: 18px;
+    }
 
-.form{padding:18px}
-.row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:12px}
-.block{background:#0e1522;border:1px solid var(--line);border-radius:10px;padding:10px}
-.block label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-.block input,.block select,.block textarea{
-  width:100%;background:#0c1220;border:1px solid #223049;color:var(--text);
-  border-radius:8px;padding:10px 12px;font-size:14px}
-.block input[readonly]{text-align:center;background:#0b1220;color:#cbd5e1}
-.center{text-align:center}
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: linear-gradient(180deg, #eef5ff 0%, var(--bg) 42%, #f9fbff 100%);
+      color: var(--ink);
+      min-height: 100vh;
+    }
 
-.col-4{grid-column:span 4} .col-6{grid-column:span 6} .col-12{grid-column:span 12}
+    .app {
+      width: min(1180px, calc(100% - 20px));
+      margin: 0 auto;
+      padding: 12px 0 28px;
+    }
 
-/* 軸列：單一大框，串接視覺 */
-.axis-stack{border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#0c1220}
-.axis-block{padding:12px;border-top:1px solid #1e2a3d}
-.axis-block:first-child{border-top:none}
-.axis-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.axis-title{font-size:12px;color:var(--muted)}
-.axis-fields{display:grid;grid-template-columns:1fr 1fr 140px; gap:8px}
-.axis-fields input[type=number]{text-align:right}
+    .hero {
+      background: linear-gradient(135deg, #1f5fbf, #163e88);
+      color: #fff;
+      border-radius: 24px;
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 8px;
+      z-index: 20;
+    }
 
-/* 收折動畫 */
-.collapsed{max-height:0;overflow:hidden;opacity:.0;pointer-events:none;transition:max-height .25s ease,opacity .25s ease}
-.expanded{max-height:180px;opacity:1;transition:max-height .25s ease,opacity .25s ease}
-.hint{color:var(--muted);font-size:12px;margin-top:6px}
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
 
-.actions{display:flex;gap:10px;margin-top:8px}
-.btn{flex:1;background:var(--accent);color:#001017;border:none;border-radius:10px;padding:12px;font-weight:700;font-size:15px;cursor:pointer}
-.btn.secondary{background:#1f2937;color:#cbd5e1;border:1px solid var(--line)}
+    h1 {
+      font-size: clamp(20px, 4.8vw, 34px);
+      margin: 0;
+      line-height: 1.2;
+      letter-spacing: .02em;
+    }
 
-@media (max-width:640px){
-  .axis-fields{grid-template-columns:1fr 1fr 100px}
-}
-</style>
+    .subtitle {
+      margin: 6px 0 0;
+      color: rgba(255,255,255,.84);
+      font-size: 14px;
+    }
+
+    .pill {
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-weight: 800;
+      font-size: 12px;
+      white-space: nowrap;
+      background: rgba(255,255,255,.13);
+    }
+
+    .status-row,
+    .shift-row,
+    .identity-row {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .status-row { grid-template-columns: 1fr 1fr; }
+    .shift-row { grid-template-columns: 1fr; }
+    .identity-row { grid-template-columns: 1fr 1fr 1fr; }
+
+    .mini-card {
+      border: 1px solid rgba(255,255,255,.24);
+      background: rgba(255,255,255,.13);
+      border-radius: 16px;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .mini-label {
+      font-size: 12px;
+      color: rgba(255,255,255,.72);
+      margin-bottom: 5px;
+    }
+
+    .mini-value {
+      font-size: 16px;
+      font-weight: 850;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .gas-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lamp {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #9aa4b2;
+      box-shadow: 0 0 0 4px rgba(255,255,255,.18);
+      flex: 0 0 auto;
+    }
+    .lamp.ok { background: var(--ok); }
+    .lamp.warn { background: var(--warn); }
+    .lamp.bad { background: var(--bad); }
+
+    select, input, button, textarea {
+      font: inherit;
+    }
+
+    .hero select {
+      width: 100%;
+      border: 0;
+      outline: none;
+      border-radius: 13px;
+      padding: 10px 12px;
+      font-weight: 800;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-top: 14px;
+      padding: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .panel-title h2 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .qr-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .12s ease, opacity .12s ease, box-shadow .12s ease;
+      min-height: 44px;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(37,95,188,.24);
+    }
+    .btn-soft {
+      background: #eef4ff;
+      color: var(--brand2);
+    }
+    .btn-submit {
+      width: 100%;
+      font-size: 20px;
+      padding: 15px 18px;
+      border-radius: 18px;
+      margin-top: 14px;
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .qr-box {
+      display: none;
+      margin-top: 12px;
+      border: 1px dashed #9bb7df;
+      background: #f7fbff;
+      border-radius: 18px;
+      padding: 12px;
+    }
+    .qr-box.active { display: block; }
+    #qr-reader {
+      min-height: 230px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0f172a;
+    }
+
+    .manual-qr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .manual-qr input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .item-card {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 17px;
+      padding: 12px;
+      min-width: 0;
+      transition: background .12s ease, opacity .12s ease, transform .12s ease, border-color .12s ease;
+    }
+    .item-card.hidden { display: none; }
+    .item-card.locked { opacity: .72; background: #f5f7fb; }
+    .item-card.warn-empty {
+      background: var(--focus);
+      border-color: #f2c94c;
+    }
+
+    .item-head {
+      display: flex;
+      gap: 7px;
+      align-items: flex-start;
+      margin-bottom: 7px;
+    }
+    .item-no {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 27px;
+      height: 27px;
+      border-radius: 9px;
+      background: #edf4ff;
+      color: var(--brand2);
+      font-weight: 900;
+      font-size: 13px;
+      flex: 0 0 auto;
+    }
+    .item-title {
+      font-size: 15px;
+      line-height: 1.25;
+      font-weight: 900;
+    }
+    .item-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      margin: 0 0 8px 34px;
+      min-height: 16px;
+    }
+
+    .control select,
+    .control input[type="text"],
+    .control input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 10px 10px;
+      outline: none;
+      background: #fff;
+      min-height: 43px;
+    }
+    .control input:focus,
+    .control select:focus {
+      border-color: #6aa1ff;
+      box-shadow: 0 0 0 4px rgba(37,95,188,.10);
+    }
+    .control.invalid input { border-color: var(--bad); background: var(--soft-bad); }
+
+    .inline-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 11px;
+      background: #fff;
+      min-height: 42px;
+      cursor: pointer;
+      font-weight: 850;
+      user-select: none;
+    }
+    .choice input { width: 18px; height: 18px; }
+    .choice.long {
+      width: 100%;
+      border-radius: 14px;
+      justify-content: flex-start;
+      white-space: normal;
+      line-height: 1.35;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(20px);
+      min-width: min(92vw, 520px);
+      padding: 13px 14px;
+      background: #111827;
+      color: #fff;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 80;
+      font-weight: 850;
+      text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.ok { background: #0f7a45; }
+    .toast.bad { background: #b42318; }
+    .toast.warn { background: #8a5a00; }
+
+    .loading-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .58);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 70;
+      backdrop-filter: blur(5px);
+    }
+    .loading-mask.active { display: flex; }
+    .loading-card {
+      width: min(86vw, 360px);
+      background: #fff;
+      border-radius: 24px;
+      padding: 26px 22px;
+      text-align: center;
+      box-shadow: 0 18px 54px rgba(0,0,0,.28);
+    }
+    .spinner {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 6px solid #dce8fb;
+      border-top-color: var(--brand);
+      margin: 0 auto 15px;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-title { font-size: 19px; font-weight: 950; }
+    .loading-sub { color: var(--muted); margin-top: 6px; font-size: 13px; }
+
+    .footer-version {
+      color: #7a8798;
+      text-align: center;
+      padding: 18px 0 4px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .auth-block {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-top: 22px;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .app { width: min(100% - 14px, 1180px); }
+      .hero { top: 4px; padding: 14px; }
+      .status-row { grid-template-columns: 1fr 1fr; }
+      .identity-row { grid-template-columns: 1fr; }
+      .items-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+      .item-card { padding: 8px; border-radius: 14px; }
+      .item-no { min-width: 24px; height: 24px; font-size: 12px; }
+      .item-title { font-size: 13px; }
+      .item-note { margin-left: 31px; font-size: 11px; }
+      .choice { padding: 8px 9px; font-size: 13px; }
+      .control select, .control input[type="text"], .control input[type="number"] { padding: 9px 8px; font-size: 14px; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <div class="card">
-    <div class="header">
-      <div class="title">異常記錄表</div>
-      <div class="subtitle">Abnormal Record Form</div>
+  <main class="app" id="app" hidden>
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>巡檢人員點檢確認表</h1>
+          <p class="subtitle">確認後送出，成功只清空項次 1、3~24；項次 2 保留。</p>
+        </div>
+        <div class="pill">v0.1.0</div>
+      </div>
+
+      <div class="status-row">
+        <div class="mini-card">
+          <div class="mini-label">本機時間</div>
+          <div class="mini-value" id="localTime">----</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-label">GAS 連線</div>
+          <div class="mini-value gas-line"><span class="lamp" id="gasLamp"></span><span id="gasText">檢查中</span></div>
+        </div>
+      </div>
+
+      <div class="shift-row">
+        <div class="mini-card">
+          <div class="mini-label">歸屬日期 / 班別</div>
+          <select id="shiftSelect" aria-label="歸屬日期與班別"></select>
+        </div>
+      </div>
+
+      <div class="identity-row">
+        <div class="mini-card">
+          <div class="mini-label">人員 ID</div>
+          <div class="mini-value" id="userIdText">----</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-label">人員姓名</div>
+          <div class="mini-value" id="userNameText">----</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-label">機台 ID</div>
+          <div class="mini-value" id="machineIdText">未掃描</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>機台 QR 掃描</h2>
+        <div class="qr-actions">
+          <button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
+          <button type="button" class="btn btn-soft" id="clearMachineBtn">清除機台</button>
+        </div>
+      </div>
+      <div class="qr-box" id="qrBox">
+        <div id="qr-reader"></div>
+        <div class="manual-qr">
+          <input id="manualQrText" type="text" placeholder="手動貼上 QR 文字，例如 ?-A6-?">
+          <button type="button" class="btn btn-soft" id="parseManualBtn">解析</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>點檢項目</h2>
+        <span class="mini-label" style="color:#667085;">3 欄多列排版</span>
+      </div>
+      <form id="checkForm" autocomplete="off">
+        <div class="items-grid" id="itemsGrid"></div>
+        <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">確認 / 送出</button>
+      </form>
+    </section>
+
+    <footer class="footer-version">
+      巡檢人員點檢確認表 v0.1.0<br>
+      action: form_write｜成功判斷：status:&quot;ok&quot;
+    </footer>
+  </main>
+
+  <section class="app" id="authGate">
+    <div class="auth-block">
+      <h2>正在確認登入狀態</h2>
+      <p id="authGateText">檢查草稿中，請稍候。</p>
     </div>
+  </section>
 
-    <div class="form">
-      <!-- 2) 日期 班別 機台 -->
-      <div class="row">
-        <div class="block col-4">
-          <label>日期</label>
-          <input id="date_display" readonly class="center" />
-        </div>
-        <div class="block col-4">
-          <label>班別</label>
-          <input id="shift_display" readonly class="center" />
-        </div>
-        <div class="block col-4">
-          <label>機台</label>
-          <input id="machine_id" placeholder="請輸入機台代號" />
-        </div>
-      </div>
-
-      <!-- 3) 產品型態 料號 -->
-      <div class="row">
-        <div class="block col-6">
-          <label>產品型態</label>
-          <select id="product_type"></select>
-        </div>
-        <div class="block col-6">
-          <label>料號</label>
-          <input id="part_no" placeholder="7 碼料號" />
-        </div>
-      </div>
-
-      <!-- 4) FA 批號 -->
-      <div class="row">
-        <div class="block col-6">
-          <label>FA</label>
-          <select id="fa_stage"></select>
-        </div>
-        <div class="block col-6">
-          <label>批號</label>
-          <input id="lot_no" placeholder="請輸入批號" />
-        </div>
-      </div>
-
-      <!-- 5–10) 軸別、類別、數量 ×6（無任何勾選；填齊自動展開下一列） -->
-      <div class="row">
-        <div class="col-12">
-          <div class="axis-stack" id="axisStack">
-            <!-- 軸1 可見 -->
-            <div class="axis-block expanded" data-idx="1">
-              <div class="axis-head">
-                <div class="axis-title">軸1</div>
-              </div>
-              <div class="axis-fields">
-                <select id="axis_1"></select>
-                <select id="cat_1"></select>
-                <input id="qty_1" type="number" min="0" placeholder="數量" />
-              </div>
-            </div>
-
-            <!-- 軸2~6 預設收折 -->
-            <div class="axis-block collapsed" data-idx="2">
-              <div class="axis-head"><div class="axis-title">軸2</div></div>
-              <div class="axis-fields">
-                <select id="axis_2"></select>
-                <select id="cat_2"></select>
-                <input id="qty_2" type="number" min="0" placeholder="數量" />
-              </div>
-            </div>
-
-            <div class="axis-block collapsed" data-idx="3">
-              <div class="axis-head"><div class="axis-title">軸3</div></div>
-              <div class="axis-fields">
-                <select id="axis_3"></select>
-                <select id="cat_3"></select>
-                <input id="qty_3" type="number" min="0" placeholder="數量" />
-              </div>
-            </div>
-
-            <div class="axis-block collapsed" data-idx="4">
-              <div class="axis-head"><div class="axis-title">軸4</div></div>
-              <div class="axis-fields">
-                <select id="axis_4"></select>
-                <select id="cat_4"></select>
-                <input id="qty_4" type="number" min="0" placeholder="數量" />
-              </div>
-            </div>
-
-            <div class="axis-block collapsed" data-idx="5">
-              <div class="axis-head"><div class="axis-title">軸5</div></div>
-              <div class="axis-fields">
-                <select id="axis_5"></select>
-                <select id="cat_5"></select>
-                <input id="qty_5" type="number" min="0" placeholder="數量" />
-              </div>
-            </div>
-
-            <div class="axis-block collapsed" data-idx="6">
-              <div class="axis-head"><div class="axis-title">軸6</div></div>
-              <div class="axis-fields">
-                <select id="axis_6"></select>
-                <select id="cat_6"></select>
-                <input id="qty_6" type="number" min="0" placeholder="數量" />
-              </div>
-            </div>
-          </div>
-          <div class="hint">規則：本列三欄皆有效（軸別、類別、數量>0）→ 自動展開下一列；若變為不完整 → 收回後續列。</div>
-        </div>
-      </div>
-
-      <!-- 11) 切板手  12) 檢驗者 -->
-      <div class="row">
-        <div class="block col-6">
-          <label class="center">切板手</label>
-          <input id="cutter_a" class="center" placeholder="切板手代號" />
-        </div>
-        <div class="block col-6">
-          <label class="center">檢驗者</label>
-          <input id="inspector" class="center" placeholder="檢驗者代號" />
-        </div>
-      </div>
-
-      <!-- 14) 重工（移除「需要重工」字樣） -->
-      <div class="row">
-        <div class="block col-4">
-          <label class="center">重工</label>
-          <div class="center"><input type="checkbox" id="rework_confirm" /></div>
-        </div>
-        <div class="block col-8">
-          <label>重工者</label>
-          <input id="reworker" placeholder="重工者代號" disabled />
-        </div>
-      </div>
-
-      <!-- 15) 報廢/續留 -->
-      <div class="row">
-        <div class="block col-6">
-          <label class="center">報廢</label>
-          <div class="center"><input type="checkbox" id="scrap_yes" /></div>
-        </div>
-        <div class="block col-6">
-          <label class="center">續留</label>
-          <div class="center"><input type="checkbox" id="scrap_keep" /></div>
-        </div>
-      </div>
-
-      <!-- 16) 備註 -->
-      <div class="row">
-        <div class="block col-12">
-          <label>備註</label>
-          <textarea id="remark" rows="3" placeholder="填寫補充說明"></textarea>
-        </div>
-      </div>
-
-      <!-- 17) 複檢員 + 按鈕 -->
-      <div class="row">
-        <div class="block col-6">
-          <label class="center">複檢員</label>
-          <input id="reviewer" class="center" placeholder="複檢員代號" />
-        </div>
-        <div class="block col-6 actions">
-          <button class="btn secondary" id="btnPreview">預覽</button>
-          <button class="btn" id="btnSubmit">送出</button>
-        </div>
-      </div>
+  <div class="loading-mask" id="loadingMask" aria-live="polite">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <div class="loading-title">資料送出中</div>
+      <div class="loading-sub">請勿關閉畫面或重複點擊</div>
     </div>
   </div>
-</div>
+
+  <div class="toast" id="toast"></div>
 
 <script>
-// === 最小骨架 ===
-document.addEventListener('DOMContentLoaded', () => {
-  initDateShift();
-  initSelectOptions();
-  bindAxisAutoProgress();
-  bindMutualLocks();
-  bindActions();
-});
+(() => {
+  'use strict';
 
-function initDateShift(){
-  if (typeof window.config_getDateShift === 'function'){
-    const {date, shift} = window.config_getDateShift();
-    document.getElementById('date_display').value = date || '';
-    document.getElementById('shift_display').value = shift || '';
-  }
-}
+  const APP_VERSION = 'v0.1.0';
+  const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
+  const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
+  const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
 
-function initSelectOptions(){
-  const fill = (id, list) => {
-    const el = document.getElementById(id);
-    if(!el || !Array.isArray(list)) return;
-    el.innerHTML = '<option value="" disabled selected>請選擇</option>' +
-      list.map(v=>`<option value="${v}">${v}</option>`).join('');
+  const AUTH_EXPIRE_MS = 13 * 60 * 60 * 1000;
+  const GAS_GREEN_MS = 800;
+  const GAS_WARN_MS = 2500;
+  const POST_TIMEOUT_MS = 15000;
+  const GAS_STATUS_INTERVAL_MS = 60000;
+
+  const GAS_ACTION_AUTH_CHECK = 'auth_check';
+  const GAS_ACTION_FORM_WRITE = 'form_write';
+
+  const ITEMS = [
+    { no: 1, title: '巡檢狀態', note: '架料(E)、待量測(D)、其他(L)、維修(G)、空機(C)', type: 'select', options: ['A', 'B', 'F', 'D', 'E', 'L'] },
+    { no: 2, title: '機台作業料號', note: '註明料號', type: 'text', allow: 'alphaNumDot', highlightIfEmpty: true },
+    { no: 3, title: '臨條&ERP&內通&謀規', note: '作業資料表條件', type: 'okng' },
+    { no: 4, title: '核對參數對照表', note: '作業資料表參數', type: 'okng' },
+    { no: 5, title: '轉速、下刀、壽命', note: 'S、F、N', type: 'okng' },
+    { no: 6, title: '索引表', note: '補償值', type: 'okng' },
+    { no: 7, title: '象限', note: 'FV', type: 'select', options: ['1', '3'] },
+    { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
+    { no: 9, title: '作業高度', note: 'H', type: 'number', min: 0.1, max: 1.8, step: 0.01 },
+    { no: 10, title: '作業深度', note: 'Z', type: 'number', min: 0.36, max: 0.52, step: 0.01 },
+    { no: 11, title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', options: ['1', '2', '3', '4', '5', '6'] },
+    { no: 12, title: '排版數', note: '排版數', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
+    { no: 13, title: '軸補', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
+    { no: 14, title: '檯面速度、行數', note: '', type: 'okng' },
+    { no: 15, title: '刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
+    { no: 16, title: '墊板數', note: '是否符合規範', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
+    { no: 17, title: '物料合規', note: '無疏紙、蓋板、尿素板、FR4、底板', type: 'okng' },
+    { no: 18, title: 'PIN有無漏咬', note: '1array最少3支pin', type: 'okng' },
+    { no: 19, title: '三天重PIN', note: '點重PIN日期及班別', type: 'okng' },
+    { no: 20, title: 'D軸A資料夾', note: '是否有非作業料號之程式', type: 'okng' },
+    { no: 21, title: '機台日報表', note: '斷刀、抽數、料號、批號', type: 'okng' },
+    { no: 22, title: '稼動紀錄表', note: '是否有清夾頭', type: 'okng' },
+    { no: 23, title: '壓力腳下降確認', note: '', type: 'singleLong', options: [
+      '正常:RT/RS　製程:0.5~1.5Kg/cm²',
+      '加大:RS/RT/DRT　製程:1.8~2.8Kg/cm²',
+      '正常:PP　製程:2.5~3.5Kg/cm²'
+    ]},
+    { no: 24, title: '電木板(有無兩人確認簽名)', note: '螺絲上的線是否平行', type: 'okng' }
+  ];
+
+  // 依項次1調整項次3~24的自定義區。
+  // 預設不限制。需要時只改這一段，不動主流程。
+  // 可用格式：
+  // A: { hidden: [3,4], disabled: [5], defaultValues: { 6: '√', 12: '0' } }
+  const STATUS_RULES = {
+    A: {},
+    B: {},
+    F: {},
+    D: {},
+    E: {},
+    L: {}
   };
-  if (typeof window.config_getProductTypes==='function'){
-    fill('product_type', window.config_getProductTypes());
-  }
-  if (typeof window.config_getFAStages==='function'){
-    fill('fa_stage', window.config_getFAStages());
-  }
-  if (typeof window.config_getAxes==='function'){
-    const axes = window.config_getAxes();
-    for(let i=1;i<=6;i++) fill(`axis_${i}`, axes);
-  }
-  if (typeof window.config_getCategories==='function'){
-    const cats = window.config_getCategories();
-    for(let i=1;i<=6;i++) fill(`cat_${i}`, cats);
-  }
-}
 
-// 監聽每列三欄：填齊→展開下一列；不齊→收回後續
-function bindAxisAutoProgress(){
-  for(let i=1;i<=6;i++){
-    ['axis_','cat_','qty_'].forEach(p=>{
-      const el = document.getElementById(p+i);
-      if(!el) return;
-      const ev = p==='qty_' ? 'input' : 'change';
-      el.addEventListener(ev, ()=> onRowChange(i));
+  let authState = null;
+  let qrScanner = null;
+  let qrRunning = false;
+  let machineId = '';
+  let gasTimer = null;
+
+  const el = {
+    app: document.getElementById('app'),
+    authGate: document.getElementById('authGate'),
+    authGateText: document.getElementById('authGateText'),
+    localTime: document.getElementById('localTime'),
+    gasLamp: document.getElementById('gasLamp'),
+    gasText: document.getElementById('gasText'),
+    shiftSelect: document.getElementById('shiftSelect'),
+    userIdText: document.getElementById('userIdText'),
+    userNameText: document.getElementById('userNameText'),
+    machineIdText: document.getElementById('machineIdText'),
+    openQrBtn: document.getElementById('openQrBtn'),
+    clearMachineBtn: document.getElementById('clearMachineBtn'),
+    qrBox: document.getElementById('qrBox'),
+    manualQrText: document.getElementById('manualQrText'),
+    parseManualBtn: document.getElementById('parseManualBtn'),
+    itemsGrid: document.getElementById('itemsGrid'),
+    checkForm: document.getElementById('checkForm'),
+    submitBtn: document.getElementById('submitBtn'),
+    loadingMask: document.getElementById('loadingMask'),
+    toast: document.getElementById('toast')
+  };
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  async function init() {
+    if (!getApiUrl()) {
+      gateMessage('找不到 config.js 內的 api_url，無法連線 GAS。');
+      return;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    const ok = await prepareAuth();
+    if (!ok) return;
+
+    el.authGate.hidden = true;
+    el.app.hidden = false;
+
+    renderIdentity();
+    buildShiftSelect();
+    renderItems();
+    bindEvents();
+    await updateGasStatus();
+    gasTimer = setInterval(updateGasStatus, GAS_STATUS_INTERVAL_MS);
+  }
+
+  function getApiUrl() {
+    return typeof window.api_url === 'string' && window.api_url.trim() ? window.api_url.trim() : '';
+  }
+
+  function gateMessage(msg) {
+    el.authGateText.textContent = msg;
+  }
+
+  async function prepareAuth() {
+    const loginDraft = readJson(LOGIN_DRAFT_KEY);
+    const shortAuth = readJson(SHORT_AUTH_KEY);
+
+    if (!loginDraft || !loginDraft.id || !loginDraft.pass) {
+      gateMessage('找不到帳密草稿，2 秒後返回登入頁。');
+      redirectLoginLater();
+      return false;
+    }
+
+    if (isShortAuthValid(shortAuth, loginDraft.id)) {
+      authState = shortAuth;
+      return true;
+    }
+
+    gateMessage('短暫通行已失效，正在使用帳密草稿原地驗證。');
+    const renewed = await renewAuth(loginDraft.id, loginDraft.pass);
+    if (renewed) {
+      authState = renewed;
+      return true;
+    }
+
+    gateMessage('驗證失敗，2 秒後返回登入頁。');
+    redirectLoginLater();
+    return false;
+  }
+
+  function isShortAuthValid(shortAuth, draftId) {
+    if (!shortAuth || !shortAuth.id || shortAuth.id !== draftId) return false;
+    const expireTime = Number(shortAuth.expire_time || 0);
+    return Number.isFinite(expireTime) && Date.now() < expireTime;
+  }
+
+  async function renewAuth(id, pass) {
+    try {
+      const params = new URLSearchParams();
+      params.set('action', GAS_ACTION_AUTH_CHECK);
+      params.set('id', id);
+      params.set('pass', pass);
+      const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+      if (!data || data.status !== 'ok') return null;
+
+      const now = Date.now();
+      const renewed = {
+        id,
+        name: String(data.name || ''),
+        shift: String(data.shift || ''),
+        admin: String(data.admin || ''),
+        auth_time: now,
+        expire_time: now + AUTH_EXPIRE_MS
+      };
+      writeJson(SHORT_AUTH_KEY, renewed);
+      return renewed;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function redirectLoginLater() {
+    window.setTimeout(() => {
+      const here = encodeURIComponent(location.pathname + location.search);
+      location.href = `login.html?return=${here}`;
+    }, 2000);
+  }
+
+  function renderIdentity() {
+    el.userIdText.textContent = authState.id || '----';
+    el.userNameText.textContent = authState.name || '----';
+    setMachineId(machineId);
+  }
+
+  function updateClock() {
+    el.localTime.textContent = formatDateTime(new Date());
+  }
+
+  function buildShiftSelect() {
+    const now = new Date();
+    const current = getCurrentShiftRef(now);
+    const options = [prevShift(current), current, nextShift(current)];
+    const windowKey = `${current.date}|${current.shift}`;
+    const saved = readJson(SHIFT_PICK_KEY);
+
+    el.shiftSelect.innerHTML = '';
+    options.forEach((opt, index) => {
+      const o = document.createElement('option');
+      o.value = `${opt.date}|${opt.shift}`;
+      o.textContent = `${index === 0 ? '上一班' : index === 1 ? '本班' : '下一班'}：${opt.date} ${opt.shift}`;
+      el.shiftSelect.appendChild(o);
+    });
+
+    const defaultByUser = options.find(opt => opt.shift === String(authState.shift || '').toUpperCase());
+    const defaultValue = defaultByUser ? `${defaultByUser.date}|${defaultByUser.shift}` : `${current.date}|${current.shift}`;
+    const values = options.map(opt => `${opt.date}|${opt.shift}`);
+
+    if (saved && saved.windowKey === windowKey && values.includes(saved.value)) {
+      el.shiftSelect.value = saved.value;
+    } else {
+      el.shiftSelect.value = defaultValue;
+      writeJson(SHIFT_PICK_KEY, { windowKey, value: defaultValue, saved_at: Date.now() });
+    }
+
+    el.shiftSelect.addEventListener('change', () => {
+      writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: Date.now() });
     });
   }
-}
 
-function onRowChange(i){
-  const complete = isRowComplete(i);
-  // 控制下一列
-  if(complete && i<6){
-    expandRow(i+1);
-  }else if(!complete){
-    // 變不完整：收回之後所有列並清空
-    collapseFrom(i+1);
+  function getCurrentShiftRef(now) {
+    const mins = now.getHours() * 60 + now.getMinutes();
+    if (mins < 510) return { date: formatDate(addDays(now, -1)), shift: 'C' };
+    if (mins < 960) return { date: formatDate(now), shift: 'A' };
+    return { date: formatDate(now), shift: 'B' };
   }
-}
 
-function isRowComplete(i){
-  const a = val(`axis_${i}`);
-  const c = val(`cat_${i}`);
-  const q = Number(val(`qty_${i}`));
-  return !!a && !!c && q>0;
-}
-
-function expandRow(i){
-  const el = document.querySelector(`.axis-block[data-idx="${i}"]`);
-  if(el){ el.classList.remove('collapsed'); el.classList.add('expanded'); }
-}
-function collapseFrom(i){
-  for(let j=i;j<=6;j++){
-    const el = document.querySelector(`.axis-block[data-idx="${j}"]`);
-    if(el){ el.classList.remove('expanded'); el.classList.add('collapsed'); }
-    clearRow(j);
+  function prevShift(ref) {
+    if (ref.shift === 'A') return { date: formatDate(addDays(parseDate(ref.date), -1)), shift: 'C' };
+    if (ref.shift === 'B') return { date: ref.date, shift: 'A' };
+    return { date: ref.date, shift: 'B' };
   }
-}
-function clearRow(i){
-  ['axis_','cat_'].forEach(p=>{
-    const s = document.getElementById(p+i);
-    if(s) s.selectedIndex = 0;
+
+  function nextShift(ref) {
+    if (ref.shift === 'A') return { date: ref.date, shift: 'B' };
+    if (ref.shift === 'B') return { date: ref.date, shift: 'C' };
+    return { date: formatDate(addDays(parseDate(ref.date), 1)), shift: 'A' };
+  }
+
+  function renderItems() {
+    el.itemsGrid.innerHTML = '';
+    ITEMS.forEach(item => {
+      const card = document.createElement('article');
+      card.className = 'item-card';
+      card.dataset.no = String(item.no);
+      card.innerHTML = `
+        <div class="item-head">
+          <span class="item-no">${item.no}</span>
+          <div class="item-title">${escapeHtml(item.title)}</div>
+        </div>
+        <p class="item-note">${escapeHtml(item.note || '')}</p>
+        <div class="control">${renderControl(item)}</div>
+      `;
+      el.itemsGrid.appendChild(card);
+    });
+
+    const item1 = getFirstInputByItemNo(1);
+    if (item1) item1.addEventListener('change', () => applyStatusRules());
+
+    const item2 = getFirstInputByItemNo(2);
+    if (item2) {
+      item2.addEventListener('input', () => {
+        normalizeItem2(item2);
+        refreshItem2Highlight();
+      });
+      refreshItem2Highlight();
+    }
+
+    document.querySelectorAll('[data-number-item]').forEach(input => {
+      input.addEventListener('input', () => validateNumberInput(input));
+      input.addEventListener('blur', () => validateNumberInput(input));
+    });
+
+    applyStatusRules();
+  }
+
+  function renderControl(item) {
+    const name = itemName(item.no);
+    if (item.type === 'select') {
+      const opts = ['<option value="">請選擇</option>'].concat(item.options.map(v => `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`));
+      return `<select name="${name}" data-item-no="${item.no}">${opts.join('')}</select>`;
+    }
+    if (item.type === 'text') {
+      return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
+    }
+    if (item.type === 'number') {
+      return `<input type="number" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" min="${item.min}" max="${item.max}" step="${item.step}" inputmode="decimal">`;
+    }
+    if (item.type === 'okng') {
+      return `<div class="inline-options">
+        ${choiceRadio(name, '√', item.no)}
+        ${choiceRadio(name, '×', item.no)}
+      </div>`;
+    }
+    if (item.type === 'multi') {
+      return `<div class="inline-options">
+        ${item.options.map(v => choiceCheckbox(name, v, item.no)).join('')}
+      </div>`;
+    }
+    if (item.type === 'singleLong') {
+      return `<div class="inline-options">
+        ${item.options.map(v => choiceRadio(name, v, item.no, true)).join('')}
+      </div>`;
+    }
+    return `<input type="text" name="${name}" data-item-no="${item.no}">`;
+  }
+
+  function choiceRadio(name, value, no, long = false) {
+    return `<label class="choice${long ? ' long' : ''}"><input type="radio" name="${name}" value="${escapeAttr(value)}" data-item-no="${no}"><span>${escapeHtml(value)}</span></label>`;
+  }
+
+  function choiceCheckbox(name, value, no) {
+    return `<label class="choice"><input type="checkbox" name="${name}" value="${escapeAttr(value)}" data-item-no="${no}"><span>${escapeHtml(value)}</span></label>`;
+  }
+
+  function bindEvents() {
+    el.openQrBtn.addEventListener('click', toggleQr);
+    el.clearMachineBtn.addEventListener('click', () => setMachineId(''));
+    el.parseManualBtn.addEventListener('click', () => {
+      const parsed = parseMachineId(el.manualQrText.value);
+      if (!parsed) {
+        showToast('QR 格式不符，需為 ?-A6-? 或 ?-N57-? 這類格式。', 'bad');
+        return;
+      }
+      setMachineId(parsed);
+      showToast(`已取得機台 ID：${parsed}`, 'ok');
+    });
+    el.checkForm.addEventListener('submit', submitForm);
+  }
+
+  async function toggleQr() {
+    el.qrBox.classList.toggle('active');
+    if (el.qrBox.classList.contains('active')) {
+      await startQrScanner();
+    } else {
+      await stopQrScanner();
+    }
+  }
+
+  async function startQrScanner() {
+    if (qrRunning) return;
+    if (!window.Html5Qrcode) {
+      showToast('未偵測到 QR 外掛，請使用手動貼上解析。', 'warn');
+      return;
+    }
+    try {
+      qrScanner = qrScanner || new window.Html5Qrcode('qr-reader');
+      await qrScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        async decodedText => {
+          const parsed = parseMachineId(decodedText);
+          if (!parsed) return;
+          setMachineId(parsed);
+          showToast(`已取得機台 ID：${parsed}`, 'ok');
+          await stopQrScanner();
+          el.qrBox.classList.remove('active');
+        }
+      );
+      qrRunning = true;
+    } catch (err) {
+      showToast(`QR 掃描啟動失敗：${err.message || err}`, 'bad');
+    }
+  }
+
+  async function stopQrScanner() {
+    if (!qrScanner || !qrRunning) return;
+    try {
+      await qrScanner.stop();
+      qrRunning = false;
+    } catch (err) {
+      qrRunning = false;
+    }
+  }
+
+  function parseMachineId(text) {
+    const raw = String(text || '').trim();
+    const parts = raw.split('-');
+    if (parts.length < 3) return '';
+    const mid = String(parts[1] || '').trim().toUpperCase();
+    return /^[A-Z0-9]+$/.test(mid) ? mid : '';
+  }
+
+  function setMachineId(value) {
+    machineId = String(value || '').trim().toUpperCase();
+    el.machineIdText.textContent = machineId || '未掃描';
+  }
+
+  function applyStatusRules() {
+    const status = getValueByItemNo(1);
+    const rule = STATUS_RULES[status] || {};
+    const hidden = new Set(rule.hidden || []);
+    const disabled = new Set(rule.disabled || []);
+    const defaults = rule.defaultValues || {};
+
+    ITEMS.forEach(item => {
+      const card = getCardByItemNo(item.no);
+      if (!card) return;
+      card.classList.remove('hidden', 'locked');
+      setItemDisabled(item.no, false);
+
+      if (item.no >= 3 && item.no <= 24 && hidden.has(item.no)) {
+        card.classList.add('hidden');
+      }
+      if (item.no >= 3 && item.no <= 24 && disabled.has(item.no)) {
+        if (Object.prototype.hasOwnProperty.call(defaults, item.no)) setValueByItemNo(item.no, defaults[item.no]);
+        setItemDisabled(item.no, true);
+        card.classList.add('locked');
+      }
+      if (item.no >= 3 && item.no <= 24 && !disabled.has(item.no) && Object.prototype.hasOwnProperty.call(defaults, item.no)) {
+        setValueByItemNo(item.no, defaults[item.no]);
+      }
+    });
+    refreshItem2Highlight();
+  }
+
+  function normalizeItem2(input) {
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9.]/g, '');
+  }
+
+  function refreshItem2Highlight() {
+    const card = getCardByItemNo(2);
+    if (!card) return;
+    const empty = !getValueByItemNo(2);
+    card.classList.toggle('warn-empty', empty);
+  }
+
+  function validateNumberInput(input) {
+    const wrap = input.closest('.control');
+    const value = input.value;
+    if (!value) {
+      if (wrap) wrap.classList.remove('invalid');
+      return true;
+    }
+    const num = Number(value);
+    const min = Number(input.min);
+    const max = Number(input.max);
+    const valid = Number.isFinite(num) && num >= min && num <= max;
+    if (wrap) wrap.classList.toggle('invalid', !valid);
+    return valid;
+  }
+
+  async function submitForm(evt) {
+    evt.preventDefault();
+    refreshItem2Highlight();
+
+    if (!machineId) {
+      showToast('請先掃描或解析機台 ID。', 'bad');
+      return;
+    }
+
+    const invalidNumber = Array.from(document.querySelectorAll('[data-number-item]')).some(input => !validateNumberInput(input));
+    if (invalidNumber) {
+      showToast('數字欄位超出限制範圍，請確認後再送出。', 'bad');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const data = await postWithTimeout(buildSubmitParams(), POST_TIMEOUT_MS);
+      if (data && data.status === 'ok') {
+        clearAfterSuccess();
+        showToast('送出成功，已保留項次 2。', 'ok');
+      } else {
+        const msg = data && data.msg ? data.msg : 'GAS 回應非 status:"ok"。';
+        showToast(`送出失敗：${msg}`, 'bad');
+      }
+    } catch (err) {
+      showToast(`送出失敗：${err.message || err}`, 'bad');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function buildSubmitParams() {
+    const selected = getSelectedShift();
+    const params = new URLSearchParams();
+    params.set('action', GAS_ACTION_FORM_WRITE);
+    params.set('id', authState.id || '');
+    params.set('pass', readJson(LOGIN_DRAFT_KEY)?.pass || '');
+    params.set('name', authState.name || '');
+    params.set('date', selected.date);
+    params.set('shift', selected.shift);
+    params.set('machine_id', machineId);
+
+    ITEMS.forEach(item => {
+      params.set(itemName(item.no), getValueByItemNo(item.no));
+    });
+    params.set('client_time', formatDateTime(new Date()));
+    params.set('client_version', APP_VERSION);
+    return params;
+  }
+
+  function getSelectedShift() {
+    const [date, shift] = String(el.shiftSelect.value || '').split('|');
+    return { date: date || '', shift: shift || '' };
+  }
+
+  function clearAfterSuccess() {
+    [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].forEach(no => {
+      setValueByItemNo(no, '');
+    });
+    applyStatusRules();
+    refreshItem2Highlight();
+  }
+
+  function setSubmitting(isSubmitting) {
+    el.loadingMask.classList.toggle('active', isSubmitting);
+    el.submitBtn.disabled = isSubmitting;
+    Array.from(el.checkForm.elements).forEach(node => {
+      if (node !== el.submitBtn) node.disabled = isSubmitting;
+    });
+    if (!isSubmitting) applyStatusRules();
+  }
+
+  async function updateGasStatus() {
+    const start = performance.now();
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), GAS_WARN_MS + 1000);
+      await fetch(getApiUrl(), { method: 'GET', cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      const ms = Math.round(performance.now() - start);
+      if (ms <= GAS_GREEN_MS) setGasState('ok', `順暢 ${ms}ms`);
+      else if (ms <= GAS_WARN_MS) setGasState('warn', `高延遲 ${ms}ms`);
+      else setGasState('bad', `高延遲 ${ms}ms`);
+    } catch (err) {
+      setGasState('bad', '連線異常');
+    }
+  }
+
+  function setGasState(state, text) {
+    el.gasLamp.className = `lamp ${state}`;
+    el.gasText.textContent = text;
+  }
+
+  async function postWithTimeout(params, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(getApiUrl(), {
+        method: 'POST',
+        body: params,
+        signal: controller.signal
+      });
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        throw new Error('GAS 回傳不是 JSON');
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function itemName(no) {
+    return `item_${String(no).padStart(2, '0')}`;
+  }
+
+  function getCardByItemNo(no) {
+    return document.querySelector(`.item-card[data-no="${no}"]`);
+  }
+
+  function getFirstInputByItemNo(no) {
+    return document.querySelector(`[data-item-no="${no}"]`);
+  }
+
+  function getInputsByItemNo(no) {
+    return Array.from(document.querySelectorAll(`[data-item-no="${no}"]`));
+  }
+
+  function getValueByItemNo(no) {
+    const inputs = getInputsByItemNo(no);
+    if (!inputs.length) return '';
+    const first = inputs[0];
+    if (first.type === 'radio') {
+      const checked = inputs.find(x => x.checked);
+      return checked ? checked.value : '';
+    }
+    if (first.type === 'checkbox') {
+      return inputs.filter(x => x.checked).map(x => x.value).join(',');
+    }
+    return first.value || '';
+  }
+
+  function setValueByItemNo(no, value) {
+    const inputs = getInputsByItemNo(no);
+    if (!inputs.length) return;
+    const first = inputs[0];
+    const val = String(value || '');
+    if (first.type === 'radio') {
+      inputs.forEach(x => { x.checked = x.value === val; });
+      return;
+    }
+    if (first.type === 'checkbox') {
+      const values = new Set(val.split(',').map(x => x.trim()).filter(Boolean));
+      inputs.forEach(x => { x.checked = values.has(x.value); });
+      return;
+    }
+    first.value = val;
+  }
+
+  function setItemDisabled(no, disabled) {
+    getInputsByItemNo(no).forEach(node => { node.disabled = disabled; });
+  }
+
+  function showToast(message, type = '') {
+    el.toast.textContent = message;
+    el.toast.className = `toast show ${type}`;
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => {
+      el.toast.className = 'toast';
+    }, 3500);
+  }
+
+  function readJson(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function writeJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function formatDateTime(date) {
+    return `${formatDate(date)} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+  }
+
+  function formatDate(date) {
+    return `${date.getFullYear()}/${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}`;
+  }
+
+  function parseDate(yyyyMmDd) {
+    const [y, m, d] = String(yyyyMmDd).split('/').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function addDays(date, days) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/'/g, '&#39;');
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (gasTimer) clearInterval(gasTimer);
+    stopQrScanner();
   });
-  const q = document.getElementById('qty_'+i);
-  if(q) q.value = '';
-}
-
-// 報廢/續留互鎖 + 重工者啟用
-function bindMutualLocks(){
-  const scrapYes = document.getElementById('scrap_yes');
-  const scrapKeep = document.getElementById('scrap_keep');
-  const rework = document.getElementById('rework_confirm');
-  const reworker = document.getElementById('reworker');
-
-  if(scrapYes && scrapKeep){
-    scrapYes.addEventListener('change', ()=>{ if(scrapYes.checked) scrapKeep.checked=false; });
-    scrapKeep.addEventListener('change', ()=>{ if(scrapKeep.checked) scrapYes.checked=false; });
-  }
-  if(rework && reworker){
-    const sync = ()=>{
-      reworker.disabled = !rework.checked;
-      if(!rework.checked) reworker.value='';
-    };
-    rework.addEventListener('change', sync);
-    sync();
-  }
-}
-
-function bindActions(){
-  document.getElementById('btnPreview')?.addEventListener('click', ()=>{
-    console.log(collectData());
-    alert('預覽已輸出到 console');
-  });
-  document.getElementById('btnSubmit')?.addEventListener('click', ()=>{
-    console.log(collectData());
-    alert('已收集資料，依需求串接送出流程');
-  });
-}
-
-function collectData(){
-  const lines=[];
-  for(let i=1;i<=6;i++){
-    const a = val(`axis_${i}`), c = val(`cat_${i}`), q = Number(val(`qty_${i}`));
-    if(!(a||c||q)) continue; // 全空略過
-    lines.push({ axis:a, cat:c, qty:isFinite(q)?q:0 });
-  }
-  return {
-    date: val('date_display'), shift: val('shift_display'),
-    machine_id: val('machine_id'),
-    product_type: val('product_type'), part_no: val('part_no'),
-    fa_stage: val('fa_stage'), lot_no: val('lot_no'),
-    lines,
-    cutter_a: val('cutter_a'), inspector: val('inspector'),
-    rework_confirm: document.getElementById('rework_confirm')?.checked || false,
-    reworker: val('reworker'),
-    scrap: document.getElementById('scrap_yes')?.checked ? 'SCRAP' :
-           (document.getElementById('scrap_keep')?.checked ? 'KEEP' : ''),
-    remark: val('remark'), reviewer: val('reviewer')
-  };
-}
-
-function val(id){ return (document.getElementById(id)?.value || '').trim(); }
+})();
 </script>
 </body>
 </html>
