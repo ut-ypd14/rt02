@@ -59,25 +59,6 @@ function routePing_(p) {
   });
 }
 
-function routeAuth_(p) {
-  const id = normalizeId_(p.id);
-  const pass = String(p.pass || '').trim();
-
-  if (!isValidId_(id)) return json_({ status: 'error', action: 'auth', msg: 'invalid_id' });
-  if (!isValidPass_(pass)) return json_({ status: 'error', action: 'auth', msg: 'invalid_pass' });
-
-  const user = findUserById_(id);
-  if (!user) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
-  if (String(user.pass || '') !== pass) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
-  if (user.active !== true) return json_({ status: 'error', action: 'auth', msg: 'account_disabled' });
-
-  return json_({
-    status: 'ok',
-    action: 'auth',
-    fields: ['id', 'name', 'shift', 'admin'],
-    values: [user.id, user.name, user.shift, user.admin]
-  });
-}
 
 function routePersonnelSave_(p) {
   const adminId = normalizeId_(p.admin_id);
