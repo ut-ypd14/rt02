@@ -1,248 +1,183 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>人員登入 v0.1.3</title>
+  <meta name="format-detection" content="telephone=no">
+  <title>人員登入</title>
+  <script src="./config.js"></script>
   <style>
-    :root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--ok:#166534;--warn:#92400e;--bad:#991b1b;--main:#2563eb;--main2:#1d4ed8;}
+    :root{--bg:#f6f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d8dee9;--ok:#087443;--bad:#b42318;--warn:#a15c07;--main:#1f5eff;}
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;font-size:16px;line-height:1.45;}
-    .wrap{width:100%;max-width:520px;margin:0 auto;padding:14px 12px 28px;}
-    .status{border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 12px;margin-bottom:12px;font-size:14px;color:var(--muted);}
-    .status.ok{color:var(--ok);border-color:#bbf7d0;background:#f0fdf4}.status.bad{color:var(--bad);border-color:#fecaca;background:#fef2f2}.status.warn{color:var(--warn);border-color:#fde68a;background:#fffbeb}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.06);padding:18px;}
-    h1{font-size:22px;margin:0 0 4px}.ver{font-size:13px;color:var(--muted);margin-bottom:18px}.hint{font-size:14px;color:var(--muted);margin:8px 0 0;}
-    label{display:block;font-weight:700;margin:14px 0 7px;}
-    input,select,button{width:100%;font:inherit;border-radius:14px;}
-    input,select{border:1px solid #d1d5db;background:#fff;padding:13px 12px;min-height:48px;outline:none;}
-    input:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
-    button{border:0;background:var(--main);color:#fff;font-weight:800;min-height:50px;padding:12px 14px;margin-top:16px;}
-    button:active{background:var(--main2)}button:disabled{opacity:.55}
-    .ghost{background:#eef2ff;color:#1e40af;margin-top:10px}.msg{margin-top:14px;font-size:15px;color:var(--muted);word-break:break-word;}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.msg.warn{color:var(--warn)}
-    iframe.bridge{width:0;height:0;border:0;position:absolute;left:-9999px;top:-9999px;}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;font-size:16px;line-height:1.45}
+    .wrap{width:100%;max-width:520px;margin:0 auto;padding:14px 12px 28px}
+    .status{padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:12px;font-size:14px;color:var(--muted)}
+    .status.ok{border-color:#abefc6;color:var(--ok);background:#ecfdf3}.status.bad{border-color:#fecdca;color:var(--bad);background:#fef3f2}.status.warn{border-color:#fedf89;color:var(--warn);background:#fffaeb}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 20px rgba(16,24,40,.06)}
+    h1{font-size:22px;margin:0 0 6px} .sub{margin:0 0 18px;color:var(--muted);font-size:14px}
+    label{display:block;margin-top:14px;font-weight:700}.hint{font-size:13px;color:var(--muted);margin-top:4px}
+    input{width:100%;min-height:48px;margin-top:7px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:18px;background:#fff;outline:none}
+    input:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(31,94,255,.12)}
+    button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:14px;background:var(--main);color:white;font-size:17px;font-weight:800;letter-spacing:.04em}
+    button:disabled{opacity:.55}.msg{min-height:22px;margin-top:14px;font-weight:700}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.msg.warn{color:var(--warn)}
+    .ver{margin-top:12px;text-align:center;color:#98a2b3;font-size:12px}
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <main class="wrap">
     <div id="gasStatus" class="status warn">GAS 伺服狀態：檢查中...</div>
     <section class="card">
       <h1>人員登入</h1>
-      <div class="ver">login.html v0.1.3</div>
-
+      <p class="sub">輸入工號與密碼。格式通過後送 GAS 判斷帳密與人員資料。</p>
       <form id="loginForm" autocomplete="off">
-        <label for="id">工號</label>
-        <input id="id" name="id" inputmode="latin" maxlength="5" autocomplete="username" placeholder="5 碼英數" required>
-
-        <label for="pass">密碼</label>
-        <input id="pass" name="pass" inputmode="latin" autocomplete="current-password" placeholder="英數密碼" required>
-
-        <button id="btnLogin" type="submit">登入驗證</button>
-        <button id="btnClear" class="ghost" type="button">清除本機草稿</button>
+        <label for="idInput">工號</label>
+        <input id="idInput" name="id" inputmode="text" autocomplete="off" maxlength="5" placeholder="5碼英數" autocapitalize="characters">
+        <div class="hint">英數 5 碼，自動轉大寫。</div>
+        <label for="passInput">密碼</label>
+        <input id="passInput" name="pass" type="password" inputmode="text" autocomplete="off" placeholder="英數密碼">
+        <div class="hint">僅接受英數。</div>
+        <button id="submitBtn" type="submit">登入</button>
       </form>
-
-      <div class="hint">前端只檢查格式；帳密、班別與權限由 GAS 判斷。</div>
       <div id="msg" class="msg"></div>
     </section>
-  </div>
-
-  <iframe id="gasFrame" name="gasFrame" class="bridge" title="gas bridge"></iframe>
-
+    <div class="ver">login.html v0.1.4</div>
+  </main>
 <script>
 (function(){
   'use strict';
-
-  var VERSION = 'v0.1.3';
+  var VERSION = 'login.html v0.1.4';
   var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
   var SHORT_KEY = 'PI_SHORT_AUTH_V001';
-  var SHORT_HOURS = 13;
-  var REQ_PREFIX = 'pi_' + Date.now() + '_';
-  var reqSeq = 0;
-  var pending = {};
+  var SHORT_AUTH_MS = 13 * 60 * 60 * 1000;
 
-  var elGas = document.getElementById('gasStatus');
-  var elMsg = document.getElementById('msg');
-  var elForm = document.getElementById('loginForm');
-  var elId = document.getElementById('id');
-  var elPass = document.getElementById('pass');
-  var btnLogin = document.getElementById('btnLogin');
-  var btnClear = document.getElementById('btnClear');
-  var frameName = 'gasFrame';
+  var gasStatus = document.getElementById('gasStatus');
+  var msg = document.getElementById('msg');
+  var form = document.getElementById('loginForm');
+  var idInput = document.getElementById('idInput');
+  var passInput = document.getElementById('passInput');
+  var submitBtn = document.getElementById('submitBtn');
 
-  function setMsg(text, cls){
-    elMsg.className = 'msg' + (cls ? ' ' + cls : '');
-    elMsg.textContent = text || '';
+  function setMsg(text, type){
+    msg.textContent = text || '';
+    msg.className = 'msg' + (type ? ' ' + type : '');
   }
 
-  function setGas(text, cls){
-    elGas.className = 'status' + (cls ? ' ' + cls : '');
-    elGas.textContent = text;
+  function setGasStatus(text, type){
+    gasStatus.textContent = 'GAS 伺服狀態：' + text;
+    gasStatus.className = 'status ' + (type || 'warn');
   }
-
-  function now(){ return Date.now(); }
 
   function getApiUrl(){
-    if (typeof api_url === 'string' && api_url) return api_url;
-    return '';
+    if (typeof api_url !== 'string' || !api_url) return '';
+    return api_url;
   }
 
-  function makeReqId(action){
-    reqSeq += 1;
-    return REQ_PREFIX + action + '_' + reqSeq;
+  function normalizeId(v){
+    return String(v || '').trim().toUpperCase();
   }
 
-  function postGas(action, data, timeoutMs){
-    var url = getApiUrl();
-    if (!url) return Promise.reject(new Error('config.js 未提供 api_url'));
-
-    var requestId = makeReqId(action);
-    var body = new URLSearchParams();
-    body.append('action', action);
-    body.append('request_id', requestId);
-    body.append('client_version', VERSION);
-
-    data = data || {};
-    Object.keys(data).forEach(function(k){
-      if (data[k] !== undefined && data[k] !== null) body.append(k, String(data[k]));
-    });
-
-    return new Promise(function(resolve, reject){
-      var timer = setTimeout(function(){
-        delete pending[requestId];
-        reject(new Error('GAS 伺服器沒有回應'));
-      }, timeoutMs || 15000);
-
-      pending[requestId] = { resolve: resolve, reject: reject, timer: timer };
-
-      var form = document.createElement('form');
-      form.method = 'post';
-      form.action = url;
-      form.target = frameName;
-      form.acceptCharset = 'UTF-8';
-      form.style.display = 'none';
-
-      body.forEach(function(value, key){
-        var input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-      setTimeout(function(){
-        if (form && form.parentNode) form.parentNode.removeChild(form);
-      }, 1000);
-    });
+  function validId(v){
+    return /^[A-Z0-9]{5}$/.test(v);
   }
 
-  window.addEventListener('message', function(ev){
-    var data = ev.data;
-    if (typeof data === 'string') {
-      try { data = JSON.parse(data); } catch(err) { return; }
-    }
-    if (!data || !data.request_id || !pending[data.request_id]) return;
+  function validPass(v){
+    return /^[A-Za-z0-9]+$/.test(String(v || ''));
+  }
 
-    var item = pending[data.request_id];
-    clearTimeout(item.timer);
-    delete pending[data.request_id];
-    item.resolve(data);
-  });
-
-  function fieldObject(res){
+  function toMap(data){
     var out = {};
-    var fields = Array.isArray(res.fields) ? res.fields : [];
-    var values = Array.isArray(res.values) ? res.values : [];
-    for (var i = 0; i < fields.length; i++) out[fields[i]] = values[i];
+    if (!data || !data.fields || !data.values) return out;
+    for (var i = 0; i < data.fields.length; i++) out[data.fields[i]] = data.values[i];
     return out;
   }
 
-  function normalizeId(v){ return String(v || '').trim().toUpperCase(); }
-  function normalizePass(v){ return String(v || '').trim(); }
-  function isId(v){ return /^[A-Z0-9]{5}$/.test(v); }
-  function isPass(v){ return /^[A-Za-z0-9]+$/.test(v); }
-
-  function getReturnTo(){
-    var qs = new URLSearchParams(location.search);
-    var r = qs.get('return_to') || sessionStorage.getItem('PI_RETURN_TO_V001') || '';
-    if (!r) r = 'admin.html';
-    return r;
+  function postAction(action, payload){
+    var url = getApiUrl();
+    if (!url) return Promise.reject(new Error('api_url_not_set'));
+    var params = new URLSearchParams();
+    params.append('action', action);
+    params.append('_t', String(Date.now()));
+    if (payload) {
+      Object.keys(payload).forEach(function(k){ params.append(k, payload[k] == null ? '' : String(payload[k])); });
+    }
+    return fetch(url, { method:'POST', body:params, credentials:'omit', cache:'no-store' })
+      .then(function(res){ return res.text(); })
+      .then(function(text){
+        try { return JSON.parse(text); }
+        catch (err) { throw new Error('json_parse_failed'); }
+      });
   }
 
-  function withReload(url){
-    var sep = url.indexOf('?') >= 0 ? '&' : '?';
-    return url + sep + 'reload_ts=' + encodeURIComponent(String(now()));
-  }
-
-  function saveDrafts(id, pass, person){
-    var authTime = now();
-    var expireTime = authTime + SHORT_HOURS * 60 * 60 * 1000;
-    localStorage.setItem(LOGIN_KEY, JSON.stringify({ id: id, pass: pass }));
+  function saveDrafts(id, pass, user){
+    var now = Date.now();
+    localStorage.setItem(LOGIN_KEY, JSON.stringify({ id:id, pass:pass }));
     localStorage.setItem(SHORT_KEY, JSON.stringify({
-      id: String(person.id || id),
-      name: String(person.name || ''),
-      shift: String(person.shift || ''),
-      admin: !!person.admin,
-      auth_time: authTime,
-      expire_time: expireTime,
-      scope: 'input'
+      id:id,
+      name:user.name || '',
+      shift:user.shift || '',
+      admin:!!user.admin,
+      auth_time:now,
+      expire_time:now + SHORT_AUTH_MS
     }));
   }
 
-  function clearDrafts(){
-    localStorage.removeItem(LOGIN_KEY);
-    localStorage.removeItem(SHORT_KEY);
+  function returnTarget(){
+    var sp = new URLSearchParams(location.search);
+    var from = sp.get('from') || sessionStorage.getItem('PI_RETURN_TO') || 'admin.html';
+    sessionStorage.removeItem('PI_RETURN_TO');
+    return from;
   }
 
-  function pingGas(){
-    setGas('GAS 伺服狀態：檢查中...', 'warn');
-    postGas('ping', {}, 12000).then(function(res){
-      if (res && res.status === 'ok') setGas('GAS 伺服狀態：正常', 'ok');
-      else setGas('GAS 伺服狀態：異常', 'bad');
-    }).catch(function(err){
-      setGas('GAS 伺服狀態：' + err.message, 'bad');
-    });
+  function addCacheBust(url){
+    var mark = url.indexOf('?') >= 0 ? '&' : '?';
+    return url + mark + 'r=' + Date.now();
   }
 
-  elId.addEventListener('input', function(){ elId.value = normalizeId(elId.value); });
+  function loadLoginDraft(){
+    try {
+      var d = JSON.parse(localStorage.getItem(LOGIN_KEY) || '{}');
+      if (d.id) idInput.value = normalizeId(d.id);
+      if (d.pass) passInput.value = d.pass;
+    } catch (err) {}
+  }
 
-  btnClear.addEventListener('click', function(){
-    clearDrafts();
-    setMsg('已清除本機登入草稿。', 'ok');
-  });
+  function ping(){
+    setGasStatus('檢查中...', 'warn');
+    postAction('ping', { page: VERSION })
+      .then(function(data){
+        if (data && data.status === 'ok' && data.action === 'ping') setGasStatus('正常', 'ok');
+        else setGasStatus('回應格式異常', 'bad');
+      })
+      .catch(function(){ setGasStatus('GAS 伺服器沒有回應', 'bad'); });
+  }
 
-  elForm.addEventListener('submit', function(ev){
+  idInput.addEventListener('input', function(){ idInput.value = normalizeId(idInput.value).replace(/[^A-Z0-9]/g, '').slice(0,5); });
+  passInput.addEventListener('input', function(){ passInput.value = String(passInput.value || '').replace(/[^A-Za-z0-9]/g, ''); });
+
+  form.addEventListener('submit', function(ev){
     ev.preventDefault();
-
-    var id = normalizeId(elId.value);
-    var pass = normalizePass(elPass.value);
-
-    if (!isId(id)) { setMsg('工號格式不正確：需 5 碼英數。', 'bad'); return; }
-    if (!isPass(pass)) { setMsg('密碼格式不正確：僅接受英數。', 'bad'); return; }
-
-    btnLogin.disabled = true;
+    var id = normalizeId(idInput.value);
+    var pass = String(passInput.value || '').trim();
+    if (!validId(id)) { setMsg('工號格式錯誤：需 5 碼英數。', 'bad'); return; }
+    if (!validPass(pass)) { setMsg('密碼格式錯誤：僅接受英數且不得空白。', 'bad'); return; }
+    submitBtn.disabled = true;
     setMsg('驗證中...', 'warn');
-
-    postGas('auth', { id: id, pass: pass }, 15000).then(function(res){
-      if (!res || res.action !== 'auth' || res.status !== 'ok') {
-        throw new Error((res && res.msg) ? res.msg : '驗證失敗');
-      }
-      var person = fieldObject(res);
-      saveDrafts(id, pass, person);
-      setMsg('驗證成功，3 秒後返回上一頁。', 'ok');
-      setTimeout(function(){
-        location.href = withReload(getReturnTo());
-      }, 3000);
-    }).catch(function(err){
-      setMsg(err.message || '驗證失敗', 'bad');
-    }).then(function(){
-      btnLogin.disabled = false;
-    });
+    postAction('auth', { id:id, pass:pass })
+      .then(function(data){
+        if (!data || data.status !== 'ok' || data.action !== 'auth') throw new Error((data && data.msg) || 'auth_failed');
+        var user = toMap(data);
+        saveDrafts(id, pass, user);
+        setMsg('驗證成功，3 秒後返回上一頁。', 'ok');
+        setTimeout(function(){ location.replace(addCacheBust(returnTarget())); }, 3000);
+      })
+      .catch(function(err){
+        setMsg('驗證失敗：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
+      })
+      .finally(function(){ submitBtn.disabled = false; });
   });
 
-  pingGas();
+  loadLoginDraft();
+  ping();
 })();
 </script>
 </body>
