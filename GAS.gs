@@ -62,14 +62,7 @@ function routePing_(p) {
 
 
 
-function routeFormWrite_(p) {
-  return json_({
-    status: 'ok',
-    action: 'form_write',
-    fields: ['result'],
-    values: ['interface_ready']
-  });
-}
+
 
 function getUserSheet_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
