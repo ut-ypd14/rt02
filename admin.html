@@ -7,66 +7,76 @@
   <title>人員管理</title>
   <script src="./config.js"></script>
   <style>
-    :root{--bg:#f6f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d8dee9;--ok:#087443;--bad:#b42318;--warn:#a15c07;--main:#1f5eff;}
+    :root{--bg:#f6f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d8dee9;--ok:#087443;--bad:#b42318;--warn:#a15c07;--main:#1f5eff;--danger:#d92d20;}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;font-size:16px;line-height:1.45}
     .wrap{width:100%;max-width:620px;margin:0 auto;padding:14px 12px 28px}
     .status{padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:12px;font-size:14px;color:var(--muted)}
     .status.ok{border-color:#abefc6;color:var(--ok);background:#ecfdf3}.status.bad{border-color:#fecdca;color:var(--bad);background:#fef3f2}.status.warn{border-color:#fedf89;color:var(--warn);background:#fffaeb}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 20px rgba(16,24,40,.06);margin-bottom:12px}
-    h1{font-size:22px;margin:0 0 6px} h2{font-size:18px;margin:0 0 12px}.sub{margin:0 0 14px;color:var(--muted);font-size:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:12px;box-shadow:0 8px 20px rgba(16,24,40,.06)}
+    h1{font-size:22px;margin:0 0 6px}h2{font-size:18px;margin:0 0 10px}.sub{margin:0 0 16px;color:var(--muted);font-size:14px}
     label{display:block;margin-top:14px;font-weight:700}.hint{font-size:13px;color:var(--muted);margin-top:4px}
     input,select{width:100%;min-height:48px;margin-top:7px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:18px;background:#fff;outline:none}
     input:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(31,94,255,.12)}
     button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:14px;background:var(--main);color:white;font-size:17px;font-weight:800;letter-spacing:.04em}
-    button:disabled{opacity:.55}.msg{min-height:22px;margin-top:14px;font-weight:700}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.msg.warn{color:var(--warn)}
-    .hide{display:none}.userbox{font-size:14px;color:var(--muted);padding:10px 12px;background:#f9fafb;border-radius:14px;border:1px solid var(--line)}
-    .ver{margin-top:12px;text-align:center;color:#98a2b3;font-size:12px}
+    button.danger{background:var(--danger)}button:disabled{opacity:.55}.msg{min-height:22px;margin-top:14px;font-weight:700}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.msg.warn{color:var(--warn)}
+    .hide{display:none!important}.user{padding:10px 12px;background:#eef4ff;border:1px solid #c7d7fe;border-radius:14px;margin-top:12px;color:#1849a9;font-weight:700}.ver{margin-top:12px;text-align:center;color:#98a2b3;font-size:12px}
+    .split{height:1px;background:var(--line);margin:18px 0}
   </style>
 </head>
 <body>
   <main class="wrap">
     <div id="gasStatus" class="status warn">GAS 伺服狀態：檢查中...</div>
-    <section class="card">
-      <h1>人員管理</h1>
-      <p class="sub">前端只檢查格式，帳密、admin 權限、新增或修改由 GAS 判斷。</p>
-      <div id="gateMsg" class="msg warn">檢查登入草稿...</div>
-      <div id="userBox" class="userbox hide"></div>
-    </section>
+    <div id="gateStatus" class="status warn">管理權限：檢查中...</div>
+    <div id="userBox" class="user hide"></div>
+
     <section id="adminPanel" class="card hide">
-      <h2>新增 / 修改人員</h2>
+      <h1>人員管理</h1>
+      <p class="sub">前端只檢查格式；帳密、管理權、帳號狀態、新增或修改由 GAS 判斷。</p>
+
       <form id="saveForm" autocomplete="off">
+        <h2>新增 / 修改人員</h2>
         <label for="targetId">工號</label>
-        <input id="targetId" name="id" inputmode="text" autocomplete="off" maxlength="5" placeholder="5碼英數" autocapitalize="characters">
-        <div class="hint">英數 5 碼，自動轉大寫。此欄作為唯一識別。</div>
+        <input id="targetId" maxlength="5" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="5碼英數">
         <label for="targetPass">密碼</label>
-        <input id="targetPass" name="pass" type="text" inputmode="text" autocomplete="off" placeholder="英數密碼">
-        <div class="hint">僅接受英數。</div>
+        <input id="targetPass" type="password" inputmode="text" autocomplete="off" placeholder="英數密碼">
         <label for="targetName">中文名字</label>
-        <input id="targetName" name="name" type="text" autocomplete="off" placeholder="至少 2 個字元">
+        <input id="targetName" inputmode="text" autocomplete="off" placeholder="不得空白，字元需大於1">
         <label for="targetShift">人員班別</label>
-        <select id="targetShift" name="shift">
+        <select id="targetShift">
           <option value="">請選擇</option>
           <option value="A">A</option>
           <option value="B">B</option>
           <option value="C">C</option>
         </select>
-        <div class="hint">admin 權限不透過此表單寫入，請手動修改試算表。</div>
-        <button id="saveBtn" type="submit">送出</button>
+        <div class="hint">admin 欄不透過 GAS 寫入；請手動在試算表 F 欄設定。</div>
+        <button id="saveBtn" type="submit">儲存人員</button>
       </form>
       <div id="saveMsg" class="msg"></div>
+
+      <div class="split"></div>
+
+      <form id="deleteForm" autocomplete="off">
+        <h2>停用帳號</h2>
+        <p class="sub">採軟刪除：只將人員主檔 E 欄 active 改為 FALSE，不刪除整列。GAS 會禁止停用 admin=true 的帳號。</p>
+        <label for="deleteId">欲停用工號</label>
+        <input id="deleteId" maxlength="5" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="5碼英數">
+        <button id="deleteBtn" class="danger" type="submit">停用帳號</button>
+      </form>
+      <div id="deleteMsg" class="msg"></div>
     </section>
-    <div class="ver">admin.html v0.1.4</div>
+    <div class="ver">admin.html v0.1.7</div>
   </main>
 <script>
 (function(){
   'use strict';
-  var VERSION = 'admin.html v0.1.4';
+  var VERSION = 'admin.html v0.1.7';
   var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
   var SHORT_KEY = 'PI_SHORT_AUTH_V001';
+  var SHORT_AUTH_MS = 13 * 60 * 60 * 1000;
 
   var gasStatus = document.getElementById('gasStatus');
-  var gateMsg = document.getElementById('gateMsg');
+  var gateStatus = document.getElementById('gateStatus');
   var userBox = document.getElementById('userBox');
   var adminPanel = document.getElementById('adminPanel');
   var saveForm = document.getElementById('saveForm');
@@ -76,6 +86,10 @@
   var targetPass = document.getElementById('targetPass');
   var targetName = document.getElementById('targetName');
   var targetShift = document.getElementById('targetShift');
+  var deleteForm = document.getElementById('deleteForm');
+  var deleteBtn = document.getElementById('deleteBtn');
+  var deleteMsg = document.getElementById('deleteMsg');
+  var deleteId = document.getElementById('deleteId');
   var loginDraft = null;
 
   function setGasStatus(text, type){
@@ -84,13 +98,13 @@
   }
 
   function setGate(text, type){
-    gateMsg.textContent = text || '';
-    gateMsg.className = 'msg ' + (type || 'warn');
+    gateStatus.textContent = '管理權限：' + text;
+    gateStatus.className = 'status ' + (type || 'warn');
   }
 
-  function setSave(text, type){
-    saveMsg.textContent = text || '';
-    saveMsg.className = 'msg' + (type ? ' ' + type : '');
+  function setMsg(el, text, type){
+    el.textContent = text || '';
+    el.className = 'msg' + (type ? ' ' + type : '');
   }
 
   function getApiUrl(){
@@ -102,7 +116,7 @@
   function validId(v){ return /^[A-Z0-9]{5}$/.test(v); }
   function validPass(v){ return /^[A-Za-z0-9]+$/.test(String(v || '')); }
   function validName(v){ return String(v || '').trim().length > 1; }
-  function validShift(v){ return /^(A|B|C)$/.test(String(v || '')); }
+  function validShift(v){ return /^(A|B|C)$/.test(String(v || '').trim().toUpperCase()); }
 
   function toMap(data){
     var out = {};
@@ -139,14 +153,42 @@
     setTimeout(function(){ location.replace('login.html?from=admin.html&r=' + Date.now()); }, 2000);
   }
 
-  function checkDraft(){
+  function writeLoginDraft(user){
+    var id = normalizeId(user.id || loginDraft.id);
+    var pass = String(loginDraft.pass || '');
+    var name = String(user.name || loginDraft.name || '');
+    loginDraft = { id:id, pass:pass, name:name };
+    localStorage.setItem(LOGIN_KEY, JSON.stringify(loginDraft));
+  }
+
+  function writeShortAuth(user){
+    var now = Date.now();
+    var data = {
+      id: normalizeId(user.id || loginDraft.id),
+      name: String(user.name || loginDraft.name || ''),
+      shift: String(user.shift || ''),
+      admin: user.admin === true || user.admin === 'TRUE' || user.admin === 'true',
+      auth_time: now,
+      expire_time: now + SHORT_AUTH_MS
+    };
+    localStorage.setItem(SHORT_KEY, JSON.stringify(data));
+    writeLoginDraft(data);
+    return data;
+  }
+
+  function loadLoginDraft(){
     var ld = readJson(LOGIN_KEY);
+    if (!ld.id || !ld.pass) return false;
+    loginDraft = { id:normalizeId(ld.id), pass:String(ld.pass || ''), name:String(ld.name || '') };
+    return true;
+  }
+
+  function shortDraftValid(){
     var sd = readJson(SHORT_KEY);
     var now = Date.now();
-    if (!ld.id || !ld.pass) { redirectLogin('無帳密草稿'); return false; }
-    if (!sd.id || !sd.expire_time || now > Number(sd.expire_time)) { redirectLogin('短暫通行草稿失效'); return false; }
-    if (normalizeId(ld.id) !== normalizeId(sd.id)) { redirectLogin('草稿帳號不一致'); return false; }
-    loginDraft = { id:normalizeId(ld.id), pass:String(ld.pass || '') };
+    if (!sd.id || !sd.expire_time) return false;
+    if (now > Number(sd.expire_time)) return false;
+    if (normalizeId(sd.id) !== normalizeId(loginDraft.id)) return false;
     return true;
   }
 
@@ -160,39 +202,55 @@
       .catch(function(){ setGasStatus('GAS 伺服器沒有回應', 'bad'); });
   }
 
-  function authAdmin(){
-    setGate('驗證管理權限中...', 'warn');
+  function startGate(){
+    if (!loadLoginDraft()) { redirectLogin('無帳密草稿'); return; }
+    if (shortDraftValid()) {
+      authAdmin('驗證管理權限中...');
+      return;
+    }
+    authAdmin('短暫通行草稿失效，使用帳密草稿原地認證中...');
+  }
+
+  function authAdmin(message){
+    setGate(message || '驗證管理權限中...', 'warn');
     postAction('auth', { id:loginDraft.id, pass:loginDraft.pass })
       .then(function(data){
         if (!data || data.status !== 'ok' || data.action !== 'auth') throw new Error((data && data.msg) || 'auth_failed');
         var user = toMap(data);
-        if (user.admin !== true && user.admin !== 'TRUE' && user.admin !== 'true') throw new Error('no_admin_permission');
-        setGate('管理權限通過。', 'ok');
+        var shortAuth = writeShortAuth(user);
         userBox.classList.remove('hide');
-        userBox.textContent = '目前登入：' + (user.id || loginDraft.id) + '｜' + (user.name || '') + '｜班別 ' + (user.shift || '');
+        userBox.textContent = '目前登入：' + (shortAuth.id || loginDraft.id) + '｜' + (shortAuth.name || '') + '｜班別 ' + (shortAuth.shift || '');
+        if (shortAuth.admin !== true) {
+          adminPanel.classList.add('hide');
+          setGate('帳密驗證通過，但無後台管理權限。', 'bad');
+          return;
+        }
+        setGate('管理權限通過，短暫通行戳已更新。', 'ok');
         adminPanel.classList.remove('hide');
       })
-      .catch(function(err){
+      .catch(function(){
         adminPanel.classList.add('hide');
-        setGate('無法進入後台：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
+        localStorage.removeItem(SHORT_KEY);
+        redirectLogin('帳密驗證失效');
       });
   }
 
   targetId.addEventListener('input', function(){ targetId.value = normalizeId(targetId.value).replace(/[^A-Z0-9]/g, '').slice(0,5); });
   targetPass.addEventListener('input', function(){ targetPass.value = String(targetPass.value || '').replace(/[^A-Za-z0-9]/g, ''); });
+  deleteId.addEventListener('input', function(){ deleteId.value = normalizeId(deleteId.value).replace(/[^A-Z0-9]/g, '').slice(0,5); });
 
   saveForm.addEventListener('submit', function(ev){
     ev.preventDefault();
     var id = normalizeId(targetId.value);
     var pass = String(targetPass.value || '').trim();
     var name = String(targetName.value || '').trim();
-    var shift = String(targetShift.value || '');
-    if (!validId(id)) { setSave('工號格式錯誤：需 5 碼英數。', 'bad'); return; }
-    if (!validPass(pass)) { setSave('密碼格式錯誤：僅接受英數且不得空白。', 'bad'); return; }
-    if (!validName(name)) { setSave('中文名字不得為空，且字元數需大於 1。', 'bad'); return; }
-    if (!validShift(shift)) { setSave('請選擇人員班別。', 'bad'); return; }
+    var shift = String(targetShift.value || '').trim().toUpperCase();
+    if (!validId(id)) { setMsg(saveMsg, '工號格式錯誤：需 5 碼英數。', 'bad'); return; }
+    if (!validPass(pass)) { setMsg(saveMsg, '密碼格式錯誤：僅接受英數且不得空白。', 'bad'); return; }
+    if (!validName(name)) { setMsg(saveMsg, '中文名字不得為空，且字元數需大於 1。', 'bad'); return; }
+    if (!validShift(shift)) { setMsg(saveMsg, '請選擇人員班別。', 'bad'); return; }
     saveBtn.disabled = true;
-    setSave('送出中...', 'warn');
+    setMsg(saveMsg, '送出中...', 'warn');
     postAction('personnel_save', {
       admin_id: loginDraft.id,
       admin_pass: loginDraft.pass,
@@ -203,14 +261,34 @@
     }).then(function(data){
       if (!data || data.status !== 'ok' || data.action !== 'personnel_save') throw new Error((data && data.msg) || 'save_failed');
       var row = toMap(data);
-      setSave('完成：' + (row.mode || '') + '｜' + (row.id || id) + '｜' + (row.name || name), 'ok');
+      setMsg(saveMsg, '完成：' + (row.mode || '') + '｜' + (row.id || id) + '｜' + (row.name || name), 'ok');
     }).catch(function(err){
-      setSave('失敗：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
+      setMsg(saveMsg, '失敗：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
     }).finally(function(){ saveBtn.disabled = false; });
   });
 
+  deleteForm.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var id = normalizeId(deleteId.value);
+    if (!validId(id)) { setMsg(deleteMsg, '工號格式錯誤：需 5 碼英數。', 'bad'); return; }
+    if (!confirm('確定停用帳號 ' + id + '？')) return;
+    deleteBtn.disabled = true;
+    setMsg(deleteMsg, '送出中...', 'warn');
+    postAction('personnel_delete', {
+      admin_id: loginDraft.id,
+      admin_pass: loginDraft.pass,
+      target_id: id
+    }).then(function(data){
+      if (!data || data.status !== 'ok' || data.action !== 'personnel_delete') throw new Error((data && data.msg) || 'delete_failed');
+      var row = toMap(data);
+      setMsg(deleteMsg, '已停用：' + (row.id || id), 'ok');
+    }).catch(function(err){
+      setMsg(deleteMsg, '失敗：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
+    }).finally(function(){ deleteBtn.disabled = false; });
+  });
+
   ping();
-  if (checkDraft()) authAdmin();
+  startGate();
 })();
 </script>
 </body>
