@@ -1,11 +1,12 @@
 /**
  * 巡檢人員點檢確認表{記錄} - 人員驗證 GAS
- * Version: v0.2.5
+ * Version: v0.2.7
  * 規則：doGet 保留伺服器存活驗證；doPost 依單一 action 跳子函式。
  * 前端使用 application/x-www-form-urlencoded / URLSearchParams。
+ * 人員主檔欄位：A id、B pass、C name、D shift、E active、F admin。
  */
 
-const GAS_VERSION = 'v0.2.5';
+const GAS_VERSION = 'v0.2.7';
 const SPREADSHEET_ID = '1TCEeGdAQvRTuxdknDeGKRXAbYS8iTYdda2XybPqDzNY';
 const USER_SHEET_NAME = 'id';
 
@@ -33,6 +34,10 @@ function doPost(e) {
 
     if (action === 'personnel_save') {
       return routePersonnelSave_(p);
+    }
+
+    if (action === 'personnel_delete') {
+      return routePersonnelDelete_(p);
     }
 
     if (action === 'form_write') {
@@ -64,6 +69,7 @@ function routeAuth_(p) {
   const user = findUserById_(id);
   if (!user) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
   if (String(user.pass || '') !== pass) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
+  if (user.active !== true) return json_({ status: 'error', action: 'auth', msg: 'account_disabled' });
 
   return json_({
     status: 'ok',
@@ -84,6 +90,7 @@ function routePersonnelSave_(p) {
   const admin = findUserById_(adminId);
   if (!admin) return json_({ status: 'error', action: 'personnel_save', msg: 'admin_auth_failed' });
   if (String(admin.pass || '') !== adminPass) return json_({ status: 'error', action: 'personnel_save', msg: 'admin_auth_failed' });
+  if (admin.active !== true) return json_({ status: 'error', action: 'personnel_save', msg: 'admin_auth_failed' });
   if (admin.admin !== true) return json_({ status: 'error', action: 'personnel_save', msg: 'no_admin_permission' });
 
   if (!isValidId_(id)) return json_({ status: 'error', action: 'personnel_save', msg: 'invalid_id' });
@@ -110,12 +117,12 @@ function routePersonnelSave_(p) {
 
     let mode = '';
     if (foundRow > 0) {
-      // 只覆寫 B:D；E 欄 admin 不透過 GAS 寫入。
+      // 只覆寫 B:D；E 欄 active 與 F 欄 admin 不透過此 action 修改。
       sh.getRange(foundRow, 2, 1, 3).setValues([[pass, name, shift]]);
       mode = 'update';
     } else {
-      // 只新增 A:D；E 欄 admin 保持空白，由人工開表設定。
-      sh.appendRow([id, pass, name, shift]);
+      // 新增 A:E；E 欄 active 由 GAS 寫 TRUE，F 欄 admin 保持空白，由人工開表設定。
+      sh.appendRow([id, pass, name, shift, 'TRUE']);
       mode = 'insert';
     }
 
@@ -124,6 +131,40 @@ function routePersonnelSave_(p) {
       action: 'personnel_save',
       fields: ['mode', 'id', 'name', 'shift'],
       values: [mode, id, name, shift]
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function routePersonnelDelete_(p) {
+  const adminId = normalizeId_(p.admin_id);
+  const adminPass = String(p.admin_pass || '').trim();
+  const targetId = normalizeId_(p.target_id);
+
+  const admin = findUserById_(adminId);
+  if (!admin) return json_({ status: 'error', action: 'personnel_delete', msg: 'admin_auth_failed' });
+  if (String(admin.pass || '') !== adminPass) return json_({ status: 'error', action: 'personnel_delete', msg: 'admin_auth_failed' });
+  if (admin.active !== true) return json_({ status: 'error', action: 'personnel_delete', msg: 'admin_auth_failed' });
+  if (admin.admin !== true) return json_({ status: 'error', action: 'personnel_delete', msg: 'no_admin_permission' });
+
+  if (!isValidId_(targetId)) return json_({ status: 'error', action: 'personnel_delete', msg: 'invalid_target_id' });
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const target = findUserById_(targetId);
+    if (!target) return json_({ status: 'error', action: 'personnel_delete', msg: 'target_not_found' });
+    if (target.admin === true) return json_({ status: 'error', action: 'personnel_delete', msg: 'target_is_admin_forbidden' });
+
+    const sh = getUserSheet_();
+    sh.getRange(target.row, 5).setValue('FALSE');
+
+    return json_({
+      status: 'ok',
+      action: 'personnel_delete',
+      fields: ['id', 'active'],
+      values: [target.id, 'FALSE']
     });
   } finally {
     lock.releaseLock();
@@ -153,7 +194,7 @@ function findUserById_(id) {
   const lastRow = sh.getLastRow();
   if (lastRow < 2) return null;
 
-  const values = sh.getRange(2, 1, lastRow - 1, 5).getValues();
+  const values = sh.getRange(2, 1, lastRow - 1, 6).getValues();
   for (let i = 0; i < values.length; i++) {
     const rowId = normalizeId_(values[i][0]);
     if (rowId === id) {
@@ -163,7 +204,8 @@ function findUserById_(id) {
         pass: String(values[i][1] || ''),
         name: String(values[i][2] || ''),
         shift: String(values[i][3] || '').trim().toUpperCase(),
-        admin: parseBool_(values[i][4])
+        active: parseActive_(values[i][4]),
+        admin: parseBool_(values[i][5])
       };
     }
   }
@@ -185,7 +227,15 @@ function isValidPass_(v) {
 function parseBool_(v) {
   if (v === true) return true;
   const s = String(v || '').trim().toUpperCase();
-  return s === 'TRUE' || s === 'Y' || s === 'YES' || s === '1';
+  return s === 'TRUE' || s === 'Y' || s === 'YES' || s === '1' || s === '是';
+}
+
+function parseActive_(v) {
+  if (v === false) return false;
+  const s = String(v || '').trim().toUpperCase();
+  if (s === '' || s === 'TRUE' || s === 'Y' || s === 'YES' || s === '1' || s === '是') return true;
+  if (s === 'FALSE' || s === 'N' || s === 'NO' || s === '0' || s === '否') return false;
+  return true;
 }
 
 function json_(obj) {
