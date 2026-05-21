@@ -351,10 +351,24 @@
       gap: 6px;
     }
     .inline-options.axis-options .choice {
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
+      gap: 4px;
       border-radius: 12px;
-      padding: 8px 6px;
+      padding: 7px 4px;
       min-width: 0;
+      min-height: 54px;
+    }
+    .inline-options.axis-options .choice input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+    .inline-options.axis-options .choice span {
+      font-size: 12px;
+      line-height: 1;
+      text-align: center;
     }
     .choice {
       display: inline-flex;
@@ -483,7 +497,7 @@
     }
 
 
-    /* v0.1.3 compact header + row-based item layout */
+    /* v0.1.4 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -684,7 +698,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.3</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.4</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -707,7 +721,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.3';
+  const APP_VERSION = 'v0.1.4';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -733,7 +747,7 @@
     { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
     { no: 9, title: '作業高度', note: 'H', type: 'number', min: 0.1, max: 1.8, step: 0.01 },
     { no: 10, title: '作業深度', note: 'Z', type: 'number', min: 0.36, max: 0.52, step: 0.01 },
-    { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '', '', '', '', '#6'] },
+    { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
     { no: 12, title: '排版數', note: '排版數', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
     { no: 13, title: '軸補', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
     { no: 14, hotkey: 'F3', title: '檯面速度、行數', note: '', type: 'okng' },
