@@ -250,7 +250,7 @@
       padding: 12px;
       min-width: 0;
       display: grid;
-      grid-template-columns: 38px minmax(0, 1fr) minmax(230px, 380px);
+      grid-template-columns: 46px minmax(0, 1fr) minmax(230px, 380px);
       gap: 10px;
       align-items: center;
       transition: background .12s ease, opacity .12s ease, transform .12s ease, border-color .12s ease;
@@ -262,6 +262,14 @@
       border-color: #f2c94c;
     }
 
+    .item-index {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+    }
     .item-no {
       display: inline-flex;
       align-items: center;
@@ -273,6 +281,22 @@
       color: var(--brand2);
       font-weight: 950;
       font-size: 14px;
+    }
+    .hotkey-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 22px;
+      padding: 0 5px;
+      border-radius: 999px;
+      border: 1px solid #b7cae8;
+      background: #f6faff;
+      color: #174c99;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
     }
     .item-title {
       font-size: 15px;
@@ -311,6 +335,27 @@
       flex-wrap: wrap;
       justify-content: flex-start;
     }
+    .inline-options.yesno {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .inline-options.yesno .choice {
+      justify-content: center;
+      border-radius: 14px;
+      font-size: 18px;
+    }
+    .inline-options.axis-options {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .inline-options.axis-options .choice {
+      justify-content: center;
+      border-radius: 12px;
+      padding: 8px 6px;
+      min-width: 0;
+    }
     .choice {
       display: inline-flex;
       align-items: center;
@@ -325,6 +370,10 @@
       user-select: none;
     }
     .choice input { width: 18px; height: 18px; }
+    .choice span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
     .choice.long {
       width: 100%;
       border-radius: 14px;
@@ -419,12 +468,13 @@
       .time-value { font-size: 13px; }
       .lamp { width: 22px; height: 22px; }
       .item-card {
-        grid-template-columns: 32px minmax(0, 1fr);
+        grid-template-columns: 40px minmax(0, 1fr);
         align-items: start;
         gap: 8px;
         padding: 10px;
       }
       .item-no { width: 28px; height: 28px; font-size: 13px; }
+      .hotkey-badge { min-width: 30px; height: 20px; font-size: 10px; }
       .item-title { font-size: 14px; }
       .item-note { font-size: 11px; }
       .control { grid-column: 1 / -1; }
@@ -438,7 +488,7 @@
     <section class="hero">
       <div class="hero-top">
         <h1>巡檢人員點檢確認表</h1>
-        <div class="pill">v0.1.1</div>
+        <div class="pill">v0.1.2</div>
       </div>
 
       <div class="status-row">
@@ -491,7 +541,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.1</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.2</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -514,7 +564,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.1';
+  const APP_VERSION = 'v0.1.2';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -531,28 +581,29 @@
 
   const ITEMS = [
     { no: 1, title: '巡檢狀態', note: '架料(E)、待量測(D)、其他(L)、維修(G)、空機(C)', type: 'select', options: ['A', 'B', 'F', 'D', 'E', 'L'] },
-    { no: 2, title: '機台作業料號', note: '註明料號', type: 'text', allow: 'alphaNumDot', highlightIfEmpty: true },
+    { no: 2, title: '機台作業料號', note: '註明料號', type: 'text', allow: 'alphaNumDotParen', highlightIfEmpty: true },
     { no: 3, title: '臨條&ERP&內通&謀規', note: '作業資料表條件', type: 'okng' },
     { no: 4, title: '核對參數對照表', note: '作業資料表參數', type: 'okng' },
-    { no: 5, title: '轉速、下刀、壽命', note: 'S、F、N', type: 'okng' },
-    { no: 6, title: '索引表', note: '補償值', type: 'okng' },
+    { no: 5, hotkey: 'F6', title: '轉速、下刀、壽命', note: 'S、F、N', type: 'okng' },
+    { no: 6, hotkey: 'F8', title: '索引表', note: '補償值', type: 'okng' },
     { no: 7, title: '象限', note: 'FV', type: 'select', options: ['1', '3'] },
     { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
     { no: 9, title: '作業高度', note: 'H', type: 'number', min: 0.1, max: 1.8, step: 0.01 },
     { no: 10, title: '作業深度', note: 'Z', type: 'number', min: 0.36, max: 0.52, step: 0.01 },
-    { no: 11, title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', options: ['1', '2', '3', '4', '5', '6'] },
+    { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
     { no: 12, title: '排版數', note: '排版數', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
     { no: 13, title: '軸補', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
-    { no: 14, title: '檯面速度、行數', note: '', type: 'okng' },
-    { no: 15, title: '刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
+    { no: 14, hotkey: 'F3', title: '檯面速度、行數', note: '', type: 'okng' },
+    { no: 15, hotkey: 'F6', title: '刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
     { no: 16, title: '墊板數', note: '是否符合規範', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
     { no: 17, title: '物料合規', note: '無疏紙、蓋板、尿素板、FR4、底板', type: 'okng' },
     { no: 18, title: 'PIN有無漏咬', note: '1array最少3支pin', type: 'okng' },
-    { no: 19, title: '三天重PIN', note: '點重PIN日期及班別', type: 'okng' },
+    { no: 19, title: '三天重PIN', note: '點重PIN日期及班別', type: 'pinDate' },
     { no: 20, title: 'D軸A資料夾', note: '是否有非作業料號之程式', type: 'okng' },
     { no: 21, title: '機台日報表', note: '斷刀、抽數、料號、批號', type: 'okng' },
     { no: 22, title: '稼動紀錄表', note: '是否有清夾頭', type: 'okng' },
-    { no: 23, title: '壓力腳下降確認', note: '', type: 'singleLong', options: [
+    { no: 23, title: '電木板(有無兩人確認簽名)', note: '(螺絲上的綠線是否平行)', type: 'okng' },
+    { no: 24, title: '壓力腳下降確認', note: '', type: 'singleLong', options: [
       '正常:RT/RS　製程:0.5~1.5Kg/cm²',
       '加大:RS/RT/DRT　製程:1.8~2.8Kg/cm²',
       '正常:PP　製程:2.5~3.5Kg/cm²'
@@ -762,10 +813,13 @@
     el.itemsGrid.innerHTML = '';
     ITEMS.forEach(item => {
       const card = document.createElement('article');
-      card.className = 'item-card';
+      card.className = `item-card item-${item.no}`;
       card.dataset.no = String(item.no);
       card.innerHTML = `
-        <div class="item-no">${item.no}</div>
+        <div class="item-index">
+          <div class="item-no">${item.no}</div>
+          ${item.hotkey ? `<div class="hotkey-badge">${escapeHtml(item.hotkey)}</div>` : ''}
+        </div>
         <div class="item-main">
           <div class="item-title">${escapeHtml(item.title)}</div>
           <div class="item-note">${escapeHtml(item.note || '')}</div>
@@ -787,6 +841,12 @@
       refreshItem2Highlight();
     }
 
+    const item19 = getFirstInputByItemNo(19);
+    if (item19) {
+      item19.addEventListener('input', () => normalizePinDateRaw(item19));
+      item19.addEventListener('blur', () => normalizePinDateField(item19, true));
+    }
+
     document.querySelectorAll('[data-number-item]').forEach(input => {
       input.addEventListener('input', () => validateNumberInput(input));
       input.addEventListener('blur', () => validateNumberInput(input));
@@ -804,14 +864,18 @@
     if (item.type === 'text') {
       return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
     }
+    if (item.type === 'pinDate') {
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、0">`;
+    }
     if (item.type === 'number') {
       return `<input type="number" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" min="${item.min}" max="${item.max}" step="${item.step}" inputmode="decimal">`;
     }
     if (item.type === 'okng') {
-      return `<div class="inline-options">${choiceRadio(name, '√', item.no)}${choiceRadio(name, '×', item.no)}</div>`;
+      return `<div class="inline-options yesno">${choiceRadio(name, '√', item.no)}${choiceRadio(name, '×', item.no)}</div>`;
     }
     if (item.type === 'multi') {
-      return `<div class="inline-options">${item.options.map(v => choiceCheckbox(name, v, item.no)).join('')}</div>`;
+      const cls = item.compact ? 'inline-options axis-options' : 'inline-options';
+      return `<div class="${cls}">${item.options.map(v => choiceCheckbox(name, v, item.no)).join('')}</div>`;
     }
     if (item.type === 'singleLong') {
       return `<div class="inline-options">${item.options.map(v => choiceRadio(name, v, item.no, true)).join('')}</div>`;
@@ -948,15 +1012,15 @@
       card.classList.remove('hidden', 'locked');
       setItemDisabled(item.no, false);
 
-      if (item.no >= 3 && item.no <= 23 && hidden.has(item.no)) {
+      if (item.no >= 3 && item.no <= 24 && hidden.has(item.no)) {
         card.classList.add('hidden');
       }
-      if (item.no >= 3 && item.no <= 23 && disabled.has(item.no)) {
+      if (item.no >= 3 && item.no <= 24 && disabled.has(item.no)) {
         if (Object.prototype.hasOwnProperty.call(defaults, item.no)) setValueByItemNo(item.no, defaults[item.no]);
         setItemDisabled(item.no, true);
         card.classList.add('locked');
       }
-      if (item.no >= 3 && item.no <= 23 && !disabled.has(item.no) && Object.prototype.hasOwnProperty.call(defaults, item.no)) {
+      if (item.no >= 3 && item.no <= 24 && !disabled.has(item.no) && Object.prototype.hasOwnProperty.call(defaults, item.no)) {
         setValueByItemNo(item.no, defaults[item.no]);
       }
     });
@@ -964,7 +1028,7 @@
   }
 
   function normalizeItem2(input) {
-    input.value = input.value.toUpperCase().replace(/[^A-Z0-9.]/g, '');
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9.()]/g, '');
   }
 
   function refreshItem2Highlight() {
@@ -989,6 +1053,94 @@
     return valid;
   }
 
+  function normalizePinDateRaw(input) {
+    input.value = input.value.toUpperCase().replace(/[^0-9/\-ABC\s]/g, '');
+  }
+
+  function normalizePinDateBeforeSubmit() {
+    const input = getFirstInputByItemNo(19);
+    if (!input) return;
+    normalizePinDateField(input, false);
+  }
+
+  function normalizePinDateField(input, showWarning) {
+    normalizePinDateRaw(input);
+    const raw = input.value.trim().toUpperCase();
+    if (!raw) return true;
+
+    const normalized = parsePinDateValue(raw, getSelectedShift().date);
+    if (normalized) {
+      input.value = normalized;
+      return true;
+    }
+
+    input.value = '';
+    if (showWarning) showToast('項次19格式或日期範圍不符，已清空。', 'warn');
+    return false;
+  }
+
+  function parsePinDateValue(rawValue, baseDateText) {
+    const raw = String(rawValue || '').replace(/\s+/g, '').toUpperCase();
+    if (raw === '0') return 'N/A';
+
+    const baseDate = parseDateSlash(baseDateText);
+    if (!isValidDate(baseDate)) return '';
+
+    let y = baseDate.getFullYear();
+    let m = 0;
+    let d = 0;
+    let shift = '';
+
+    let match = raw.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})([ABC])$/);
+    if (match) {
+      y = Number(match[1]);
+      m = Number(match[2]);
+      d = Number(match[3]);
+      shift = match[4];
+    } else {
+      match = raw.match(/^(\d{1,2})[/-](\d{1,2})([ABC])$/);
+      if (match) {
+        m = Number(match[1]);
+        d = Number(match[2]);
+        shift = match[3];
+      } else {
+        match = raw.match(/^(\d{3,4})([ABC])$/);
+        if (!match) return '';
+        const md = match[1];
+        if (md.length === 3) {
+          m = Number(md.slice(0, 1));
+          d = Number(md.slice(1));
+        } else {
+          m = Number(md.slice(0, 2));
+          d = Number(md.slice(2));
+        }
+        shift = match[2];
+      }
+    }
+
+    const parsed = new Date(y, m - 1, d);
+    if (!isValidDate(parsed)) return '';
+    if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) return '';
+    if (!isPinDateWithinRange(parsed, baseDate)) return '';
+
+    return `${parsed.getFullYear()}/${pad2(parsed.getMonth() + 1)}/${pad2(parsed.getDate())} ${shift}`;
+  }
+
+  function isPinDateWithinRange(targetDate, baseDate) {
+    const base = startOfDay(baseDate).getTime();
+    const target = startOfDay(targetDate).getTime();
+    const max = startOfDay(addDays(baseDate, 4)).getTime();
+    return target >= base && target <= max;
+  }
+
+  function startOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  function isValidDate(date) {
+    return date instanceof Date && !Number.isNaN(date.getTime());
+  }
+
   async function submitForm(evt) {
     evt.preventDefault();
     refreshItem2Highlight();
@@ -1004,12 +1156,14 @@
       return;
     }
 
+    normalizePinDateBeforeSubmit();
+
     setSubmitting(true);
     try {
       const data = await postWithTimeout(buildSubmitParams(), POST_TIMEOUT_MS);
       if (data && data.status === 'ok') {
         clearAfterSuccess();
-        showToast('送出成功，已保留項次 2。', 'ok');
+        showToast('送出成功，已保留項次 2，並清除機台 ID。', 'ok');
       } else {
         const msg = data && data.msg ? data.msg : 'GAS 回應非 status:"ok"。';
         showToast(`送出失敗：${msg}`, 'bad');
@@ -1048,8 +1202,9 @@
 
   function clearAfterSuccess() {
     const clearNos = [1];
-    for (let i = 3; i <= 23; i++) clearNos.push(i);
+    for (let i = 3; i <= 24; i++) clearNos.push(i);
     clearNos.forEach(no => setValueByItemNo(no, ''));
+    setMachineId('');
     applyStatusRules();
     refreshItem2Highlight();
   }
@@ -1188,7 +1343,7 @@
   }
 
   function parseDateSlash(yyyyMmDd) {
-    const [y, m, d] = String(yyyyMmDd).split('/').map(Number);
+    const [y, m, d] = String(yyyyMmDd || '').split('/').map(Number);
     return new Date(y, m - 1, d);
   }
 
