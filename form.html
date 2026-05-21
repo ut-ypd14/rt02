@@ -497,7 +497,7 @@
     }
 
 
-    /* v0.1.4 compact header + row-based item layout */
+    /* v0.1.5 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -698,7 +698,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.4</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.5</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -721,7 +721,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.4';
+  const APP_VERSION = 'v0.1.5';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -1062,12 +1062,26 @@
       item19.addEventListener('blur', () => normalizePinDateField(item19, true));
     }
 
+    bindClearOnReEdit([9, 10, 19]);
+
     document.querySelectorAll('[data-number-item]').forEach(input => {
       input.addEventListener('input', () => validateNumberInput(input));
       input.addEventListener('blur', () => validateNumberInput(input));
     });
 
     applyStatusRules();
+  }
+
+  function bindClearOnReEdit(itemNos) {
+    itemNos.forEach(no => {
+      const input = getFirstInputByItemNo(no);
+      if (!input) return;
+      input.addEventListener('focus', () => {
+        if (!input.value) return;
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
   }
 
   function renderControl(item) {
