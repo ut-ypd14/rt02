@@ -481,33 +481,176 @@
       .choice { padding: 8px 9px; font-size: 13px; }
       .control select, .control input[type="text"], .control input[type="number"] { padding: 9px 8px; font-size: 14px; }
     }
+
+
+    /* v0.1.3 compact header + row-based item layout */
+    .hero {
+      background: rgba(255,255,255,.92);
+      color: var(--ink);
+      border: 1px solid rgba(217,226,239,.90);
+      backdrop-filter: blur(8px);
+    }
+    .top-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto 34px;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+    }
+    .top-line h1 {
+      color: var(--ink);
+      font-size: clamp(18px, 4.6vw, 30px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .time-inline {
+      font-size: 13px;
+      font-weight: 950;
+      color: #344054;
+      white-space: nowrap;
+      letter-spacing: .02em;
+    }
+    .gas-inline {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .info-row {
+      display: grid;
+      grid-template-columns: .82fr 1fr 1.1fr 58px;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .info-value {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: #f8fbff;
+      border-radius: 14px;
+      padding: 9px 8px;
+      font-size: 14px;
+      line-height: 1.15;
+      font-weight: 950;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hero select {
+      width: 58px;
+      min-width: 58px;
+      text-align: center;
+      text-align-last: center;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 9px 4px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.15;
+      font-weight: 950;
+      min-height: 38px;
+    }
+    .lamp {
+      width: 22px;
+      height: 22px;
+      box-shadow: 0 0 0 4px rgba(37,95,188,.08), 0 0 14px rgba(37,95,188,.16);
+    }
+    .item-card {
+      display: block;
+      grid-template-columns: none;
+      padding: 11px 12px;
+    }
+    .item-head {
+      display: grid;
+      grid-template-columns: 32px 42px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .hotkey-slot {
+      width: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hotkey-badge.hotkey-empty {
+      visibility: hidden;
+    }
+    .item-title {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .item-note {
+      margin: 7px 0 0 80px;
+      min-height: 14px;
+    }
+    .control {
+      margin: 9px 0 0 80px;
+    }
+    .item-card.item-24 .control {
+      margin-left: 0;
+    }
+    .item-card.item-24 .inline-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .top-line {
+        grid-template-columns: minmax(0, 1fr) auto 28px;
+        gap: 6px;
+      }
+      .top-line h1 { font-size: 18px; }
+      .time-inline { font-size: 12px; }
+      .info-row {
+        grid-template-columns: .82fr 1fr 1fr 54px;
+        gap: 6px;
+      }
+      .info-value { padding: 8px 5px; font-size: 13px; border-radius: 12px; }
+      .hero select { width: 54px; min-width: 54px; padding: 8px 2px; border-radius: 12px; }
+      .lamp { width: 20px; height: 20px; }
+      .item-card { padding: 10px; }
+      .item-head { grid-template-columns: 30px 40px minmax(0, 1fr); gap: 5px; }
+      .hotkey-slot { width: 40px; }
+      .item-no { width: 28px; height: 28px; font-size: 13px; }
+      .hotkey-badge { min-width: 34px; height: 20px; }
+      .item-note { margin-left: 75px; }
+      .control { margin-left: 75px; }
+      .item-card.item-24 .control { margin-left: 0; }
+    }
+
+    @media (max-width: 380px) {
+      .top-line h1 { font-size: 16px; }
+      .time-inline { font-size: 11px; }
+      .info-row { grid-template-columns: .8fr .95fr 1fr 50px; }
+      .hero select { width: 50px; min-width: 50px; }
+      .item-head { grid-template-columns: 28px 38px minmax(0, 1fr); }
+      .hotkey-slot { width: 38px; }
+      .item-note { margin-left: 70px; }
+      .control { margin-left: 70px; }
+    }
   </style>
 </head>
 <body>
   <main class="app" id="app" hidden>
     <section class="hero">
-      <div class="hero-top">
+      <div class="top-line">
         <h1>巡檢人員點檢確認表</h1>
-        <div class="pill">v0.1.2</div>
-      </div>
-
-      <div class="status-row">
-        <div class="mini-card">
-          <div class="mini-value time-value" id="localTime">----</div>
-        </div>
-        <div class="mini-card gas-card" id="gasStatusWrap" title="GAS 連線狀態" aria-label="GAS 連線狀態">
+        <div class="time-inline" id="localTime">-- --:--:--</div>
+        <div class="gas-inline" id="gasStatusWrap" title="GAS 連線狀態" aria-label="GAS 連線狀態">
           <span class="lamp checking" id="gasLamp"></span>
         </div>
       </div>
 
-      <div class="shift-row">
+      <div class="info-row">
+        <div class="info-value" id="userIdText">----</div>
+        <div class="info-value" id="userNameText">----</div>
+        <div class="info-value" id="machineIdText">未掃描</div>
         <select id="shiftSelect" aria-label="歸屬日期與班別"></select>
-      </div>
-
-      <div class="identity-row">
-        <div class="mini-card"><div class="mini-value" id="userIdText">----</div></div>
-        <div class="mini-card"><div class="mini-value" id="userNameText">----</div></div>
-        <div class="mini-card"><div class="mini-value" id="machineIdText">未掃描</div></div>
       </div>
     </section>
 
@@ -541,7 +684,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.2</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.3</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -564,7 +707,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.2';
+  const APP_VERSION = 'v0.1.3';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -756,26 +899,27 @@
   }
 
   function updateClock() {
-    el.localTime.textContent = formatLocalDateTime(new Date());
+    el.localTime.textContent = formatHeaderTime(new Date());
   }
 
   function buildShiftSelect() {
     const now = new Date();
-    const current = getCurrentShiftRef(now);
+    const userShift = normalizeShift(authState && authState.shift) || getNearestClockShift(now).shift;
+    const current = getNearestUserShiftRef(userShift, now);
     const options = [prevShift(current), current, nextShift(current)];
     const windowKey = `${current.date}|${current.shift}`;
     const saved = readJson(SHIFT_PICK_KEY);
 
     el.shiftSelect.innerHTML = '';
-    options.forEach((opt, index) => {
+    options.forEach(opt => {
       const o = document.createElement('option');
       o.value = `${opt.date}|${opt.shift}`;
-      o.textContent = `${index === 0 ? '上一班' : index === 1 ? '本班' : '下一班'}：${opt.date} ${opt.shift}`;
+      o.textContent = opt.shift;
+      o.title = `${opt.date} ${opt.shift}`;
       el.shiftSelect.appendChild(o);
     });
 
-    const defaultByUser = options.find(opt => opt.shift === String(authState.shift || '').toUpperCase());
-    const defaultValue = defaultByUser ? `${defaultByUser.date}|${defaultByUser.shift}` : `${current.date}|${current.shift}`;
+    const defaultValue = `${current.date}|${current.shift}`;
     const values = options.map(opt => `${opt.date}|${opt.shift}`);
 
     if (saved && saved.windowKey === windowKey && values.includes(saved.value)) {
@@ -790,11 +934,70 @@
     });
   }
 
-  function getCurrentShiftRef(now) {
-    const mins = now.getHours() * 60 + now.getMinutes();
-    if (mins < 510) return { date: formatDateSlash(addDays(now, -1)), shift: 'C' };
-    if (mins < 960) return { date: formatDateSlash(now), shift: 'A' };
-    return { date: formatDateSlash(now), shift: 'B' };
+  function normalizeShift(value) {
+    const v = String(value || '').trim().toUpperCase();
+    return /^[ABC]$/.test(v) ? v : '';
+  }
+
+  function getNearestUserShiftRef(userShift, now) {
+    const base = startOfDay(now);
+    const candidates = [];
+    for (let offset = -3; offset <= 3; offset++) {
+      const refDate = formatDateSlash(addDays(base, offset));
+      const span = getShiftSpan(refDate, userShift);
+      candidates.push({
+        date: refDate,
+        shift: userShift,
+        distance: distanceToSpan(now, span.start, span.end),
+        startMs: span.start.getTime()
+      });
+    }
+    candidates.sort((a, b) => a.distance - b.distance || a.startMs - b.startMs);
+    return { date: candidates[0].date, shift: candidates[0].shift };
+  }
+
+  function getNearestClockShift(now) {
+    const base = startOfDay(now);
+    const candidates = [];
+    ['A', 'B', 'C'].forEach(shift => {
+      for (let offset = -2; offset <= 2; offset++) {
+        const refDate = formatDateSlash(addDays(base, offset));
+        const span = getShiftSpan(refDate, shift);
+        candidates.push({
+          date: refDate,
+          shift,
+          distance: distanceToSpan(now, span.start, span.end),
+          startMs: span.start.getTime()
+        });
+      }
+    });
+    candidates.sort((a, b) => a.distance - b.distance || a.startMs - b.startMs);
+    return { date: candidates[0].date, shift: candidates[0].shift };
+  }
+
+  function getShiftSpan(refDateText, shift) {
+    const d = parseDateSlash(refDateText);
+    if (shift === 'A') {
+      return { start: setTime(d, 8, 0), end: setTime(d, 16, 30) };
+    }
+    if (shift === 'B') {
+      return { start: setTime(d, 16, 0), end: setTime(addDays(d, 1), 0, 30) };
+    }
+    return { start: setTime(addDays(d, 1), 0, 0), end: setTime(addDays(d, 1), 8, 30) };
+  }
+
+  function distanceToSpan(now, start, end) {
+    const t = now.getTime();
+    const s = start.getTime();
+    const e = end.getTime();
+    if (t >= s && t <= e) return 0;
+    return Math.min(Math.abs(t - s), Math.abs(t - e));
+  }
+
+  function setTime(date, hour, minute) {
+    const d = new Date(date);
+    d.setHours(hour, minute, 0, 0);
+    return d;
   }
 
   function prevShift(ref) {
@@ -816,14 +1019,12 @@
       card.className = `item-card item-${item.no}`;
       card.dataset.no = String(item.no);
       card.innerHTML = `
-        <div class="item-index">
+        <div class="item-head">
           <div class="item-no">${item.no}</div>
-          ${item.hotkey ? `<div class="hotkey-badge">${escapeHtml(item.hotkey)}</div>` : ''}
-        </div>
-        <div class="item-main">
+          <div class="hotkey-slot">${item.hotkey ? `<div class="hotkey-badge">${escapeHtml(item.hotkey)}</div>` : `<div class="hotkey-badge hotkey-empty" aria-hidden="true"></div>`}</div>
           <div class="item-title">${escapeHtml(item.title)}</div>
-          <div class="item-note">${escapeHtml(item.note || '')}</div>
         </div>
+        <div class="item-note">${escapeHtml(item.note || '')}</div>
         <div class="control">${renderControl(item)}</div>
       `;
       el.itemsGrid.appendChild(card);
@@ -1332,6 +1533,10 @@
 
   function writeJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function formatHeaderTime(date) {
+    return `${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
   }
 
   function formatLocalDateTime(date) {
