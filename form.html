@@ -426,8 +426,7 @@
     .toast.bad { background: #b42318; }
     .toast.warn { background: #8a5a00; }
 
-    .loading-mask,
-    .reload-mask {
+    .loading-mask {
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, .58);
@@ -437,12 +436,7 @@
       z-index: 70;
       backdrop-filter: blur(5px);
     }
-    .loading-mask.active,
-    .reload-mask.active { display: flex; }
-    .reload-mask {
-      z-index: 90;
-      background: rgba(15, 23, 42, .72);
-    }
+    .loading-mask.active { display: flex; }
     .loading-card {
       width: min(86vw, 360px);
       background: #fff;
@@ -463,19 +457,6 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-title { font-size: 19px; font-weight: 950; }
     .loading-sub { color: var(--muted); margin-top: 6px; font-size: 13px; }
-    .reload-icon {
-      width: 58px;
-      height: 58px;
-      border-radius: 18px;
-      display: grid;
-      place-items: center;
-      margin: 0 auto 15px;
-      background: #eef4ff;
-      color: var(--brand2);
-      font-size: 34px;
-      font-weight: 950;
-    }
-    .reload-btn { margin-top: 16px; width: 100%; }
 
     .footer-version {
       color: #7a8798;
@@ -520,7 +501,7 @@
     }
 
 
-    /* v0.1.7 compact header + row-based item layout */
+    /* v0.1.8 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -721,7 +702,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.7</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.8</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -739,21 +720,12 @@
     </div>
   </div>
 
-  <div class="reload-mask" id="reloadMask" aria-live="polite">
-    <div class="loading-card">
-      <div class="reload-icon">↻</div>
-      <div class="loading-title">請重新整理</div>
-      <div class="loading-sub">頁面曾進入背景，需重新整理以重新檢查登入時效。</div>
-      <button type="button" class="btn btn-primary reload-btn" id="reloadBtn">重新整理</button>
-    </div>
-  </div>
-
   <div class="toast" id="toast"></div>
 
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.7';
+  const APP_VERSION = 'v0.1.8';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -764,6 +736,8 @@
   const GAS_VERY_SLOW_MS = 6000;
   const POST_TIMEOUT_MS = 15000;
   const GAS_STATUS_INTERVAL_MS = 60000;
+  const FREEZE_HEARTBEAT_MS = 30 * 1000;
+  const FREEZE_RELOAD_MS = 10 * 60 * 1000;
 
   const GAS_ACTION_AUTH_CHECK = 'auth_check';
   const GAS_ACTION_FORM_WRITE = 'form_write';
@@ -834,8 +808,8 @@
   let scanLocked = false;
   let machineId = '';
   let gasTimer = null;
-  let pageWasBackgrounded = false;
-  let reloadMaskShown = false;
+  let freezeTimer = null;
+  let freezeLastAliveAt = Date.now();
 
   const el = {
     app: document.getElementById('app'),
@@ -859,8 +833,6 @@
     checkForm: document.getElementById('checkForm'),
     submitBtn: document.getElementById('submitBtn'),
     loadingMask: document.getElementById('loadingMask'),
-    reloadMask: document.getElementById('reloadMask'),
-    reloadBtn: document.getElementById('reloadBtn'),
     toast: document.getElementById('toast')
   };
 
@@ -885,7 +857,7 @@
     buildShiftSelect();
     renderItems();
     bindEvents();
-    bindActivationReloadGuard();
+    startFreezeHeartbeat();
     await updateGasStatus();
     gasTimer = setInterval(updateGasStatus, GAS_STATUS_INTERVAL_MS);
   }
@@ -1189,40 +1161,32 @@
       setMachineId(parsed);
       showToast(`已取得機台 ID：${parsed}`, 'ok');
     });
-    el.reloadBtn.addEventListener('click', () => location.reload());
     el.checkForm.addEventListener('submit', submitForm);
   }
 
-  function bindActivationReloadGuard() {
+  function startFreezeHeartbeat() {
+    freezeLastAliveAt = Date.now();
+
+    if (freezeTimer) clearInterval(freezeTimer);
+    freezeTimer = setInterval(checkFreezeHeartbeat, FREEZE_HEARTBEAT_MS);
+
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        pageWasBackgrounded = true;
-        return;
-      }
-      if (document.visibilityState === 'visible' && pageWasBackgrounded) {
-        showReloadMask();
-      }
+      if (document.visibilityState === 'visible') checkFreezeHeartbeat();
     });
 
-    window.addEventListener('blur', () => {
-      pageWasBackgrounded = true;
-    });
-
-    window.addEventListener('focus', () => {
-      if (pageWasBackgrounded) showReloadMask();
-    });
+    window.addEventListener('focus', checkFreezeHeartbeat);
   }
 
-  function showReloadMask() {
-    if (reloadMaskShown) return;
-    reloadMaskShown = true;
-    el.reloadMask.classList.add('active');
-    Array.from(el.checkForm.elements).forEach(node => {
-      node.disabled = true;
-    });
-    el.openQrBtn.disabled = true;
-    el.clearMachineBtn.disabled = true;
-    el.parseManualBtn.disabled = true;
+  function checkFreezeHeartbeat() {
+    const now = Date.now();
+    const gap = now - freezeLastAliveAt;
+
+    if (gap > FREEZE_RELOAD_MS) {
+      location.reload();
+      return;
+    }
+
+    freezeLastAliveAt = now;
   }
 
   async function toggleQr() {
