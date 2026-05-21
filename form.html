@@ -545,7 +545,7 @@
     }
 
 
-    /* v0.2.5 compact header + row-based item layout */
+    /* v0.2.6 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -751,7 +751,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.2.5</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.2.6</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -774,7 +774,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.2.5';
+  const APP_VERSION = 'v0.2.6';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -801,8 +801,8 @@
     { no: 6, hotkey: 'F8', title: '索引表', note: '補償值', type: 'okng' },
     { no: 7, title: '象限', note: 'FV', type: 'select', options: ['1', '3'] },
     { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
-    { no: 9, title: '作業高度', note: 'H', type: 'number', min: 0.1, max: 1.8, step: 0.01 },
-    { no: 10, title: '作業深度', note: 'Z', type: 'number', min: 0.36, max: 0.52, step: 0.001, decimals: 3, autoZero: true },
+    { no: 9, title: '作業高度', note: 'H', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
+    { no: 10, title: '作業深度', note: 'Z', type: 'number', min: 0.355, max: 0.550, step: 0.001, decimals: 3, autoZero: true, clearInvalidOnBlur: true },
     { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
     { no: 12, title: '排版數', note: '排版數', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
     { no: 13, title: '軸補', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
@@ -1220,7 +1220,7 @@
       });
       input.addEventListener('blur', () => {
         normalizeNumberOnBlur(input);
-        validateNumberInput(input);
+        clearInvalidNumberOnBlur(input);
       });
     });
 
@@ -1254,7 +1254,8 @@
     if (item.type === 'number') {
       const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
       const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
-      return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero} inputmode="decimal" autocomplete="off">`;
+      const clearInvalid = item.clearInvalidOnBlur ? ' data-clear-invalid-on-blur="true"' : '';
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} inputmode="decimal" autocomplete="off">`;
     }
     if (item.type === 'okng') {
       return `<div class="inline-options yesno">${choiceRadio(name, '√', item.no)}${choiceRadio(name, '×', item.no)}</div>`;
@@ -1504,7 +1505,6 @@
 
     if (input.dataset.autoZero === 'true') {
       if (input.value.startsWith('.')) input.value = `0${input.value}`;
-      if (input.value.endsWith('.')) input.value = input.value.slice(0, -1);
     }
 
     const decimalsText = input.dataset.decimals;
@@ -1516,6 +1516,13 @@
       const intPart = parts[0] || '0';
       const decPart = String(parts[1] || '').padEnd(decimals, '0').slice(0, decimals);
       input.value = decimals > 0 ? `${intPart}.${decPart}` : intPart;
+    }
+  }
+
+  function clearInvalidNumberOnBlur(input) {
+    if (!validateNumberInput(input) && input.dataset.clearInvalidOnBlur === 'true') {
+      input.value = '';
+      validateNumberInput(input);
     }
   }
 
