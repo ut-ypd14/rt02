@@ -162,8 +162,30 @@
       font-size: 18px;
       margin: 0;
     }
-    .selected-shift-badge {
+    .routine-check-wrap {
       margin-left: auto;
+      margin-right: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 32px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .routine-check-wrap input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--brand2);
+    }
+    .selected-shift-badge {
       min-width: 86px;
       text-align: right;
       font-size: 15px;
@@ -523,7 +545,7 @@
     }
 
 
-    /* v0.2.4 compact header + row-based item layout */
+    /* v0.2.5 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -717,6 +739,10 @@
     <section class="panel">
       <div class="panel-title">
         <h2>點檢項目</h2>
+        <label class="routine-check-wrap" for="routineCheck">
+          <input type="checkbox" id="routineCheck">
+          <span>例行</span>
+        </label>
         <div class="selected-shift-badge" id="selectedShiftText">-- --</div>
       </div>
       <form id="checkForm" autocomplete="off">
@@ -725,7 +751,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.2.4</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.2.5</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -748,7 +774,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.2.4';
+  const APP_VERSION = 'v0.2.5';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -844,6 +870,7 @@
     gasStatusWrap: document.getElementById('gasStatusWrap'),
     shiftSelect: document.getElementById('shiftSelect'),
     selectedShiftText: document.getElementById('selectedShiftText'),
+    routineCheck: document.getElementById('routineCheck'),
     userIdText: document.getElementById('userIdText'),
     userNameText: document.getElementById('userNameText'),
     machineIdText: document.getElementById('machineIdText'),
@@ -1460,7 +1487,10 @@
       value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
     }
 
-    const decimals = Number(input.dataset.decimals || '');
+    const decimalsText = input.dataset.decimals;
+    const hasDecimalLimit = decimalsText !== undefined && decimalsText !== '';
+    const decimals = hasDecimalLimit ? Number(decimalsText) : NaN;
+
     if (Number.isFinite(decimals) && decimals >= 0 && value.includes('.')) {
       const parts = value.split('.');
       value = `${parts[0]}.${String(parts[1] || '').slice(0, decimals)}`;
@@ -1475,6 +1505,17 @@
     if (input.dataset.autoZero === 'true') {
       if (input.value.startsWith('.')) input.value = `0${input.value}`;
       if (input.value.endsWith('.')) input.value = input.value.slice(0, -1);
+    }
+
+    const decimalsText = input.dataset.decimals;
+    const decimals = decimalsText !== undefined && decimalsText !== '' ? Number(decimalsText) : NaN;
+    const value = String(input.value || '').trim();
+
+    if (Number.isFinite(decimals) && decimals >= 0 && value !== '' && /^\d+(?:\.\d*)?$/.test(value)) {
+      const parts = value.split('.');
+      const intPart = parts[0] || '0';
+      const decPart = String(parts[1] || '').padEnd(decimals, '0').slice(0, decimals);
+      input.value = decimals > 0 ? `${intPart}.${decPart}` : intPart;
     }
   }
 
@@ -1663,6 +1704,7 @@
     params.set('date', dateTextToSerial(selected.date));
     params.set('shift', selected.shift);
     params.set('machine_id', machineId);
+    params.set('routine_check', el.routineCheck.checked ? 'TRUE' : '');
 
     ITEMS.forEach(item => {
       params.set(itemName(item.no), getValueByItemNo(item.no));
