@@ -162,6 +162,19 @@
       font-size: 18px;
       margin: 0;
     }
+    .selected-shift-badge {
+      margin-left: auto;
+      min-width: 86px;
+      text-align: right;
+      font-size: 15px;
+      font-weight: 950;
+      color: var(--brand2);
+      background: #eef4ff;
+      border: 1px solid #c8d8f2;
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
 
     .qr-actions {
       display: flex;
@@ -501,7 +514,7 @@
     }
 
 
-    /* v0.1.8 compact header + row-based item layout */
+    /* v0.1.9 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -695,6 +708,7 @@
     <section class="panel">
       <div class="panel-title">
         <h2>點檢項目</h2>
+        <div class="selected-shift-badge" id="selectedShiftText">-- --</div>
       </div>
       <form id="checkForm" autocomplete="off">
         <div class="items-list" id="itemsGrid"></div>
@@ -702,7 +716,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.8</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.9</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -725,7 +739,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.8';
+  const APP_VERSION = 'v0.1.9';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -819,6 +833,7 @@
     gasLamp: document.getElementById('gasLamp'),
     gasStatusWrap: document.getElementById('gasStatusWrap'),
     shiftSelect: document.getElementById('shiftSelect'),
+    selectedShiftText: document.getElementById('selectedShiftText'),
     userIdText: document.getElementById('userIdText'),
     userNameText: document.getElementById('userNameText'),
     machineIdText: document.getElementById('machineIdText'),
@@ -972,9 +987,27 @@
       writeJson(SHIFT_PICK_KEY, { windowKey, value: defaultValue, saved_at: Date.now() });
     }
 
+    updateSelectedShiftText();
+
     el.shiftSelect.addEventListener('change', () => {
       writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: Date.now() });
+      updateSelectedShiftText();
     });
+  }
+
+  function updateSelectedShiftText() {
+    const selected = getSelectedShift();
+    if (!selected.date || !selected.shift) {
+      el.selectedShiftText.textContent = '-- --';
+      return;
+    }
+    el.selectedShiftText.textContent = `${formatDateMonthDay(selected.date)} ${selected.shift}`;
+  }
+
+  function formatDateMonthDay(dateText) {
+    const m = String(dateText || '').match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (!m) return '--';
+    return `${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
   }
 
   function normalizeShift(value) {
