@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
   <title>人員登入</title>
+  <script src="./config.js"></script>
   <style>
     :root{--bg:#f6f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d8dee9;--ok:#087443;--bad:#b42318;--warn:#a15c07;--main:#1f5eff;}
     *{box-sizing:border-box}
@@ -40,12 +40,12 @@
       </form>
       <div id="msg" class="msg"></div>
     </section>
-    <div class="ver">login.html v0.1.7</div>
+    <div class="ver">login.html v0.1.8</div>
   </main>
 <script>
 (function(){
   'use strict';
-  var VERSION = 'login.html v0.1.7';
+  var VERSION = 'login.html v0.1.8';
   var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
   var SHORT_KEY = 'PI_SHORT_AUTH_V001';
   var SHORT_AUTH_MS = 13 * 60 * 60 * 1000;
@@ -122,11 +122,27 @@
     }));
   }
 
+  function safeLocalTarget(raw){
+    var v = String(raw || '').trim();
+    if (!v) return '';
+    if (/^(javascript:|data:|blob:)/i.test(v)) return '';
+    try {
+      var u = new URL(v, location.href);
+      if (u.origin !== location.origin) return '';
+      if (/\/login\.html$/i.test(u.pathname)) return '';
+      return u.pathname + u.search + u.hash;
+    } catch (err) {
+      return '';
+    }
+  }
+
   function returnTarget(){
     var sp = new URLSearchParams(location.search);
-    var from = sp.get('from') || sessionStorage.getItem('PI_RETURN_TO') || 'admin.html';
+    var target = safeLocalTarget(sp.get('from'));
+    if (!target) target = safeLocalTarget(sessionStorage.getItem('PI_RETURN_TO'));
     sessionStorage.removeItem('PI_RETURN_TO');
-    return from;
+    if (!target) target = safeLocalTarget(document.referrer);
+    return target;
   }
 
   function addCacheBust(url){
@@ -168,8 +184,13 @@
         if (!data || data.status !== 'ok' || data.action !== 'auth') throw new Error((data && data.msg) || 'auth_failed');
         var user = toMap(data);
         saveDrafts(id, pass, user);
-        setMsg('驗證成功，3 秒後返回上一頁。', 'ok');
-        setTimeout(function(){ location.replace(addCacheBust(returnTarget())); }, 3000);
+        var target = returnTarget();
+        if (target) {
+          setMsg('驗證成功，3 秒後返回原頁。', 'ok');
+          setTimeout(function(){ location.replace(addCacheBust(target)); }, 3000);
+        } else {
+          setMsg('驗證成功，已建立通行草稿；未取得來源頁，不自動跳轉。', 'ok');
+        }
       })
       .catch(function(err){
         setMsg('驗證失敗：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
