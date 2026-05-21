@@ -257,6 +257,10 @@
     }
     .item-card.hidden { display: none; }
     .item-card.locked { opacity: .72; background: #f5f7fb; }
+    .item-card.focus-required {
+      border-color: var(--bad);
+      box-shadow: 0 0 0 4px rgba(229, 72, 77, .16), var(--shadow);
+    }
     .item-card.warn-empty {
       background: var(--focus);
       border-color: #f2c94c;
@@ -422,7 +426,8 @@
     .toast.bad { background: #b42318; }
     .toast.warn { background: #8a5a00; }
 
-    .loading-mask {
+    .loading-mask,
+    .reload-mask {
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, .58);
@@ -432,7 +437,12 @@
       z-index: 70;
       backdrop-filter: blur(5px);
     }
-    .loading-mask.active { display: flex; }
+    .loading-mask.active,
+    .reload-mask.active { display: flex; }
+    .reload-mask {
+      z-index: 90;
+      background: rgba(15, 23, 42, .72);
+    }
     .loading-card {
       width: min(86vw, 360px);
       background: #fff;
@@ -453,6 +463,19 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-title { font-size: 19px; font-weight: 950; }
     .loading-sub { color: var(--muted); margin-top: 6px; font-size: 13px; }
+    .reload-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 15px;
+      background: #eef4ff;
+      color: var(--brand2);
+      font-size: 34px;
+      font-weight: 950;
+    }
+    .reload-btn { margin-top: 16px; width: 100%; }
 
     .footer-version {
       color: #7a8798;
@@ -497,7 +520,7 @@
     }
 
 
-    /* v0.1.6 compact header + row-based item layout */
+    /* v0.1.7 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -698,7 +721,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.6</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.7</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -716,17 +739,26 @@
     </div>
   </div>
 
+  <div class="reload-mask" id="reloadMask" aria-live="polite">
+    <div class="loading-card">
+      <div class="reload-icon">↻</div>
+      <div class="loading-title">請重新整理</div>
+      <div class="loading-sub">頁面曾進入背景，需重新整理以重新檢查登入時效。</div>
+      <button type="button" class="btn btn-primary reload-btn" id="reloadBtn">重新整理</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.6';
+  const APP_VERSION = 'v0.1.7';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
 
-  const AUTH_EXPIRE_MS = 13 * 60 * 60 * 1000;
+  const AUTH_EXPIRE_MS = 2 * 60 * 60 * 1000;
   const GAS_OK_MS = 800;
   const GAS_SLOW_MS = 2500;
   const GAS_VERY_SLOW_MS = 6000;
@@ -780,9 +812,20 @@
     F: {},
     D: {},
     E: {},
-    L: {
-  19: { mode: 'hideLock', value: 'N/A' }
-},
+    L: {}
+  };
+
+  const ITEM1_REQUIRED_RULES = {
+    // 預設：項次3~24不強制必填。
+    // 只在需要必填時填入項次號，例如：
+    // A: [3, 4, 5]
+    // 送出時只檢查最終值是否非空；不做格式、範圍或文字提示。
+    A: [],
+    B: [],
+    F: [],
+    D: [],
+    E: [],
+    L: []
   };
 
   let authState = null;
@@ -791,6 +834,8 @@
   let scanLocked = false;
   let machineId = '';
   let gasTimer = null;
+  let pageWasBackgrounded = false;
+  let reloadMaskShown = false;
 
   const el = {
     app: document.getElementById('app'),
@@ -814,6 +859,8 @@
     checkForm: document.getElementById('checkForm'),
     submitBtn: document.getElementById('submitBtn'),
     loadingMask: document.getElementById('loadingMask'),
+    reloadMask: document.getElementById('reloadMask'),
+    reloadBtn: document.getElementById('reloadBtn'),
     toast: document.getElementById('toast')
   };
 
@@ -838,6 +885,7 @@
     buildShiftSelect();
     renderItems();
     bindEvents();
+    bindActivationReloadGuard();
     await updateGasStatus();
     gasTimer = setInterval(updateGasStatus, GAS_STATUS_INTERVAL_MS);
   }
@@ -1141,7 +1189,40 @@
       setMachineId(parsed);
       showToast(`已取得機台 ID：${parsed}`, 'ok');
     });
+    el.reloadBtn.addEventListener('click', () => location.reload());
     el.checkForm.addEventListener('submit', submitForm);
+  }
+
+  function bindActivationReloadGuard() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        pageWasBackgrounded = true;
+        return;
+      }
+      if (document.visibilityState === 'visible' && pageWasBackgrounded) {
+        showReloadMask();
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      pageWasBackgrounded = true;
+    });
+
+    window.addEventListener('focus', () => {
+      if (pageWasBackgrounded) showReloadMask();
+    });
+  }
+
+  function showReloadMask() {
+    if (reloadMaskShown) return;
+    reloadMaskShown = true;
+    el.reloadMask.classList.add('active');
+    Array.from(el.checkForm.elements).forEach(node => {
+      node.disabled = true;
+    });
+    el.openQrBtn.disabled = true;
+    el.clearMachineBtn.disabled = true;
+    el.parseManualBtn.disabled = true;
   }
 
   async function toggleQr() {
@@ -1404,6 +1485,44 @@
     return date instanceof Date && !Number.isNaN(date.getTime());
   }
 
+  function validateRequiredBeforeSubmit() {
+    if (!hasItemValue(1)) {
+      focusItemNo(1);
+      return false;
+    }
+
+    const status = getValueByItemNo(1);
+    const requiredNos = ITEM1_REQUIRED_RULES[status] || ITEM1_REQUIRED_RULES[String(status)] || [];
+
+    for (const no of requiredNos) {
+      if (!hasItemValue(no)) {
+        focusItemNo(no);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function hasItemValue(no) {
+    return String(getValueByItemNo(no) || '').trim() !== '';
+  }
+
+  function focusItemNo(no) {
+    const card = getCardByItemNo(no);
+    const input = getFirstInputByItemNo(no);
+
+    if (card) {
+      card.classList.add('focus-required');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => card.classList.remove('focus-required'), 1200);
+    }
+
+    if (input && !input.disabled && typeof input.focus === 'function') {
+      setTimeout(() => input.focus({ preventScroll: true }), 180);
+    }
+  }
+
   async function submitForm(evt) {
     evt.preventDefault();
     refreshItem2Highlight();
@@ -1413,13 +1532,9 @@
       return;
     }
 
-    const invalidNumber = Array.from(document.querySelectorAll('[data-number-item]')).some(input => !validateNumberInput(input));
-    if (invalidNumber) {
-      showToast('數字欄位超出限制範圍，請確認後再送出。', 'bad');
+    if (!validateRequiredBeforeSubmit()) {
       return;
     }
-
-    normalizePinDateBeforeSubmit();
 
     setSubmitting(true);
     try {
