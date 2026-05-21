@@ -231,17 +231,17 @@
     .qr-box.active { display: block; }
     .qr-stage {
       position: relative;
-      min-height: 240px;
+      height: clamp(260px, 72vw, 360px);
       border-radius: 14px;
       overflow: hidden;
       background: #0f172a;
-      display: grid;
-      place-items: center;
+      display: block;
     }
     #qrVideo {
       width: 100%;
-      max-height: 360px;
+      height: 100%;
       object-fit: cover;
+      display: block;
       background: #0f172a;
     }
 
@@ -523,7 +523,7 @@
     }
 
 
-    /* v0.2.1 compact header + row-based item layout */
+    /* v0.2.3 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -725,7 +725,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.2.1</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.2.3</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -748,7 +748,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.2.1';
+  const APP_VERSION = 'v0.2.3';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -761,6 +761,7 @@
   const GAS_STATUS_INTERVAL_MS = 60000;
   const FREEZE_HEARTBEAT_MS = 30 * 1000;
   const FREEZE_RELOAD_MS = 10 * 60 * 1000;
+  const SHIFT_SELECT_GRACE_MIN = 40;
 
   const GAS_ACTION_AUTH_CHECK = 'auth_check';
   const GAS_ACTION_FORM_WRITE = 'form_write';
@@ -973,28 +974,29 @@
     const now = new Date();
     const userShift = normalizeShift(authState && authState.shift) || getNearestClockShift(now).shift;
     const current = getNearestUserShiftRef(userShift, now);
-    const options = [prevShift(current), current, nextShift(current)];
+    const options = [prevShift(current), current, nextShift(current)].map((opt, index) => ({
+      ...opt,
+      order: index + 1,
+      value: `${opt.date}|${opt.shift}`,
+      selectable: isShiftOptionSelectable(opt, now)
+    }));
     const windowKey = `${current.date}|${current.shift}`;
     const saved = readJson(SHIFT_PICK_KEY);
 
     el.shiftSelect.innerHTML = '';
     options.forEach(opt => {
       const o = document.createElement('option');
-      o.value = `${opt.date}|${opt.shift}`;
+      o.value = opt.value;
       o.textContent = opt.shift;
-      o.title = `${opt.date} ${opt.shift}`;
+      o.title = `${opt.date} ${opt.shift}${opt.selectable ? '' : '（目前不可選）'}`;
+      o.disabled = !opt.selectable;
       el.shiftSelect.appendChild(o);
     });
 
     const defaultValue = `${current.date}|${current.shift}`;
-    const values = options.map(opt => `${opt.date}|${opt.shift}`);
-
-    if (saved && saved.windowKey === windowKey && values.includes(saved.value)) {
-      el.shiftSelect.value = saved.value;
-    } else {
-      el.shiftSelect.value = defaultValue;
-      writeJson(SHIFT_PICK_KEY, { windowKey, value: defaultValue, saved_at: Date.now() });
-    }
+    const selectedValue = resolveShiftSelectValue(options, saved, windowKey, defaultValue);
+    el.shiftSelect.value = selectedValue;
+    writeJson(SHIFT_PICK_KEY, { windowKey, value: selectedValue, saved_at: Date.now() });
 
     updateSelectedShiftText();
 
@@ -1002,6 +1004,55 @@
       writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: Date.now() });
       updateSelectedShiftText();
     });
+  }
+
+  function resolveShiftSelectValue(options, saved, windowKey, defaultValue) {
+    const savedOption = saved && saved.windowKey === windowKey
+      ? options.find(opt => opt.value === saved.value)
+      : null;
+
+    if (savedOption && savedOption.selectable) {
+      return savedOption.value;
+    }
+
+    const defaultOption = options.find(opt => opt.value === defaultValue);
+    if (!savedOption && defaultOption && defaultOption.selectable) {
+      return defaultOption.value;
+    }
+
+    const fallbackOrder = [2, 3, 1];
+    for (const order of fallbackOrder) {
+      const opt = options.find(item => item.order === order && item.selectable);
+      if (opt) return opt.value;
+    }
+
+    return defaultValue;
+  }
+
+  function isShiftOptionSelectable(opt, now) {
+    const span = getShiftSelectableSpan(opt.date, opt.shift);
+    const t = now.getTime();
+    return t >= span.start.getTime() && t <= span.end.getTime();
+  }
+
+  function getShiftSelectableSpan(refDateText, shift) {
+    const d = parseDateSlash(refDateText);
+    if (shift === 'A') {
+      return {
+        start: setTime(d, 8, 0),
+        end: setTime(d, 16, SHIFT_SELECT_GRACE_MIN)
+      };
+    }
+    if (shift === 'B') {
+      return {
+        start: setTime(d, 16, 0),
+        end: setTime(addDays(d, 1), 0, SHIFT_SELECT_GRACE_MIN)
+      };
+    }
+    return {
+      start: setTime(addDays(d, 1), 0, 0),
+      end: setTime(addDays(d, 1), 8, SHIFT_SELECT_GRACE_MIN)
+    };
   }
 
   function updateSelectedShiftText() {
@@ -1242,10 +1293,15 @@
   async function toggleQr() {
     el.qrBox.classList.toggle('active');
     if (el.qrBox.classList.contains('active')) {
+      await nextAnimationFrame();
       await startQrScanner();
     } else {
       await stopQrScanner();
     }
+  }
+
+  function nextAnimationFrame() {
+    return new Promise(resolve => requestAnimationFrame(resolve));
   }
 
   async function startQrScanner() {
