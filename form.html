@@ -523,7 +523,7 @@
     }
 
 
-    /* v0.2.3 compact header + row-based item layout */
+    /* v0.2.4 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -725,7 +725,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.2.3</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.2.4</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -748,7 +748,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.2.3';
+  const APP_VERSION = 'v0.2.4';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -1660,7 +1660,7 @@
     params.set('id', authState.id || '');
     params.set('pass', loginDraft && loginDraft.pass ? loginDraft.pass : '');
     params.set('name', authState.name || '');
-    params.set('date', selected.date);
+    params.set('date', dateTextToSerial(selected.date));
     params.set('shift', selected.shift);
     params.set('machine_id', machineId);
 
@@ -1670,6 +1670,17 @@
     params.set('client_time', formatLocalDateTime(new Date()));
     params.set('client_version', APP_VERSION);
     return params;
+  }
+
+  function dateTextToSerial(dateText) {
+    const m = String(dateText || '').match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (!m) return '';
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    const utcMs = Date.UTC(y, mo - 1, d);
+    if (!Number.isFinite(utcMs)) return '';
+    return String(Math.floor(utcMs / 86400000) + 25569);
   }
 
   function getSelectedShift() {
