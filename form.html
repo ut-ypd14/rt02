@@ -497,7 +497,7 @@
     }
 
 
-    /* v0.1.5 compact header + row-based item layout */
+    /* v0.1.6 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -698,7 +698,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.1.5</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.1.6</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -721,7 +721,7 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
 
-  const APP_VERSION = 'v0.1.5';
+  const APP_VERSION = 'v0.1.6';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -767,7 +767,14 @@
     ]}
   ];
 
-  const STATUS_RULES = {
+  const ITEM1_RULES = {
+    // 預設：項次3~24全部 open。
+    // 只在需要限制時填入例外項次。
+    // 可用模式：
+    // { mode: 'open' }
+    // { mode: 'hide' }
+    // { mode: 'lock', value: '√' }
+    // { mode: 'hideLock', value: 'N/A' }
     A: {},
     B: {},
     F: {},
@@ -1230,30 +1237,55 @@
 
   function applyStatusRules() {
     const status = getValueByItemNo(1);
-    const rule = STATUS_RULES[status] || {};
-    const hidden = new Set(rule.hidden || []);
-    const disabled = new Set(rule.disabled || []);
-    const defaults = rule.defaultValues || {};
+    const rules = ITEM1_RULES[status] || {};
 
     ITEMS.forEach(item => {
       const card = getCardByItemNo(item.no);
       if (!card) return;
+
       card.classList.remove('hidden', 'locked');
       setItemDisabled(item.no, false);
 
-      if (item.no >= 3 && item.no <= 24 && hidden.has(item.no)) {
-        card.classList.add('hidden');
-      }
-      if (item.no >= 3 && item.no <= 24 && disabled.has(item.no)) {
-        if (Object.prototype.hasOwnProperty.call(defaults, item.no)) setValueByItemNo(item.no, defaults[item.no]);
-        setItemDisabled(item.no, true);
-        card.classList.add('locked');
-      }
-      if (item.no >= 3 && item.no <= 24 && !disabled.has(item.no) && Object.prototype.hasOwnProperty.call(defaults, item.no)) {
-        setValueByItemNo(item.no, defaults[item.no]);
-      }
+      if (item.no < 3 || item.no > 24) return;
+
+      const rule = rules[item.no] || rules[String(item.no)] || { mode: 'open' };
+      applySingleItemRule(item.no, rule);
     });
+
     refreshItem2Highlight();
+  }
+
+  function applySingleItemRule(no, rule) {
+    const card = getCardByItemNo(no);
+    if (!card) return;
+
+    const mode = String(rule && rule.mode ? rule.mode : 'open');
+    const hasValue = rule && Object.prototype.hasOwnProperty.call(rule, 'value');
+
+    if (mode === 'open') {
+      return;
+    }
+
+    if (mode === 'hide') {
+      setValueByItemNo(no, '');
+      setItemDisabled(no, false);
+      card.classList.add('hidden');
+      return;
+    }
+
+    if (mode === 'lock') {
+      if (hasValue) setValueByItemNo(no, rule.value);
+      setItemDisabled(no, true);
+      card.classList.add('locked');
+      return;
+    }
+
+    if (mode === 'hideLock') {
+      if (hasValue) setValueByItemNo(no, rule.value);
+      setItemDisabled(no, true);
+      card.classList.add('hidden', 'locked');
+      return;
+    }
   }
 
   function normalizeItem2(input) {
