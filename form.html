@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Fe4814443-f72a-4c36-85f7-4ba3eb20c35b.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
+  <script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Fa5eda131-e251-43b3-8d12-86753d40a912.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢確認表</title>
@@ -750,7 +750,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.2.6</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.3.1</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -792,7 +792,7 @@
 
   const ITEMS = [
     {
-	  no: 1, title: '機台狀態', note: '架料(E)、待量測(D)、其他(L)、維修(G)、空機(C)', type: 'selectPlus', 
+	  no: 1, title: '機台狀態', note: '', type: 'selectPlus', 
 	  options: [
 	    { value: 'A',label: 'A:量產' },
 	    { value: 'B',label: 'B:試切' },
@@ -814,11 +814,11 @@
     { no: 9, title: '作業高度(H)', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
     { no: 10, title: '作業深度(Z)', type: 'number', min: 0.355, max: 0.550, step: 0.001, decimals: 3, autoZero: true, clearInvalidOnBlur: true },
     { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
-    { no: 12, title: '排版數', note: '排版數', type: 'singleAxis', options: ['0', '1', '2', '3', '4', '5', '6'] },
+    { no: 12, title: '排版數', note: '排版數', type: 'multi', options: ['0', '6', '5', '4', '3', '2', '1'] },
     { no: 13, title: '軸襯', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
     { no: 14, hotkey: 'F3', title: '檯面速度、行數', note: '', type: 'okng' },
     { no: 15, hotkey: 'F6', title: '檢查刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
-    { no: 16, title: '疊板數', note: '確認板件疊板片數', type: 'singleAxis', options: ['0', '1', '2', '3', '4', '5', '6'] },
+    { no: 16, title: '疊板數', note: '確認板件疊板片數', type: 'singleAxis', options: ['0', '6', '5', '4', '3', '2', '1'] },
     { no: 17, title: '物料是否符合', note: '無硫紙、蓋板、尿素板、FR4、底板', type: 'okng' },
     { no: 18, title: 'PIN有無漏敲', note: '每1array最少3支pin', type: 'okng' },
     { no: 19, title: '三天重PIN', note: '重PIN日期及班別 | 0 = 免重PIN', type: 'pinDate' },
@@ -939,7 +939,7 @@
     const shortAuth = readJson(SHORT_AUTH_KEY);
 
     if (!loginDraft || !loginDraft.id || !loginDraft.pass) {
-      gateMessage('找不到帳密草稿，2 秒後返回登入頁。');
+      gateMessage('找不到帳密，1 秒後返回登入頁。');
       redirectLoginLater();
       return false;
     }
@@ -949,14 +949,14 @@
       return true;
     }
 
-    gateMessage('短暫通行已失效，正在使用帳密草稿原地驗證。');
+    gateMessage('通行證失效，使用帳密原地驗證。');
     const renewed = await renewAuth(loginDraft.id, loginDraft.pass);
     if (renewed) {
       authState = renewed;
       return true;
     }
 
-    gateMessage('驗證失敗，2 秒後返回登入頁。');
+    gateMessage('驗證失敗，1 秒後返回登入頁。');
     redirectLoginLater();
     return false;
   }
@@ -996,7 +996,7 @@
     window.setTimeout(() => {
       const here = encodeURIComponent(location.pathname + location.search);
       location.href = `login.html?return=${here}`;
-    }, 2000);
+    }, 1000);
   }
 
   function renderIdentity() {
@@ -1271,7 +1271,7 @@
       return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
     }
     if (item.type === 'pinDate') {
-      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、0">`;
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
     }
     if (item.type === 'number') {
       const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
@@ -1313,7 +1313,8 @@
     el.parseManualBtn.addEventListener('click', () => {
       const parsed = parseMachineId(el.manualQrText.value);
       if (!parsed) {
-        showToast('QR 格式不符，需為 ?-A6-? 或 ?-N57-? 這類格式。', 'bad');
+        showToast('QR code格式不符，請再次確認', 'bad');
+		//需為 ?-A6-? 或 ?-N57-? 這類格式。
         return;
       }
       setMachineId(parsed);
@@ -1343,7 +1344,6 @@
       location.reload();
       return;
     }
-
     freezeLastAliveAt = now;
   }
 
@@ -1456,12 +1456,11 @@
       card.classList.remove('hidden', 'locked');
       setItemDisabled(item.no, false);
 
-      if (item.no < 3 || item.no > 24) return;
+      if (item.no < 2 || item.no > 24) return;
 
       const rule = rules[item.no] || rules[String(item.no)] || { mode: 'open' };
       applySingleItemRule(item.no, rule);
     });
-
     refreshItem2Highlight();
   }
 
@@ -1525,7 +1524,6 @@
       const parts = value.split('.');
       value = `${parts[0]}.${String(parts[1] || '').slice(0, decimals)}`;
     }
-
     input.value = value;
   }
 
