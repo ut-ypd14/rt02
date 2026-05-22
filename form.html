@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
+  <script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Fd65570b7-82be-45ec-b857-a442192d9949.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢確認表</title>
-  <script src="./config.js"></script>
   <style>
     :root {
       --bg: #f4f7fb;
@@ -545,7 +545,6 @@
     }
 
 
-    /* v0.2.6 compact header + row-based item layout */
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -741,7 +740,7 @@
         <h2>點檢項目</h2>
         <label class="routine-check-wrap" for="routineCheck">
           <input type="checkbox" id="routineCheck">
-          <span>例行</span>
+          <span>接班檢查</span>
         </label>
         <div class="selected-shift-badge" id="selectedShiftText">-- --</div>
       </div>
@@ -757,14 +756,14 @@
   <section class="app" id="authGate">
     <div class="auth-block">
       <h2>正在確認登入狀態</h2>
-      <p id="authGateText">檢查草稿中，請稍候。</p>
+      <p id="authGateText">檢查中，請稍候...</p>
     </div>
   </section>
 
   <div class="loading-mask" id="loadingMask" aria-live="polite">
     <div class="loading-card">
       <div class="spinner"></div>
-      <div class="loading-title">資料送出中</div>
+      <div class="loading-title">資料傳送中...</div>
       <div class="loading-sub">請勿關閉畫面或重複點擊</div>
     </div>
   </div>
@@ -773,8 +772,7 @@
 
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
-
-  const APP_VERSION = 'v0.2.6';
+  //const APP_VERSION = 'v0.2.6';
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -793,29 +791,41 @@
   const GAS_ACTION_FORM_WRITE = 'form_write';
 
   const ITEMS = [
-    { no: 1, title: '巡檢狀態', note: '架料(E)、待量測(D)、其他(L)、維修(G)、空機(C)', type: 'select', options: ['A', 'B', 'F', 'D', 'E', 'L'] },
+    {
+	  no: 1, title: '機台狀態', note: '架料(E)、待量測(D)、其他(L)、維修(G)、空機(C)', type: 'selectPlus', 
+	  options: [
+	    { value: 'A',label: 'A:量產' },
+	    { value: 'B',label: 'B:試切' },
+	    { value: 'F',label: 'F:首趟' },
+	    { value: 'G',label: 'G:維修' },
+	    { value: 'L',label: 'L:其它' },
+	    { value: 'R',label: 'R:重工' },
+	    { value: 'C',label: 'C:( 空機 | 架料 | 物料 )' },
+	    { value: 'Q',label: 'Q:待( 臨條 | 量測 | QA )' }
+	  ]
+	},
     { no: 2, title: '機台作業料號', note: '註明料號', type: 'text', allow: 'alphaNumDotParen', highlightIfEmpty: true },
     { no: 3, title: '臨條&ERP&內通&謀規', note: '作業資料表條件', type: 'okng' },
     { no: 4, title: '核對參數對照表', note: '作業資料表參數', type: 'okng' },
-    { no: 5, hotkey: 'F6', title: '轉速、下刀、壽命', note: 'S、F、N', type: 'okng' },
+    { no: 5, title: '轉速、下刀、壽命', note: 'S、F、N', type: 'okng' },
     { no: 6, hotkey: 'F8', title: '索引表', note: '補償值', type: 'okng' },
-    { no: 7, title: '象限', note: 'FV', type: 'select', options: ['1', '3'] },
+    { no: 7, title: '象限', note: 'FV', type: 'redio', options: ['1', '3'] },
     { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
-    { no: 9, title: '作業高度', note: 'H', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
-    { no: 10, title: '作業深度', note: 'Z', type: 'number', min: 0.355, max: 0.550, step: 0.001, decimals: 3, autoZero: true, clearInvalidOnBlur: true },
+    { no: 9, title: '作業高度(H)', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
+    { no: 10, title: '作業深度(Z)', type: 'number', min: 0.355, max: 0.550, step: 0.001, decimals: 3, autoZero: true, clearInvalidOnBlur: true },
     { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
-    { no: 12, title: '排版數', note: '排版數', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
-    { no: 13, title: '軸補', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
+    { no: 12, title: '排版數', note: '排版數', type: 'singleAxis', options: ['0', '1', '2', '3', '4', '5', '6'] },
+    { no: 13, title: '軸襯', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
     { no: 14, hotkey: 'F3', title: '檯面速度、行數', note: '', type: 'okng' },
-    { no: 15, hotkey: 'F6', title: '刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
-    { no: 16, title: '墊板數', note: '是否符合規範', type: 'select', options: ['0', '1', '2', '3', '4', '5', '6'] },
-    { no: 17, title: '物料合規', note: '無疏紙、蓋板、尿素板、FR4、底板', type: 'okng' },
-    { no: 18, title: 'PIN有無漏咬', note: '1array最少3支pin', type: 'okng' },
-    { no: 19, title: '三天重PIN', note: '點重PIN日期及班別', type: 'pinDate' },
-    { no: 20, title: 'D軸A資料夾', note: '是否有非作業料號之程式', type: 'okng' },
-    { no: 21, title: '機台日報表', note: '斷刀、抽數、料號、批號', type: 'okng' },
-    { no: 22, title: '稼動紀錄表', note: '是否有清夾頭', type: 'okng' },
-    { no: 23, title: '電木板(有無兩人確認簽名)', note: '(螺絲上的綠線是否平行)', type: 'okng' },
+    { no: 15, hotkey: 'F6', title: '檢查刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
+    { no: 16, title: '疊板數', note: '確認板件疊板片數', type: 'singleAxis', options: ['0', '1', '2', '3', '4', '5', '6'] },
+    { no: 17, title: '物料是否符合', note: '無硫紙、蓋板、尿素板、FR4、底板', type: 'okng' },
+    { no: 18, title: 'PIN有無漏敲', note: '每1array最少3支pin', type: 'okng' },
+    { no: 19, title: '三天重PIN', note: '重PIN日期及班別 | 0 = 免重PIN', type: 'pinDate' },
+    { no: 20, title: 'D槽A資料夾', note: '是否有非作業料號之程式', type: 'okng' },
+    { no: 21, title: '機台日報表', note: '斷刀、軸數、料號、批號', type: 'okng' },
+    { no: 22, title: '稼動紀錄表', note: '確認是否有清夾頭', type: 'okng' },
+    { no: 23, title: '電木板(有無二人確認簽名)', note: '(螺絲上的綠線是否平行)', type: 'okng' },
     { no: 24, title: '壓力腳下降確認', note: '', type: 'singleLong', options: [
       '正常:RT/RS　製程:0.5~1.5Kg/cm²',
       '加大:RS/RT/DRT　製程:1.8~2.8Kg/cm²',
@@ -824,32 +834,34 @@
   ];
 
   const ITEM1_RULES = {
-    // 預設：項次3~24全部 open。
-    // 只在需要限制時填入例外項次。
-    // 可用模式：
+    // 預設：項次2~24全部 open。,只在需要限制時填入例外項次。
     // { mode: 'open' }
     // { mode: 'hide' }
     // { mode: 'lock', value: '√' }
     // { mode: 'hideLock', value: 'N/A' }
-    A: {},
-    B: {},
-    F: {},
-    D: {},
-    E: {},
-    L: {}
+    A: [],
+    B: [],
+    F: [],
+    G: [],
+    L: [],
+	R: [],
+	C: [],
+    Q: []
   };
 
   const ITEM1_REQUIRED_RULES = {
-    // 預設：項次3~24不強制必填。
+    // 預設：項次2~24不強制必填。
     // 只在需要必填時填入項次號，例如：
     // A: [3, 4, 5]
     // 送出時只檢查最終值是否非空；不做格式、範圍或文字提示。
     A: [],
     B: [],
     F: [],
-    D: [],
-    E: [],
-    L: []
+    G: [],
+    L: [],
+	R: [],
+	C: [],
+    Q: []
   };
 
   let authState = null;
@@ -1245,6 +1257,16 @@
       const opts = ['<option value="">請選擇</option>'].concat(item.options.map(v => `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`));
       return `<select name="${name}" data-item-no="${item.no}">${opts.join('')}</select>`;
     }
+	if (item.type === 'selectPlus') {
+	  return `<select name="${name}" data-item-no="${item.no}">
+	  <option value="">請選擇</option>
+	    ${item.options.map(opt => {
+	    const value = typeof opt === 'object' ? opt.value : opt;
+	    const label = typeof opt === 'object' ? opt.label : opt;
+	    return `<option value="${value}">${label}</option>`;
+	    }).join('')}
+	  </select>`;
+	}
     if (item.type === 'text') {
       return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
     }
@@ -1260,10 +1282,17 @@
     if (item.type === 'okng') {
       return `<div class="inline-options yesno">${choiceRadio(name, '√', item.no)}${choiceRadio(name, '×', item.no)}</div>`;
     }
+	if (item.type === 'radio') {
+	  return `<div class="inline-options yesno">${item.options.map(v => choiceRadio(name, v, item.no)).join('')}</div>`;
+	}
     if (item.type === 'multi') {
       const cls = item.compact ? 'inline-options axis-options' : 'inline-options';
       return `<div class="${cls}">${item.options.map(v => choiceCheckbox(name, v, item.no)).join('')}</div>`;
     }
+	if (item.type === 'singleAxis') {
+	  const cls = item.compact ? 'inline-options axis-options' : 'inline-options';
+	  return `<div class="${cls}">${item.options.map(v => choiceRadio(name, v, item.no)).join('')}</div>`;
+	}
     if (item.type === 'singleLong') {
       return `<div class="inline-options">${item.options.map(v => choiceRadio(name, v, item.no, true)).join('')}</div>`;
     }
@@ -1687,6 +1716,7 @@
       const data = await postWithTimeout(buildSubmitParams(), POST_TIMEOUT_MS);
       if (data && data.status === 'ok') {
         clearAfterSuccess();
+		el.routineCheck.checked = false;
         scrollToTopAfterSuccess();
         showToast('送出成功，已保留項次 2，並清除機台 ID。', 'ok');
       } else {
@@ -1717,7 +1747,7 @@
       params.set(itemName(item.no), getValueByItemNo(item.no));
     });
     params.set('client_time', formatLocalDateTime(new Date()));
-    params.set('client_version', APP_VERSION);
+    //params.set('client_version', APP_VERSION);
     return params;
   }
 
