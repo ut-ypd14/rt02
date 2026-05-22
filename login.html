@@ -158,15 +158,23 @@
     } catch (err) {}
   }
 
-  function ping(){
-    setGasStatus('檢查中...', 'warn');
-    postAction('ping', { page: VERSION })
-      .then(function(data){
-        if (data && data.status === 'ok' && data.action === 'ping') setGasStatus('正常', 'ok');
-        else setGasStatus('回應格式異常', 'bad');
-      })
-      .catch(function(){ setGasStatus('GAS 伺服器沒有回應', 'bad'); });
-  }
+function ping(){
+  setGasStatus('檢查中...', 'warn');
+  fetch(api_url + '?t=' + Date.now())
+    .then(function(res){
+      return res.text();
+    })
+    .then(function(text){
+      if (String(text).trim() === 'ok') {
+        setGasStatus('ok', 'ok');
+      } else {
+        setGasStatus('回應異常', 'bad');
+      }
+    })
+    .catch(function(){
+      setGasStatus('伺服器沒有回應', 'bad');
+    });
+}
 
   idInput.addEventListener('input', function(){ idInput.value = normalizeId(idInput.value).replace(/[^A-Z0-9]/g, '').slice(0,5); });
   passInput.addEventListener('input', function(){ passInput.value = String(passInput.value || '').replace(/[^A-Za-z0-9]/g, ''); });
