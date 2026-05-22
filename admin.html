@@ -191,15 +191,23 @@
     return true;
   }
 
-  function ping(){
-    setGasStatus('檢查中...', 'warn');
-    postAction('ping', { page: VERSION })
-      .then(function(data){
-        if (data && data.status === 'ok' && data.action === 'ping') setGasStatus('正常', 'ok');
-        else setGasStatus('回應格式異常', 'bad');
-      })
-      .catch(function(){ setGasStatus('GAS 伺服器沒有回應', 'bad'); });
-  }
+function ping(){
+  setGasStatus('檢查中...', 'warn');
+  fetch(api_url + '?t=' + Date.now())
+    .then(function(res){
+      return res.text();
+    })
+    .then(function(text){
+      if (String(text).trim() === 'ok') {
+        setGasStatus('ok', 'ok');
+      } else {
+        setGasStatus('回應異常', 'bad');
+      }
+    })
+    .catch(function(){
+      setGasStatus('伺服器沒有回應', 'bad');
+    });
+}
 
   function startGate(){
     if (!loadLoginDraft()) { redirectLogin('無帳密草稿'); return; }
