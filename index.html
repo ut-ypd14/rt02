@@ -10,7 +10,7 @@
       --bg:#f4f7fb;
       --card:#ffffff;
       --text:#1f2937;
-      --muted:#6b7280;
+      --muted:#64748b;
       --line:#e5e7eb;
       --main:#2563eb;
       --main2:#1d4ed8;
@@ -37,7 +37,7 @@
     .page{
       width:min(1120px, 100%);
       margin:0 auto;
-      padding:18px 14px 28px;
+      padding:16px 12px 26px;
     }
 
     .hero{
@@ -45,21 +45,15 @@
       align-items:center;
       justify-content:space-between;
       gap:12px;
-      margin:4px 0 14px;
+      margin:2px 0 12px;
     }
 
     .title{
       margin:0;
-      font-size:22px;
+      font-size:23px;
       line-height:1.18;
       letter-spacing:.02em;
       font-weight:900;
-    }
-
-    .subtitle{
-      margin:5px 0 0;
-      color:var(--muted);
-      font-size:13px;
     }
 
     .top-link{
@@ -67,19 +61,68 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-height:40px;
+      min-height:38px;
       color:#ffffff;
       background:linear-gradient(135deg, var(--main), var(--main2));
       border:1px solid rgba(29,78,216,.2);
-      padding:9px 14px;
+      padding:8px 13px;
       border-radius:999px;
       font-size:14px;
       font-weight:900;
       text-decoration:none;
       box-shadow:0 10px 22px rgba(37,99,235,.18);
+      white-space:nowrap;
     }
 
     .top-link:active{ transform:scale(.98); }
+
+    .status-line{
+      display:grid;
+      grid-template-columns:1fr auto auto;
+      gap:10px;
+      align-items:center;
+      min-height:46px;
+      margin-bottom:14px;
+      padding:10px 12px;
+      border:1px solid rgba(226,232,240,.95);
+      border-radius:16px;
+      background:rgba(255,255,255,.94);
+      box-shadow:0 8px 20px rgba(15,23,42,.06);
+      overflow:hidden;
+    }
+
+    .status-text{
+      min-width:0;
+      color:var(--text);
+      font-size:15px;
+      font-weight:900;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .gas-inline{
+      display:inline-flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+      color:var(--text);
+      font-size:15px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .gas-dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:var(--warn);
+      box-shadow:0 0 0 4px rgba(245,158,11,.16);
+      flex:0 0 auto;
+    }
+
+    .gas-dot.ok{ background:var(--ok); box-shadow:0 0 0 4px rgba(22,163,74,.15); }
+    .gas-dot.bad{ background:var(--bad); box-shadow:0 0 0 4px rgba(220,38,38,.15); }
 
     .grid{
       display:grid;
@@ -100,7 +143,7 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding:14px 15px 10px;
+      padding:13px 15px 10px;
       border-bottom:1px solid var(--line);
     }
 
@@ -111,97 +154,37 @@
       letter-spacing:.02em;
     }
 
-    .card-note{
-      color:var(--muted);
-      font-size:12px;
-      white-space:nowrap;
-    }
-
-    .card-body{ padding:14px 15px 15px; }
-
-    .status-grid{
-      display:grid;
-      grid-template-columns:repeat(3, 1fr);
-      gap:10px;
-    }
-
-    .status-box{
-      background:#f8fafc;
-      border:1px solid #e2e8f0;
-      border-radius:14px;
-      padding:11px 12px;
-      min-height:66px;
-    }
-
-    .label{
-      display:block;
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:5px;
-    }
-
-    .value{
-      display:flex;
-      align-items:center;
-      gap:7px;
-      font-weight:900;
-      font-size:18px;
-      word-break:break-word;
-    }
-
-    .gas-dot{
-      width:10px;
-      height:10px;
-      border-radius:999px;
-      background:var(--warn);
-      box-shadow:0 0 0 4px rgba(245,158,11,.16);
-      flex:0 0 auto;
-    }
-
-    .gas-dot.ok{ background:var(--ok); box-shadow:0 0 0 4px rgba(22,163,74,.15); }
-    .gas-dot.bad{ background:var(--bad); box-shadow:0 0 0 4px rgba(220,38,38,.15); }
-
-    .toolbar{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:12px;
-    }
-
-    .select-wrap{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex:1 1 220px;
-    }
-
-    select{
-      width:100%;
-      appearance:none;
-      border:1px solid #cbd5e1;
-      border-radius:13px;
-      background:#fff;
-      color:var(--text);
-      font-size:15px;
-      font-weight:800;
-      padding:11px 36px 11px 12px;
-      outline:none;
-      background-image:linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
-      background-position:calc(100% - 18px) 50%, calc(100% - 12px) 50%;
-      background-size:6px 6px, 6px 6px;
-      background-repeat:no-repeat;
-    }
-
     .count-pill{
       flex:0 0 auto;
       background:var(--soft);
       color:#1e40af;
       border:1px solid #bfdbfe;
       border-radius:999px;
-      padding:9px 12px;
+      padding:8px 12px;
       font-size:13px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .card-body{ padding:14px 15px 15px; }
+
+    .group-block{ margin-bottom:16px; }
+    .group-block:last-child{ margin-bottom:0; }
+
+    .group-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin:0 0 8px;
+      color:#0f172a;
+      font-size:14px;
+      font-weight:900;
+    }
+
+    .group-title small{
+      color:var(--muted);
+      font-size:12px;
       font-weight:900;
     }
 
@@ -228,7 +211,7 @@
       color:#334155;
       font-size:12px;
       text-align:left;
-      padding:11px 9px;
+      padding:10px 9px;
       border-bottom:1px solid var(--line);
       white-space:nowrap;
     }
@@ -272,6 +255,29 @@
     .btn:hover{ background:#bfdbfe; }
     .btn:disabled{ opacity:.45; cursor:not-allowed; }
 
+    .clear-area{
+      display:flex;
+      justify-content:center;
+      margin-top:14px;
+    }
+
+    .clear-btn{
+      min-width:160px;
+      min-height:46px;
+      border:0;
+      border-radius:15px;
+      padding:12px 18px;
+      color:#991b1b;
+      background:#fee2e2;
+      font-size:15px;
+      font-weight:900;
+      cursor:pointer;
+      transition:transform .12s ease, background .12s ease;
+    }
+
+    .clear-btn:active{ transform:scale(.98); }
+    .clear-btn:hover{ background:#fecaca; }
+
     .empty{
       padding:18px;
       text-align:center;
@@ -288,160 +294,55 @@
       color:var(--muted);
       font-size:13px;
       font-weight:800;
+      text-align:center;
     }
 
     .msg.ok{ color:var(--ok); }
     .msg.bad{ color:var(--bad); }
     .msg.warn{ color:#b45309; }
 
-
-    .status-strip{
-      display:grid;
-      grid-template-columns:1fr 1.2fr 1fr;
-      gap:10px;
-      align-items:stretch;
-      margin-bottom:14px;
-    }
-
-    .status-item{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      min-height:46px;
-      padding:10px 12px;
-      border:1px solid rgba(226,232,240,.95);
-      border-radius:16px;
-      background:rgba(255,255,255,.94);
-      box-shadow:0 8px 20px rgba(15,23,42,.06);
-      overflow:hidden;
-    }
-
-    .strip-label{
-      flex:0 0 auto;
-      color:var(--muted);
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:.04em;
-    }
-
-    .strip-value{
-      min-width:0;
-      color:var(--text);
-      font-size:15px;
-      font-weight:900;
-      text-align:right;
-      word-break:break-word;
-    }
-
-    .gas-inline{
-      display:inline-flex;
-      align-items:center;
-      justify-content:flex-end;
-      gap:7px;
-    }
-
-    .action-grid{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-    }
-
-    .action-btn{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      width:100%;
-      min-height:48px;
-      border:0;
-      border-radius:15px;
-      padding:12px 14px;
-      font-size:15px;
-      font-weight:900;
-      text-decoration:none;
-      cursor:pointer;
-      transition:transform .12s ease, opacity .12s ease, background .12s ease;
-    }
-
-    .action-btn:active{ transform:scale(.98); }
-    .action-btn.primary{ color:#ffffff; background:linear-gradient(135deg, var(--main), var(--main2)); }
-    .action-btn.secondary{ color:#1e40af; background:#dbeafe; }
-    .action-btn.danger{ color:#991b1b; background:#fee2e2; }
-    .action-btn.danger:hover{ background:#fecaca; }
-
     @media (max-width:720px){
       .page{ padding:14px 10px 24px; }
       .hero{ align-items:flex-start; }
       .title{ font-size:20px; }
-      .top-link{ margin-top:2px; }
-      .status-strip{ grid-template-columns:1fr; }
-      .status-item{ min-height:42px; }
-      .action-grid{ grid-template-columns:1fr; }
-      .card-head{ align-items:flex-start; flex-direction:column; }
-      .card-note{ white-space:normal; }
+      .top-link{ margin-top:1px; padding:8px 11px; }
+      .status-line{ grid-template-columns:1fr auto; }
+      .gas-inline{ grid-column:1 / -1; justify-content:flex-start; }
+      .card-head{ padding:12px 13px 9px; }
+      .card-body{ padding:12px 13px 14px; }
     }
   </style>
 </head>
 <body>
   <main class="page">
     <section class="hero">
-      <div>
-        <h1 class="title">巡檢人員點檢首頁</h1>
-        <p class="subtitle">本機紀錄、表單入口與草稿操作</p>
-      </div>
+      <h1 class="title">巡檢人員點檢首頁</h1>
       <a class="top-link" href="./form.html" id="formEntryLink">進入點檢表</a>
     </section>
 
-    <section class="status-strip" aria-label="目前狀態">
-      <div class="status-item">
-        <span class="strip-label">ID</span>
-        <span class="strip-value" id="currentIdText">未登入</span>
-      </div>
-      <div class="status-item">
-        <span class="strip-label">日期</span>
-        <span class="strip-value" id="localTimeText">--</span>
-      </div>
-      <div class="status-item">
-        <span class="strip-label">GAS</span>
-        <span class="strip-value gas-inline"><span class="gas-dot" id="gasDot"></span><span id="gasStatusText">檢查中</span></span>
-      </div>
+    <section class="status-line" aria-label="目前狀態">
+      <span class="status-text" id="currentIdText">訪客</span>
+      <span class="status-text" id="localTimeText">--</span>
+      <span class="gas-inline"><span class="gas-dot" id="gasDot"></span><span id="gasStatusText">GAS</span></span>
     </section>
 
     <section class="grid">
-      <section class="card" aria-label="已送出紀錄">
+      <section class="card" aria-label="今日編輯清單">
         <div class="card-head">
-          <h2 class="card-title">已送出紀錄</h2>
-          <span class="card-note">選擇日期 / 班別後，可把單筆紀錄交給 form.html 編輯</span>
+          <h2 class="card-title">今日編輯清單</h2>
+          <span class="count-pill" id="recordCountText">0 筆</span>
         </div>
         <div class="card-body">
-          <div class="toolbar">
-            <div class="select-wrap">
-              <select id="historyGroupSelect" aria-label="選擇表單日期與班別">
-                <option value="">尚無資料</option>
-              </select>
-            </div>
-            <div class="count-pill" id="recordCountText">0 筆</div>
-          </div>
-
-          <div id="historyArea" class="empty">目前沒有本機送出紀錄</div>
+          <div id="historyArea" class="empty">目前沒有可編輯紀錄</div>
           <div class="msg" id="historyMsg"></div>
         </div>
       </section>
-
-      <section class="card" aria-label="功能區">
-        <div class="card-head">
-          <h2 class="card-title">操作</h2>
-          <span class="card-note">登入草稿與表單入口</span>
-        </div>
-        <div class="card-body">
-          <div class="action-grid">
-            <a class="action-btn primary" href="./form.html">進入點檢表</a>
-            <button type="button" class="action-btn danger" id="clearLoginDraftBtn">清除登入草稿</button>
-          </div>
-          <div class="msg" id="actionMsg"></div>
-        </div>
-      </section>
     </section>
+
+    <div class="clear-area">
+      <button type="button" class="clear-btn" id="clearLoginDraftBtn">清除</button>
+    </div>
+    <div class="msg" id="actionMsg"></div>
   </main>
 
   <script>
@@ -457,7 +358,6 @@
       localTimeText:document.getElementById('localTimeText'),
       gasDot:document.getElementById('gasDot'),
       gasStatusText:document.getElementById('gasStatusText'),
-      historyGroupSelect:document.getElementById('historyGroupSelect'),
       recordCountText:document.getElementById('recordCountText'),
       historyArea:document.getElementById('historyArea'),
       historyMsg:document.getElementById('historyMsg'),
@@ -466,7 +366,7 @@
     };
 
     let allHistoryRecords = [];
-    let groupedHistory = {};
+    let groupedTodayHistory = [];
 
     document.addEventListener('DOMContentLoaded', init);
 
@@ -479,7 +379,6 @@
     }
 
     function bindEvents(){
-      el.historyGroupSelect.addEventListener('change', renderSelectedGroup);
       el.clearLoginDraftBtn.addEventListener('click', clearLoginDrafts);
 
       window.addEventListener('focus', loadAndRenderHistory);
@@ -492,13 +391,12 @@
       });
     }
 
-
     function clearLoginDrafts(){
       localStorage.removeItem(LOGIN_DRAFT_KEY);
       localStorage.removeItem(SHORT_AUTH_KEY);
       sessionStorage.removeItem(FORM_RESTORE_KEY);
       renderCurrentId();
-      setMsg(el.actionMsg, 'ok', '已清除登入草稿');
+      setMsg(el.actionMsg, 'ok', '已清除');
     }
 
     function readJsonStorage(key, fallback){
@@ -536,7 +434,7 @@
 
     function renderCurrentId(){
       const id = getCurrentId();
-      el.currentIdText.textContent = id || '未登入';
+      el.currentIdText.textContent = id || '訪客';
     }
 
     function startClock(){
@@ -557,20 +455,20 @@
 
     function pingGasByGet(){
       if (typeof api_url === 'undefined' || !api_url){
-        setGasStatus('bad', 'api_url未設定');
+        setGasStatus('bad', 'GAS');
         return;
       }
 
-      setGasStatus('warn', '檢查中');
+      setGasStatus('warn', 'GAS');
 
       fetch(api_url, { method:'GET', cache:'no-store' })
         .then(function(res){ return res.text(); })
         .then(function(text){
-          if (isOkResponseText(text)) setGasStatus('ok', '正常');
-          else setGasStatus('bad', '異常');
+          if (isOkResponseText(text)) setGasStatus('ok', 'GAS');
+          else setGasStatus('bad', 'GAS');
         })
         .catch(function(){
-          setGasStatus('bad', '異常');
+          setGasStatus('bad', 'GAS');
         });
     }
 
@@ -588,11 +486,12 @@
 
     function loadAndRenderHistory(){
       renderCurrentId();
+      clearMsg(el.historyMsg);
 
       const data = readJsonStorage(FORM_HISTORY_KEY, []);
-      allHistoryRecords = normalizeHistoryList(data);
-      groupedHistory = buildHistoryGroups(allHistoryRecords);
-      renderHistoryGroups();
+      allHistoryRecords = normalizeHistoryList(data).filter(isRecordWorkTimeToday);
+      groupedTodayHistory = buildTodayGroups(allHistoryRecords);
+      renderTodayGroups();
     }
 
     function normalizeHistoryList(data){
@@ -615,78 +514,85 @@
       return [];
     }
 
-    function buildHistoryGroups(records){
-      const groups = {};
+    function buildTodayGroups(records){
+      const map = {};
 
       records.forEach(function(record, index){
-        const key = getHistoryKey(record);
-        if (!key) return;
-        if (!groups[key]) groups[key] = [];
-        groups[key].push({ record:record, originalIndex:index });
+        const key = getHistoryKey(record) || '未分類';
+        if (!map[key]) map[key] = { key:key, rows:[], latestTime:0 };
+
+        const timeValue = getRecordTimeValue(record);
+        map[key].rows.push({ record:record, originalIndex:index, timeValue:timeValue });
+        if (timeValue > map[key].latestTime) map[key].latestTime = timeValue;
       });
 
-      Object.keys(groups).forEach(function(key){
-        groups[key].sort(function(a, b){
-          const ta = getRecordTimeValue(a.record);
-          const tb = getRecordTimeValue(b.record);
-          if (ta !== tb) return tb - ta;
+      const groups = Object.keys(map).map(function(key){ return map[key]; });
+
+      groups.forEach(function(group){
+        group.rows.sort(function(a, b){
+          if (a.timeValue !== b.timeValue) return b.timeValue - a.timeValue;
           return b.originalIndex - a.originalIndex;
         });
+      });
+
+      groups.sort(function(a, b){
+        if (a.latestTime !== b.latestTime) return b.latestTime - a.latestTime;
+        return compareHistoryKeyDesc(a.key, b.key);
       });
 
       return groups;
     }
 
-    function renderHistoryGroups(){
-      const keys = Object.keys(groupedHistory).sort(compareHistoryKeyDesc);
+    function renderTodayGroups(){
+      const total = groupedTodayHistory.reduce(function(sum, group){
+        return sum + group.rows.length;
+      }, 0);
 
-      el.historyGroupSelect.innerHTML = '';
-
-      if (!keys.length){
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = '尚無資料';
-        el.historyGroupSelect.appendChild(opt);
-        el.recordCountText.textContent = '0 筆';
-        el.historyArea.className = 'empty';
-        el.historyArea.textContent = '目前沒有本機送出紀錄';
-        return;
-      }
-
-      keys.forEach(function(key){
-        const opt = document.createElement('option');
-        opt.value = key;
-        opt.textContent = formatHistoryKeyLabel(key) + '（' + groupedHistory[key].length + '筆）';
-        el.historyGroupSelect.appendChild(opt);
-      });
-
-      renderSelectedGroup();
-    }
-
-    function renderSelectedGroup(){
-      const key = el.historyGroupSelect.value;
-      const rows = groupedHistory[key] || [];
-      el.recordCountText.textContent = rows.length + ' 筆';
-      clearMsg(el.historyMsg);
-
-      if (!rows.length){
-        el.historyArea.className = 'empty';
-        el.historyArea.textContent = '此班別目前沒有紀錄';
-        return;
-      }
-
-      el.historyArea.className = 'table-wrap';
+      el.recordCountText.textContent = total + ' 筆';
       el.historyArea.innerHTML = '';
 
-      const table = document.createElement('table');
-      table.appendChild(buildTableHead());
+      if (!groupedTodayHistory.length){
+        el.historyArea.className = 'empty';
+        el.historyArea.textContent = '目前沒有可編輯紀錄';
+        return;
+      }
 
-      const tbody = document.createElement('tbody');
-      rows.forEach(function(item, idx){
-        tbody.appendChild(buildHistoryRow(item.record, idx + 1));
+      el.historyArea.className = '';
+      let seq = 1;
+
+      groupedTodayHistory.forEach(function(group){
+        const block = document.createElement('section');
+        block.className = 'group-block';
+
+        const title = document.createElement('h3');
+        title.className = 'group-title';
+
+        const label = document.createElement('span');
+        label.textContent = formatHistoryKeyLabel(group.key);
+
+        const small = document.createElement('small');
+        small.textContent = group.rows.length + ' 筆';
+
+        title.appendChild(label);
+        title.appendChild(small);
+        block.appendChild(title);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'table-wrap';
+
+        const table = document.createElement('table');
+        table.appendChild(buildTableHead());
+
+        const tbody = document.createElement('tbody');
+        group.rows.forEach(function(item){
+          tbody.appendChild(buildHistoryRow(item.record, seq));
+          seq += 1;
+        });
+        table.appendChild(tbody);
+        wrap.appendChild(table);
+        block.appendChild(wrap);
+        el.historyArea.appendChild(block);
       });
-      table.appendChild(tbody);
-      el.historyArea.appendChild(table);
     }
 
     function buildTableHead(){
@@ -701,7 +607,7 @@
         '項次2',
         '是否接班',
         '工作時間',
-        '操作'
+        '編輯'
       ].forEach(function(text){
         const th = document.createElement('th');
         th.textContent = text;
@@ -729,7 +635,7 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn';
-      btn.textContent = '修改';
+      btn.textContent = '編輯';
       btn.addEventListener('click', function(){
         passRecordToForm(record);
       });
@@ -773,6 +679,17 @@
 
       writeSessionJsonStorage(FORM_RESTORE_KEY, selectedDraft);
       window.location.href = './form.html';
+    }
+
+    function isRecordWorkTimeToday(record){
+      const timeValue = getRecordTimeValue(record);
+      if (!timeValue) return false;
+
+      const d = new Date(timeValue);
+      const today = new Date();
+      return d.getFullYear() === today.getFullYear() &&
+        d.getMonth() === today.getMonth() &&
+        d.getDate() === today.getDate();
     }
 
     function getHistoryKey(record){
@@ -879,25 +796,22 @@
     }
 
     function getDisplayWorkTime(record){
-      const payload = getRecordPayload(record);
-      const raw = normalizeText(
-        getFirstValue(record, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
-        getFirstValue(payload, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
-        ''
-      );
-
+      const raw = getRecordTimeRaw(record);
       if (!raw) return '';
       return formatWorkTimeText(raw);
     }
 
     function getRecordTimeValue(record){
+      return parseTimeValue(getRecordTimeRaw(record));
+    }
+
+    function getRecordTimeRaw(record){
       const payload = getRecordPayload(record);
-      const raw = normalizeText(
+      return normalizeText(
         getFirstValue(record, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
         getFirstValue(payload, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
         ''
       );
-      return parseTimeValue(raw);
     }
 
     function formatRoutineCheck(value){
@@ -956,7 +870,6 @@
       return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) + ' ' +
         pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
     }
-
 
     function setMsg(target, type, text){
       target.className = 'msg ' + (type || '');
