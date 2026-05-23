@@ -62,16 +62,24 @@
       font-size:13px;
     }
 
-    .version{
+    .top-link{
       flex:0 0 auto;
-      color:#64748b;
-      background:rgba(255,255,255,.72);
-      border:1px solid rgba(226,232,240,.95);
-      padding:7px 10px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:40px;
+      color:#ffffff;
+      background:linear-gradient(135deg, var(--main), var(--main2));
+      border:1px solid rgba(29,78,216,.2);
+      padding:9px 14px;
       border-radius:999px;
-      font-size:12px;
-      box-shadow:0 6px 18px rgba(15,23,42,.05);
+      font-size:14px;
+      font-weight:900;
+      text-decoration:none;
+      box-shadow:0 10px 22px rgba(37,99,235,.18);
     }
+
+    .top-link:active{ transform:scale(.98); }
 
     .grid{
       display:grid;
@@ -286,13 +294,89 @@
     .msg.bad{ color:var(--bad); }
     .msg.warn{ color:#b45309; }
 
+
+    .status-strip{
+      display:grid;
+      grid-template-columns:1fr 1.2fr 1fr;
+      gap:10px;
+      align-items:stretch;
+      margin-bottom:14px;
+    }
+
+    .status-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      min-height:46px;
+      padding:10px 12px;
+      border:1px solid rgba(226,232,240,.95);
+      border-radius:16px;
+      background:rgba(255,255,255,.94);
+      box-shadow:0 8px 20px rgba(15,23,42,.06);
+      overflow:hidden;
+    }
+
+    .strip-label{
+      flex:0 0 auto;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.04em;
+    }
+
+    .strip-value{
+      min-width:0;
+      color:var(--text);
+      font-size:15px;
+      font-weight:900;
+      text-align:right;
+      word-break:break-word;
+    }
+
+    .gas-inline{
+      display:inline-flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+    }
+
+    .action-grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+
+    .action-btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:100%;
+      min-height:48px;
+      border:0;
+      border-radius:15px;
+      padding:12px 14px;
+      font-size:15px;
+      font-weight:900;
+      text-decoration:none;
+      cursor:pointer;
+      transition:transform .12s ease, opacity .12s ease, background .12s ease;
+    }
+
+    .action-btn:active{ transform:scale(.98); }
+    .action-btn.primary{ color:#ffffff; background:linear-gradient(135deg, var(--main), var(--main2)); }
+    .action-btn.secondary{ color:#1e40af; background:#dbeafe; }
+    .action-btn.danger{ color:#991b1b; background:#fee2e2; }
+    .action-btn.danger:hover{ background:#fecaca; }
+
     @media (max-width:720px){
       .page{ padding:14px 10px 24px; }
       .hero{ align-items:flex-start; }
       .title{ font-size:20px; }
-      .version{ margin-top:2px; }
-      .status-grid{ grid-template-columns:1fr; }
-      .status-box{ min-height:auto; }
+      .top-link{ margin-top:2px; }
+      .status-strip{ grid-template-columns:1fr; }
+      .status-item{ min-height:42px; }
+      .action-grid{ grid-template-columns:1fr; }
       .card-head{ align-items:flex-start; flex-direction:column; }
       .card-note{ white-space:normal; }
     }
@@ -303,39 +387,31 @@
     <section class="hero">
       <div>
         <h1 class="title">巡檢人員點檢首頁</h1>
-        <p class="subtitle">本機工作進度與表單編輯入口</p>
+        <p class="subtitle">本機紀錄、表單入口與草稿操作</p>
       </div>
-      <div class="version" id="versionText">index v0.1.2</div>
+      <a class="top-link" href="./form.html" id="formEntryLink">進入點檢表</a>
+    </section>
+
+    <section class="status-strip" aria-label="目前狀態">
+      <div class="status-item">
+        <span class="strip-label">ID</span>
+        <span class="strip-value" id="currentIdText">未登入</span>
+      </div>
+      <div class="status-item">
+        <span class="strip-label">日期</span>
+        <span class="strip-value" id="localTimeText">--</span>
+      </div>
+      <div class="status-item">
+        <span class="strip-label">GAS</span>
+        <span class="strip-value gas-inline"><span class="gas-dot" id="gasDot"></span><span id="gasStatusText">檢查中</span></span>
+      </div>
     </section>
 
     <section class="grid">
-      <section class="card" aria-label="狀態區">
+      <section class="card" aria-label="已送出紀錄">
         <div class="card-head">
-          <h2 class="card-title">A. 狀態</h2>
-          <span class="card-note">顯示本機登入草稿與 GAS 回應狀態</span>
-        </div>
-        <div class="card-body">
-          <div class="status-grid">
-            <div class="status-box">
-              <span class="label">目前 ID</span>
-              <div class="value" id="currentIdText">未登入</div>
-            </div>
-            <div class="status-box">
-              <span class="label">本機時間</span>
-              <div class="value" id="localTimeText">--</div>
-            </div>
-            <div class="status-box">
-              <span class="label">GAS 狀態</span>
-              <div class="value"><span class="gas-dot" id="gasDot"></span><span id="gasStatusText">檢查中</span></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card" aria-label="歷史記錄區">
-        <div class="card-head">
-          <h2 class="card-title">B. 本機工作進度</h2>
-          <span class="card-note">點選修改後，只把該筆草稿傳給 form.html</span>
+          <h2 class="card-title">已送出紀錄</h2>
+          <span class="card-note">選擇日期 / 班別後，可把單筆紀錄交給 form.html 編輯</span>
         </div>
         <div class="card-body">
           <div class="toolbar">
@@ -351,13 +427,25 @@
           <div class="msg" id="historyMsg"></div>
         </div>
       </section>
+
+      <section class="card" aria-label="功能區">
+        <div class="card-head">
+          <h2 class="card-title">操作</h2>
+          <span class="card-note">登入草稿與表單入口</span>
+        </div>
+        <div class="card-body">
+          <div class="action-grid">
+            <a class="action-btn primary" href="./form.html">進入點檢表</a>
+            <button type="button" class="action-btn danger" id="clearLoginDraftBtn">清除登入草稿</button>
+          </div>
+          <div class="msg" id="actionMsg"></div>
+        </div>
+      </section>
     </section>
   </main>
 
   <script>
     'use strict';
-
-    const PAGE_VERSION = 'index v0.1.2';
 
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -365,7 +453,6 @@
     const FORM_RESTORE_KEY = 'PI_FORM_RESTORE_DRAFT_V001';
 
     const el = {
-      versionText:document.getElementById('versionText'),
       currentIdText:document.getElementById('currentIdText'),
       localTimeText:document.getElementById('localTimeText'),
       gasDot:document.getElementById('gasDot'),
@@ -373,7 +460,9 @@
       historyGroupSelect:document.getElementById('historyGroupSelect'),
       recordCountText:document.getElementById('recordCountText'),
       historyArea:document.getElementById('historyArea'),
-      historyMsg:document.getElementById('historyMsg')
+      historyMsg:document.getElementById('historyMsg'),
+      clearLoginDraftBtn:document.getElementById('clearLoginDraftBtn'),
+      actionMsg:document.getElementById('actionMsg')
     };
 
     let allHistoryRecords = [];
@@ -382,7 +471,6 @@
     document.addEventListener('DOMContentLoaded', init);
 
     function init(){
-      el.versionText.textContent = PAGE_VERSION;
       bindEvents();
       renderCurrentId();
       startClock();
@@ -392,6 +480,7 @@
 
     function bindEvents(){
       el.historyGroupSelect.addEventListener('change', renderSelectedGroup);
+      el.clearLoginDraftBtn.addEventListener('click', clearLoginDrafts);
 
       window.addEventListener('focus', loadAndRenderHistory);
       window.addEventListener('pageshow', loadAndRenderHistory);
@@ -401,6 +490,15 @@
       window.addEventListener('storage', function(evt){
         if (evt && evt.key === FORM_HISTORY_KEY) loadAndRenderHistory();
       });
+    }
+
+
+    function clearLoginDrafts(){
+      localStorage.removeItem(LOGIN_DRAFT_KEY);
+      localStorage.removeItem(SHORT_AUTH_KEY);
+      sessionStorage.removeItem(FORM_RESTORE_KEY);
+      renderCurrentId();
+      setMsg(el.actionMsg, 'ok', '已清除登入草稿');
     }
 
     function readJsonStorage(key, fallback){
@@ -857,6 +955,12 @@
     function formatLocalDateTime(d){
       return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) + ' ' +
         pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+    }
+
+
+    function setMsg(target, type, text){
+      target.className = 'msg ' + (type || '');
+      target.textContent = text || '';
     }
 
     function clearMsg(target){
