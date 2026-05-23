@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>巡檢人員點檢首頁</title>
+  <script src="./config.js"></script>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --main:#2563eb;
+      --main2:#1d4ed8;
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --bad:#dc2626;
+      --soft:#eef4ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.14), transparent 34%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+    }
+
+    .page{
+      width:min(1120px, 100%);
+      margin:0 auto;
+      padding:18px 14px 28px;
+    }
+
+    .hero{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:4px 0 14px;
+    }
+
+    .title{
+      margin:0;
+      font-size:22px;
+      line-height:1.18;
+      letter-spacing:.02em;
+      font-weight:900;
+    }
+
+    .subtitle{
+      margin:5px 0 0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .version{
+      flex:0 0 auto;
+      color:#64748b;
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(226,232,240,.95);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      box-shadow:0 6px 18px rgba(15,23,42,.05);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    .card{
+      background:rgba(255,255,255,.94);
+      border:1px solid rgba(226,232,240,.95);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .card-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:14px 15px 10px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .card-title{
+      margin:0;
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+
+    .card-note{
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .card-body{ padding:14px 15px 15px; }
+
+    .status-grid{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:10px;
+    }
+
+    .status-box{
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:14px;
+      padding:11px 12px;
+      min-height:66px;
+    }
+
+    .label{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:5px;
+    }
+
+    .value{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      font-weight:900;
+      font-size:18px;
+      word-break:break-word;
+    }
+
+    .gas-dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:var(--warn);
+      box-shadow:0 0 0 4px rgba(245,158,11,.16);
+      flex:0 0 auto;
+    }
+
+    .gas-dot.ok{ background:var(--ok); box-shadow:0 0 0 4px rgba(22,163,74,.15); }
+    .gas-dot.bad{ background:var(--bad); box-shadow:0 0 0 4px rgba(220,38,38,.15); }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+
+    .select-wrap{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex:1 1 220px;
+    }
+
+    select{
+      width:100%;
+      appearance:none;
+      border:1px solid #cbd5e1;
+      border-radius:13px;
+      background:#fff;
+      color:var(--text);
+      font-size:15px;
+      font-weight:800;
+      padding:11px 36px 11px 12px;
+      outline:none;
+      background-image:linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
+      background-position:calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+      background-size:6px 6px, 6px 6px;
+      background-repeat:no-repeat;
+    }
+
+    .count-pill{
+      flex:0 0 auto;
+      background:var(--soft);
+      color:#1e40af;
+      border:1px solid #bfdbfe;
+      border-radius:999px;
+      padding:9px 12px;
+      font-size:13px;
+      font-weight:900;
+    }
+
+    .table-wrap{
+      width:100%;
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:15px;
+      background:#fff;
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:900px;
+    }
+
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:#f1f5f9;
+      color:#334155;
+      font-size:12px;
+      text-align:left;
+      padding:11px 9px;
+      border-bottom:1px solid var(--line);
+      white-space:nowrap;
+    }
+
+    tbody td{
+      padding:10px 9px;
+      border-bottom:1px solid #eef2f7;
+      font-size:13px;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+
+    tbody tr:last-child td{ border-bottom:none; }
+    tbody tr:hover{ background:#f8fbff; }
+
+    .seq{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:26px;
+      height:26px;
+      border-radius:999px;
+      background:#e0ecff;
+      color:#1d4ed8;
+      font-weight:900;
+    }
+
+    .btn{
+      border:none;
+      border-radius:13px;
+      padding:10px 13px;
+      font-size:14px;
+      font-weight:900;
+      cursor:pointer;
+      color:#1e40af;
+      background:#dbeafe;
+      transition:transform .12s ease, background .12s ease, opacity .12s ease;
+    }
+
+    .btn:active{ transform:scale(.98); }
+    .btn:hover{ background:#bfdbfe; }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+    .empty{
+      padding:18px;
+      text-align:center;
+      color:var(--muted);
+      font-weight:800;
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      border-radius:14px;
+    }
+
+    .msg{
+      margin-top:12px;
+      min-height:22px;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .msg.ok{ color:var(--ok); }
+    .msg.bad{ color:var(--bad); }
+    .msg.warn{ color:#b45309; }
+
+    @media (max-width:720px){
+      .page{ padding:14px 10px 24px; }
+      .hero{ align-items:flex-start; }
+      .title{ font-size:20px; }
+      .version{ margin-top:2px; }
+      .status-grid{ grid-template-columns:1fr; }
+      .status-box{ min-height:auto; }
+      .card-head{ align-items:flex-start; flex-direction:column; }
+      .card-note{ white-space:normal; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h1 class="title">巡檢人員點檢首頁</h1>
+        <p class="subtitle">本機工作進度與表單編輯入口</p>
+      </div>
+      <div class="version" id="versionText">index v0.1.2</div>
+    </section>
+
+    <section class="grid">
+      <section class="card" aria-label="狀態區">
+        <div class="card-head">
+          <h2 class="card-title">A. 狀態</h2>
+          <span class="card-note">顯示本機登入草稿與 GAS 回應狀態</span>
+        </div>
+        <div class="card-body">
+          <div class="status-grid">
+            <div class="status-box">
+              <span class="label">目前 ID</span>
+              <div class="value" id="currentIdText">未登入</div>
+            </div>
+            <div class="status-box">
+              <span class="label">本機時間</span>
+              <div class="value" id="localTimeText">--</div>
+            </div>
+            <div class="status-box">
+              <span class="label">GAS 狀態</span>
+              <div class="value"><span class="gas-dot" id="gasDot"></span><span id="gasStatusText">檢查中</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="歷史記錄區">
+        <div class="card-head">
+          <h2 class="card-title">B. 本機工作進度</h2>
+          <span class="card-note">點選修改後，只把該筆草稿傳給 form.html</span>
+        </div>
+        <div class="card-body">
+          <div class="toolbar">
+            <div class="select-wrap">
+              <select id="historyGroupSelect" aria-label="選擇表單日期與班別">
+                <option value="">尚無資料</option>
+              </select>
+            </div>
+            <div class="count-pill" id="recordCountText">0 筆</div>
+          </div>
+
+          <div id="historyArea" class="empty">目前沒有本機送出紀錄</div>
+          <div class="msg" id="historyMsg"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    'use strict';
+
+    const PAGE_VERSION = 'index v0.1.2';
+
+    const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
+    const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
+    const FORM_HISTORY_KEY = 'PI_FORM_HISTORY_V001';
+    const FORM_RESTORE_KEY = 'PI_FORM_RESTORE_DRAFT_V001';
+
+    const el = {
+      versionText:document.getElementById('versionText'),
+      currentIdText:document.getElementById('currentIdText'),
+      localTimeText:document.getElementById('localTimeText'),
+      gasDot:document.getElementById('gasDot'),
+      gasStatusText:document.getElementById('gasStatusText'),
+      historyGroupSelect:document.getElementById('historyGroupSelect'),
+      recordCountText:document.getElementById('recordCountText'),
+      historyArea:document.getElementById('historyArea'),
+      historyMsg:document.getElementById('historyMsg')
+    };
+
+    let allHistoryRecords = [];
+    let groupedHistory = {};
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    function init(){
+      el.versionText.textContent = PAGE_VERSION;
+      bindEvents();
+      renderCurrentId();
+      startClock();
+      pingGasByGet();
+      loadAndRenderHistory();
+    }
+
+    function bindEvents(){
+      el.historyGroupSelect.addEventListener('change', renderSelectedGroup);
+
+      window.addEventListener('focus', loadAndRenderHistory);
+      window.addEventListener('pageshow', loadAndRenderHistory);
+      document.addEventListener('visibilitychange', function(){
+        if (!document.hidden) loadAndRenderHistory();
+      });
+      window.addEventListener('storage', function(evt){
+        if (evt && evt.key === FORM_HISTORY_KEY) loadAndRenderHistory();
+      });
+    }
+
+    function readJsonStorage(key, fallback){
+      try{
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const data = JSON.parse(raw);
+        return data == null ? fallback : data;
+      }catch(err){
+        return fallback;
+      }
+    }
+
+    function writeSessionJsonStorage(key, value){
+      sessionStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function getLoginDraft(){
+      return readJsonStorage(LOGIN_DRAFT_KEY, null);
+    }
+
+    function getShortAuthDraft(){
+      return readJsonStorage(SHORT_AUTH_KEY, null);
+    }
+
+    function getCurrentId(){
+      const shortAuth = getShortAuthDraft();
+      const loginDraft = getLoginDraft();
+      return normalizeText(
+        getFirstValue(shortAuth, ['id', 'user_id', 'inspector']) ||
+        getFirstValue(loginDraft, ['id', 'user_id', 'inspector']) ||
+        ''
+      ).toUpperCase();
+    }
+
+    function renderCurrentId(){
+      const id = getCurrentId();
+      el.currentIdText.textContent = id || '未登入';
+    }
+
+    function startClock(){
+      renderClock();
+      window.setInterval(renderClock, 1000);
+    }
+
+    function renderClock(){
+      el.localTimeText.textContent = formatMmDdHhMmSs(new Date());
+    }
+
+    function setGasStatus(status, text){
+      el.gasDot.classList.remove('ok', 'bad');
+      if (status === 'ok') el.gasDot.classList.add('ok');
+      else if (status === 'bad') el.gasDot.classList.add('bad');
+      el.gasStatusText.textContent = text;
+    }
+
+    function pingGasByGet(){
+      if (typeof api_url === 'undefined' || !api_url){
+        setGasStatus('bad', 'api_url未設定');
+        return;
+      }
+
+      setGasStatus('warn', '檢查中');
+
+      fetch(api_url, { method:'GET', cache:'no-store' })
+        .then(function(res){ return res.text(); })
+        .then(function(text){
+          if (isOkResponseText(text)) setGasStatus('ok', '正常');
+          else setGasStatus('bad', '異常');
+        })
+        .catch(function(){
+          setGasStatus('bad', '異常');
+        });
+    }
+
+    function isOkResponseText(text){
+      const raw = String(text || '').trim();
+      if (!raw) return false;
+
+      try{
+        const data = JSON.parse(raw);
+        return data && String(data.status || '').toLowerCase() === 'ok';
+      }catch(err){
+        return raw.toLowerCase().indexOf('ok') >= 0;
+      }
+    }
+
+    function loadAndRenderHistory(){
+      renderCurrentId();
+
+      const data = readJsonStorage(FORM_HISTORY_KEY, []);
+      allHistoryRecords = normalizeHistoryList(data);
+      groupedHistory = buildHistoryGroups(allHistoryRecords);
+      renderHistoryGroups();
+    }
+
+    function normalizeHistoryList(data){
+      if (Array.isArray(data)) return data.filter(Boolean);
+
+      if (data && typeof data === 'object'){
+        const list = [];
+        Object.keys(data).forEach(function(key){
+          const group = data[key];
+          if (Array.isArray(group)){
+            group.forEach(function(item){
+              if (item && typeof item === 'object' && !item.history_key) item.history_key = key;
+              if (item) list.push(item);
+            });
+          }
+        });
+        return list;
+      }
+
+      return [];
+    }
+
+    function buildHistoryGroups(records){
+      const groups = {};
+
+      records.forEach(function(record, index){
+        const key = getHistoryKey(record);
+        if (!key) return;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push({ record:record, originalIndex:index });
+      });
+
+      Object.keys(groups).forEach(function(key){
+        groups[key].sort(function(a, b){
+          const ta = getRecordTimeValue(a.record);
+          const tb = getRecordTimeValue(b.record);
+          if (ta !== tb) return tb - ta;
+          return b.originalIndex - a.originalIndex;
+        });
+      });
+
+      return groups;
+    }
+
+    function renderHistoryGroups(){
+      const keys = Object.keys(groupedHistory).sort(compareHistoryKeyDesc);
+
+      el.historyGroupSelect.innerHTML = '';
+
+      if (!keys.length){
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '尚無資料';
+        el.historyGroupSelect.appendChild(opt);
+        el.recordCountText.textContent = '0 筆';
+        el.historyArea.className = 'empty';
+        el.historyArea.textContent = '目前沒有本機送出紀錄';
+        return;
+      }
+
+      keys.forEach(function(key){
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = formatHistoryKeyLabel(key) + '（' + groupedHistory[key].length + '筆）';
+        el.historyGroupSelect.appendChild(opt);
+      });
+
+      renderSelectedGroup();
+    }
+
+    function renderSelectedGroup(){
+      const key = el.historyGroupSelect.value;
+      const rows = groupedHistory[key] || [];
+      el.recordCountText.textContent = rows.length + ' 筆';
+      clearMsg(el.historyMsg);
+
+      if (!rows.length){
+        el.historyArea.className = 'empty';
+        el.historyArea.textContent = '此班別目前沒有紀錄';
+        return;
+      }
+
+      el.historyArea.className = 'table-wrap';
+      el.historyArea.innerHTML = '';
+
+      const table = document.createElement('table');
+      table.appendChild(buildTableHead());
+
+      const tbody = document.createElement('tbody');
+      rows.forEach(function(item, idx){
+        tbody.appendChild(buildHistoryRow(item.record, idx + 1));
+      });
+      table.appendChild(tbody);
+      el.historyArea.appendChild(table);
+    }
+
+    function buildTableHead(){
+      const thead = document.createElement('thead');
+      const tr = document.createElement('tr');
+      [
+        '序號',
+        '表單日期',
+        '班別',
+        '機台ID',
+        '項次1',
+        '項次2',
+        '是否接班',
+        '工作時間',
+        '操作'
+      ].forEach(function(text){
+        const th = document.createElement('th');
+        th.textContent = text;
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+      return thead;
+    }
+
+    function buildHistoryRow(record, seq){
+      const tr = document.createElement('tr');
+      const historyKey = getHistoryKey(record);
+      const keyParts = parseHistoryKey(historyKey);
+
+      appendCell(tr, makeSeq(seq));
+      appendCell(tr, keyParts.dateText || '');
+      appendCell(tr, keyParts.shift || '');
+      appendCell(tr, getDisplayMachineId(record));
+      appendCell(tr, getDisplayItem(record, 1));
+      appendCell(tr, getDisplayItem(record, 2));
+      appendCell(tr, formatRoutineCheck(getDisplayRoutineCheck(record)));
+      appendCell(tr, getDisplayWorkTime(record));
+
+      const actionTd = document.createElement('td');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn';
+      btn.textContent = '修改';
+      btn.addEventListener('click', function(){
+        passRecordToForm(record);
+      });
+      actionTd.appendChild(btn);
+      tr.appendChild(actionTd);
+
+      return tr;
+    }
+
+    function appendCell(tr, content){
+      const td = document.createElement('td');
+      if (content instanceof Node) td.appendChild(content);
+      else td.textContent = content == null ? '' : String(content);
+      tr.appendChild(td);
+    }
+
+    function makeSeq(seq){
+      const span = document.createElement('span');
+      span.className = 'seq';
+      span.textContent = String(seq);
+      return span;
+    }
+
+    function passRecordToForm(record){
+      clearMsg(el.historyMsg);
+
+      const currentId = getCurrentId();
+      const recordOwnerId = getRecordOwnerId(record);
+
+      if (!currentId || !recordOwnerId || currentId !== recordOwnerId){
+        return;
+      }
+
+      const selectedDraft = {
+        source:'index_history',
+        created_at_ms:Date.now(),
+        created_at_local:formatLocalDateTime(new Date()),
+        history_key:getHistoryKey(record),
+        record:record
+      };
+
+      writeSessionJsonStorage(FORM_RESTORE_KEY, selectedDraft);
+      window.location.href = './form.html';
+    }
+
+    function getHistoryKey(record){
+      const payload = getRecordPayload(record);
+
+      const direct = normalizeText(
+        getFirstValue(record, ['history_key', 'shift_key', 'date_shift_key']) ||
+        getFirstValue(payload, ['history_key', 'shift_key', 'date_shift_key']) ||
+        ''
+      );
+      if (direct) return direct;
+
+      const dateText = normalizeText(
+        getFirstValue(record, ['form_date', 'date_text', 'display_date']) ||
+        getFirstValue(payload, ['form_date', 'date_text', 'display_date']) ||
+        ''
+      );
+      const shift = normalizeText(
+        getFirstValue(record, ['shift']) ||
+        getFirstValue(payload, ['shift']) ||
+        ''
+      ).toUpperCase();
+
+      if (dateText && shift) return dateText + '|' + shift;
+      return '';
+    }
+
+    function parseHistoryKey(key){
+      const parts = String(key || '').split('|');
+      return {
+        dateText:parts[0] || '',
+        shift:(parts[1] || '').toUpperCase()
+      };
+    }
+
+    function formatHistoryKeyLabel(key){
+      const parsed = parseHistoryKey(key);
+      const date = parsed.dateText.replace(/^\d{4}\//, '');
+      return (date || parsed.dateText || '--') + ' ' + (parsed.shift || '-');
+    }
+
+    function compareHistoryKeyDesc(a, b){
+      const pa = parseHistoryKey(a);
+      const pb = parseHistoryKey(b);
+      const da = historyDateNumber(pa.dateText);
+      const db = historyDateNumber(pb.dateText);
+      if (da !== db) return db - da;
+      return shiftNumber(pb.shift) - shiftNumber(pa.shift);
+    }
+
+    function historyDateNumber(dateText){
+      const s = String(dateText || '').replace(/[^0-9]/g, '');
+      if (s.length >= 8) return Number(s.slice(0, 8)) || 0;
+      return Number(s) || 0;
+    }
+
+    function shiftNumber(shift){
+      if (shift === 'A') return 1;
+      if (shift === 'B') return 2;
+      if (shift === 'C') return 3;
+      return 0;
+    }
+
+    function getRecordPayload(record){
+      if (record && record.payload && typeof record.payload === 'object') return record.payload;
+      return record && typeof record === 'object' ? record : {};
+    }
+
+    function getRecordOwnerId(record){
+      const payload = getRecordPayload(record);
+      return normalizeText(
+        getFirstValue(record, ['id', 'user_id', 'inspector']) ||
+        getFirstValue(payload, ['id', 'user_id', 'inspector']) ||
+        ''
+      ).toUpperCase();
+    }
+
+    function getDisplayMachineId(record){
+      const payload = getRecordPayload(record);
+      return normalizeText(
+        getFirstValue(record, ['machine_id', 'machine', 'machineId']) ||
+        getFirstValue(payload, ['machine_id', 'machine', 'machineId']) ||
+        ''
+      );
+    }
+
+    function getDisplayItem(record, no){
+      const payload = getRecordPayload(record);
+      const n = String(no).padStart(2, '0');
+      return normalizeText(
+        getFirstValue(record, ['item_' + n, 'item' + n, 'item_' + no, 'item' + no]) ||
+        getFirstValue(payload, ['item_' + n, 'item' + n, 'item_' + no, 'item' + no]) ||
+        ''
+      );
+    }
+
+    function getDisplayRoutineCheck(record){
+      const payload = getRecordPayload(record);
+      return normalizeText(
+        getFirstValue(record, ['routine_check', 'routineCheck']) ||
+        getFirstValue(payload, ['routine_check', 'routineCheck']) ||
+        ''
+      );
+    }
+
+    function getDisplayWorkTime(record){
+      const payload = getRecordPayload(record);
+      const raw = normalizeText(
+        getFirstValue(record, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
+        getFirstValue(payload, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
+        ''
+      );
+
+      if (!raw) return '';
+      return formatWorkTimeText(raw);
+    }
+
+    function getRecordTimeValue(record){
+      const payload = getRecordPayload(record);
+      const raw = normalizeText(
+        getFirstValue(record, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
+        getFirstValue(payload, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
+        ''
+      );
+      return parseTimeValue(raw);
+    }
+
+    function formatRoutineCheck(value){
+      const v = String(value || '').trim().toUpperCase();
+      if (v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1') return '是';
+      if (v === 'FALSE' || v === 'N' || v === 'NO' || v === '0' || v === '') return '否';
+      return value;
+    }
+
+    function formatWorkTimeText(raw){
+      const s = String(raw || '').trim();
+      const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
+      if (m){
+        return pad2(m[2]) + '-' + pad2(m[3]) + ' ' + pad2(m[4]) + ':' + pad2(m[5]);
+      }
+      return s;
+    }
+
+    function parseTimeValue(raw){
+      const s = String(raw || '').trim();
+      const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+      if (!m) return 0;
+      return new Date(
+        Number(m[1]),
+        Number(m[2]) - 1,
+        Number(m[3]),
+        Number(m[4]),
+        Number(m[5]),
+        Number(m[6] || 0)
+      ).getTime() || 0;
+    }
+
+    function getFirstValue(obj, names){
+      if (!obj || typeof obj !== 'object') return '';
+      for (let i = 0; i < names.length; i++){
+        const name = names[i];
+        if (Object.prototype.hasOwnProperty.call(obj, name) && obj[name] != null && obj[name] !== '') return obj[name];
+      }
+      return '';
+    }
+
+    function normalizeText(value){
+      return String(value == null ? '' : value).trim();
+    }
+
+    function pad2(n){
+      return String(n).padStart(2, '0');
+    }
+
+    function formatMmDdHhMmSs(d){
+      return pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' +
+        pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+    }
+
+    function formatLocalDateTime(d){
+      return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) + ' ' +
+        pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+    }
+
+    function clearMsg(target){
+      target.className = 'msg';
+      target.textContent = '';
+    }
+  </script>
+</body>
+</html>

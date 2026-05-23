@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F3cc24ee4-3dd7-4f48-a6d1-c69b6d75a144.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="46ac3076809d42c7a37a9ecba85" src="//local.adguard.org?ts=1779473759312&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
+  <script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Faabec184-1916-4f1e-95de-9083a59fae55.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢確認表</title>
@@ -781,7 +781,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.3.1</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.3.2</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -804,6 +804,9 @@
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
   //const APP_VERSION = 'v0.2.6';
+  const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
+  const WORK_LOG_KEEP_MS = 9 * 60 * 60 * 1000;
+
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
@@ -1740,8 +1743,10 @@
 
     setSubmitting(true);
     try {
-      const data = await postWithTimeout(buildSubmitParams(), POST_TIMEOUT_MS);
+	  const submitParams = buildSubmitParams();
+	  const data = await postWithTimeout(submitParams, POST_TIMEOUT_MS);
       if (data && data.status === 'ok') {
+		saveWorkLogDraft(data, submitParams),
         clearAfterSuccess();
 		el.routineCheck.checked = false;
         scrollToTopAfterSuccess();
@@ -1777,6 +1782,52 @@
     //params.set('client_version', APP_VERSION);
     return params;
   }
+
+  //上傳成功記錄 - on
+  function saveWorkLogDraft(data, submitParams) {
+	const now = Date.now();
+	const cutoff = now - WORK_LOG_KEEP_MS;
+
+	const old = readJson(WORK_LOG_KEY);
+	const list = Array.isArray(old) ? old : [];
+
+	const row = buildWorkLogRow(data, submitParams);
+
+	const next = list
+	.filter(item => Number(item && item.saved_at || 0) >= cutoff)
+	.concat([{
+	saved_at: now,
+	row
+	}]);
+	writeJson(WORK_LOG_KEY, next);
+  }
+
+  function buildWorkLogRow(data, submitParams) {
+	const row = [
+	String(data && data.record_id ? data.record_id : ''), // 欄1：record_id
+	String(el.localTime.textContent || ''), // 欄2：畫面即時時間
+	String(submitParams.get('date') || ''),
+	String(submitParams.get('shift') || ''),
+	String(submitParams.get('machine_id') || ''),
+	String(submitParams.get('name') || ''),
+	String(submitParams.get('routine_check') || '')
+	];
+
+	const maxNo = getMaxItemNo();
+
+	for (let i = 1; i <= maxNo; i++) {
+	  row.push(String(submitParams.get(itemName(i)) || ''));
+	}
+	return row;
+  }
+
+  function getMaxItemNo() {
+	return ITEMS.reduce((max, item) => {
+	const no = Number(item && item.no || 0);
+	return no > max ? no : max;
+	}, 0);
+  }
+  //上傳成功記錄 - off
 
   function dateTextToSerial(dateText) {
     const m = String(dateText || '').match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
