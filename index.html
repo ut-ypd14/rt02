@@ -352,7 +352,7 @@
   <script>
     'use strict';
 
-    // index v0.1.9：歷史草稿格式固定為 record_id + 當時作業時間 + 原表單29欄。
+    // index v0.1.10：歷史草稿格式固定為 record_id + 當時作業時間 + 原表單29欄。
 
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -495,9 +495,17 @@
       clearMsg(el.historyMsg);
 
       const data = readJsonStorage(FORM_HISTORY_KEY, []);
-      allHistoryRecords = normalizeHistoryList(data).filter(isRecordWorkTimeToday);
+      const rawRecords = normalizeHistoryList(data);
+      const todayRecords = rawRecords.filter(isRecordWorkTimeToday);
+
+      allHistoryRecords = todayRecords;
+
+      if (rawRecords.length > 0 && todayRecords.length === 0){
+        setMsg(el.historyMsg, 'warn', '已讀到 ' + rawRecords.length + ' 筆草稿，但第2欄工作時間未判定為今天');
+      }
+
       groupedTodayHistory = buildTodayGroups(allHistoryRecords);
-      renderTodayGroups();
+      renderTodayGroups(rawRecords.length);
     }
 
     function normalizeHistoryList(data){
@@ -559,7 +567,7 @@
       return groups;
     }
 
-    function renderTodayGroups(){
+    function renderTodayGroups(rawCount){
       const total = groupedTodayHistory.reduce(function(sum, group){
         return sum + group.rows.length;
       }, 0);
@@ -569,7 +577,7 @@
 
       if (!groupedTodayHistory.length){
         el.historyArea.className = 'empty';
-        el.historyArea.textContent = '目前沒有可編輯紀錄';
+        el.historyArea.textContent = rawCount > 0 ? '有草稿，但工作時間不屬於今天' : '目前沒有可編輯紀錄';
         return;
       }
 
@@ -690,11 +698,21 @@
     }
 
     function isRecordWorkTimeToday(record){
+      const raw = getRecordTimeRaw(record);
+      if (!raw) return false;
+
+      const today = new Date();
+      const mmddDash = pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+      const mmddSlash = pad2(today.getMonth() + 1) + '/' + pad2(today.getDate());
+
+      // form.html 草稿第2欄來源為 el.localTime.textContent，通常是 mm-dd HH:mm:ss。
+      // 先用文字前綴/包含判斷，避免 Date 解析差異造成今日資料被誤排除。
+      if (raw.indexOf(mmddDash) >= 0 || raw.indexOf(mmddSlash) >= 0) return true;
+
       const timeValue = getRecordTimeValue(record);
       if (!timeValue) return false;
 
       const d = new Date(timeValue);
-      const today = new Date();
       return d.getFullYear() === today.getFullYear() &&
         d.getMonth() === today.getMonth() &&
         d.getDate() === today.getDate();
