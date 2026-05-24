@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
   <title>人員登入</title>
-  <script src="./config.js"></script>
+  <script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F60f195b2-5588-433d-9bfe-05f755cec6e9.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <style>
     :root{--bg:#f6f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d8dee9;--ok:#087443;--bad:#b42318;--warn:#a15c07;--main:#1f5eff;}
     *{box-sizing:border-box}
@@ -96,7 +96,7 @@
     if (!url) return Promise.reject(new Error('api_url_not_set'));
     var params = new URLSearchParams();
     params.append('action', action);
-    params.append('_t', String(Date.now()));
+    params.append('_t', String(window.CFG_now));
     if (payload) {
       Object.keys(payload).forEach(function(k){ params.append(k, payload[k] == null ? '' : String(payload[k])); });
     }
@@ -158,23 +158,26 @@
     } catch (err) {}
   }
 
-function ping(){
-  setGasStatus('檢查中...', 'warn');
-  fetch(api_url + '?t=' + Date.now())
-    .then(function(res){
-      return res.text();
+
+
+  function ping(){
+    setGasStatus('檢查中...', 'warn');
+
+    fetch(api_url + '?t=' + Date.now(), {
+      method: 'GET',
+      cache: 'no-store'
     })
-    .then(function(text){
-      if (String(text).trim() === 'ok') {
+    .then(function(res){
+      if (res && res.ok) {
         setGasStatus('ok', 'ok');
       } else {
-        setGasStatus('回應異常', 'bad');
+        setGasStatus('伺服器回應異常', 'bad');
       }
     })
     .catch(function(){
       setGasStatus('伺服器沒有回應', 'bad');
     });
-}
+  }
 
   idInput.addEventListener('input', function(){ idInput.value = normalizeId(idInput.value).replace(/[^A-Z0-9]/g, '').slice(0,5); });
   passInput.addEventListener('input', function(){ passInput.value = String(passInput.value || '').replace(/[^A-Za-z0-9]/g, ''); });
@@ -195,9 +198,9 @@ function ping(){
         var target = returnTarget();
         if (target) {
           setMsg('驗證成功，3 秒後返回原頁。', 'ok');
-          setTimeout(function(){ location.replace(addCacheBust(target)); }, 3000);
+          setTimeout(function(){ location.replace(addCacheBust(target)); }, 0);
         } else {
-          setMsg('驗證成功，已建立通行草稿；未取得來源頁，不自動跳轉。', 'ok');
+          setMsg('驗證成功，已建立通行權證；未取得來源頁，不自動跳轉。', 'ok');
         }
       })
       .catch(function(err){
