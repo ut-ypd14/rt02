@@ -352,6 +352,8 @@
   <script>
     'use strict';
 
+    // index v0.1.9：歷史草稿格式固定為 record_id + 當時作業時間 + 原表單29欄。
+
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
     const FORM_HISTORY_KEY = 'PI_FORM_HISTORY_V001';
@@ -499,17 +501,29 @@
     }
 
     function normalizeHistoryList(data){
-      if (Array.isArray(data)){
-        if (isHistoryRowArray(data)) return [data];
-        return data.filter(isHistoryRowArray);
+      const rows = [];
+      collectHistoryRows(data, rows);
+      return rows;
+    }
+
+    function collectHistoryRows(value, rows){
+      if (isHistoryRowArray(value)){
+        rows.push(value);
+        return;
       }
 
-      if (data && typeof data === 'object'){
-        const rows = data.records || data.rows || data.list || data.history || data.data;
-        if (Array.isArray(rows)) return normalizeHistoryList(rows);
+      if (Array.isArray(value)){
+        value.forEach(function(item){
+          collectHistoryRows(item, rows);
+        });
+        return;
       }
 
-      return [];
+      if (value && typeof value === 'object'){
+        Object.keys(value).forEach(function(key){
+          collectHistoryRows(value[key], rows);
+        });
+      }
     }
 
     function isHistoryRowArray(data){
@@ -761,6 +775,7 @@
     }
 
     function getRecordTimeRaw(record){
+      // row[1] = form.html 寫入草稿時的畫面即時時間：String(el.localTime.textContent || '')
       return normalizeText(record[1]);
     }
 
@@ -795,25 +810,49 @@
 
     function formatWorkTimeText(raw){
       const s = String(raw || '').trim();
-      const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
+      if (!s) return '';
+
+      let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
       if (m){
         return pad2(m[2]) + '-' + pad2(m[3]) + ' ' + pad2(m[4]) + ':' + pad2(m[5]);
       }
+
+      m = s.match(/^(\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
+      if (m){
+        return pad2(m[1]) + '-' + pad2(m[2]) + ' ' + pad2(m[3]) + ':' + pad2(m[4]);
+      }
+
       return s;
     }
 
     function parseTimeValue(raw){
       const s = String(raw || '').trim();
-      const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-      if (!m) return 0;
-      return new Date(
-        Number(m[1]),
-        Number(m[2]) - 1,
-        Number(m[3]),
-        Number(m[4]),
-        Number(m[5]),
-        Number(m[6] || 0)
-      ).getTime() || 0;
+      let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+      if (m){
+        return new Date(
+          Number(m[1]),
+          Number(m[2]) - 1,
+          Number(m[3]),
+          Number(m[4]),
+          Number(m[5]),
+          Number(m[6] || 0)
+        ).getTime() || 0;
+      }
+
+      m = s.match(/^(\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+      if (m){
+        const now = new Date();
+        return new Date(
+          now.getFullYear(),
+          Number(m[1]) - 1,
+          Number(m[2]),
+          Number(m[3]),
+          Number(m[4]),
+          Number(m[5] || 0)
+        ).getTime() || 0;
+      }
+
+      return 0;
     }
 
     function getFirstValue(obj, names){
