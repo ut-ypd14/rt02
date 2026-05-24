@@ -205,14 +205,14 @@
 
     table{
       width:100%;
-      min-width:790px;
+      min-width:620px;
       border-collapse:separate;
       border-spacing:0;
       font-size:14px;
     }
 
     th, td{
-      padding:9px 9px;
+      padding:8px 7px;
       border-bottom:1px solid rgba(226,232,240,.9);
       text-align:left;
       vertical-align:middle;
@@ -316,7 +316,7 @@
       .gas-inline{ font-size:14px; }
       .card-head{ padding:12px 13px 9px; }
       .card-body{ padding:12px 13px 14px; }
-      table{ min-width:760px; }
+      table{ min-width:600px; }
     }
   </style>
 </head>
@@ -355,7 +355,7 @@
   <script>
     'use strict';
 
-    const APP_VERSION = 'index v0.1.11';
+    const APP_VERSION = 'index v0.1.12';
 
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -642,14 +642,14 @@
       const thead = document.createElement('thead');
       const tr = document.createElement('tr');
       [
-        '序號',
-        '表單日期',
-        '班別',
-        '機台ID',
-        '項次1',
-        '項次2',
-        '是否接班',
-        '工作時間',
+        '#',
+        '日期',
+        '班',
+        '機台',
+        '狀態',
+        '作業料號',
+        '例',
+        '時間',
         '編輯'
       ].forEach(function(text){
         const th = document.createElement('th');
@@ -666,7 +666,7 @@
       const keyParts = parseHistoryKey(historyKey);
 
       appendCell(tr, makeSeq(seq));
-      appendCell(tr, keyParts.dateText || '');
+      appendCell(tr, formatTableDateText(keyParts.dateText));
       appendCell(tr, keyParts.shift || '');
       appendCell(tr, getDisplayMachineId(record));
       appendCell(tr, getDisplayItem(record, 1));
@@ -835,6 +835,19 @@
       return s;
     }
 
+    function formatTableDateText(value){
+      const s = String(value == null ? '' : value).trim();
+      if (!s) return '';
+
+      let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+      if (m) return pad2(m[2]) + '/' + pad2(m[3]);
+
+      m = s.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+      if (m) return pad2(m[1]) + '/' + pad2(m[2]);
+
+      return s;
+    }
+
     function formatRoutineCheck(value){
       const v = String(value || '').trim().toUpperCase();
       if (v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1') return '是';
@@ -848,12 +861,12 @@
 
       let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
       if (m){
-        return pad2(m[2]) + '-' + pad2(m[3]) + ' ' + pad2(m[4]) + ':' + pad2(m[5]);
+        return pad2(m[4]) + ':' + pad2(m[5]);
       }
 
       m = s.match(/^(\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
       if (m){
-        return pad2(m[1]) + '-' + pad2(m[2]) + ' ' + pad2(m[3]) + ':' + pad2(m[4]);
+        return pad2(m[3]) + ':' + pad2(m[4]);
       }
 
       return s;
