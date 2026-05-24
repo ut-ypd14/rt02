@@ -1804,13 +1804,22 @@
 
 function buildWorkLogRow(data, submitParams) {
   const row = [
-    String(data && data.record_id ? data.record_id : ''),
-    String(el.localTime.textContent || '')
+    String(data && data.record_id ? data.record_id : ''), // 欄1：record_id
+    String(el.localTime.textContent || ''),                // 欄2：畫面即時時間
+
+    String(submitParams.get('date') || ''),
+    String(submitParams.get('shift') || ''),
+    String(submitParams.get('machine_id') || ''),
+    String(submitParams.get('id') || ''),                  // 帳號 ID
+    String(submitParams.get('name') || ''),
+    String(submitParams.get('routine_check') || '')
   ];
 
-  submitParams.forEach(function(value) {
-    row.push(String(value || ''));
+  ITEMS.forEach(item => {
+    row.push(String(submitParams.get(itemName(item.no)) || ''));
   });
+
+  row.push(String(submitParams.get('client_time') || ''));
 
   return row;
 }
