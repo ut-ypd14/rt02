@@ -195,65 +195,82 @@
       white-space:nowrap;
     }
 
-    .table-wrap{
+    .log-list{
       width:100%;
-      overflow:auto;
       border:1px solid rgba(226,232,240,.95);
       border-radius:14px;
       background:#ffffff;
+      overflow:hidden;
     }
 
-    table{
-      width:100%;
-      min-width:620px;
-      border-collapse:separate;
-      border-spacing:0;
-      font-size:14px;
-    }
-
-    th, td{
-      padding:8px 7px;
-      border-bottom:1px solid rgba(226,232,240,.9);
-      text-align:left;
-      vertical-align:middle;
+    .log-row{
+      display:grid;
+      grid-template-columns:2.1em 3.8em 3.6em 14ch 1.6em 3.7em auto;
+      align-items:center;
+      column-gap:.28rem;
+      min-height:42px;
+      padding:7px 8px;
+      border-bottom:1px solid rgba(226,232,240,.86);
+      color:#1f2937;
+      font-size:12.5px;
+      font-weight:850;
       white-space:nowrap;
     }
 
-    th{
-      position:sticky;
-      top:0;
-      z-index:1;
-      color:#475569;
-      background:#f8fafc;
-      font-size:12px;
-      font-weight:900;
+    .log-row:last-child{ border-bottom:0; }
+
+    .log-cell{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
 
-    tr:last-child td{ border-bottom:0; }
-
-    td{ color:#1f2937; font-weight:750; }
-
-    .seq{
+    .log-seq{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-width:28px;
-      height:28px;
+      width:2em;
+      height:2em;
       border-radius:999px;
       color:#1d4ed8;
       background:#eff6ff;
       border:1px solid rgba(147,197,253,.46);
+      font-size:12px;
       font-weight:900;
     }
 
+    .log-machine{ font-weight:950; }
+
+    .log-status{ color:#334155; }
+
+    .log-part{
+      width:14ch;
+      max-width:14ch;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      letter-spacing:-.02em;
+    }
+
+    .log-routine{
+      text-align:center;
+      color:#1d4ed8;
+      font-weight:950;
+    }
+
+    .log-time{
+      color:#475569;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      letter-spacing:-.03em;
+    }
+
     .btn{
-      min-height:34px;
+      min-height:30px;
       border:0;
       border-radius:999px;
-      padding:7px 12px;
+      padding:6px 10px;
       color:#ffffff;
       background:linear-gradient(135deg, var(--main), var(--main2));
-      font-size:13px;
+      font-size:12.5px;
       font-weight:900;
       cursor:pointer;
       box-shadow:0 8px 18px rgba(37,99,235,.16);
@@ -316,7 +333,14 @@
       .gas-inline{ font-size:14px; }
       .card-head{ padding:12px 13px 9px; }
       .card-body{ padding:12px 13px 14px; }
-      table{ min-width:600px; }
+      .log-row{
+        grid-template-columns:2em 3.5em 3.3em 14ch 1.4em 3.4em auto;
+        column-gap:.22rem;
+        padding:7px 6px;
+        font-size:11.7px;
+      }
+      .log-seq{ width:1.9em; height:1.9em; font-size:11px; }
+      .btn{ min-height:29px; padding:5px 8px; font-size:12px; }
     }
   </style>
 </head>
@@ -355,7 +379,7 @@
   <script>
     'use strict';
 
-    const APP_VERSION = 'index v0.1.12';
+    const APP_VERSION = 'index v0.1.13';
 
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -620,61 +644,32 @@
         title.appendChild(small);
         block.appendChild(title);
 
-        const wrap = document.createElement('div');
-        wrap.className = 'table-wrap';
+        const list = document.createElement('div');
+        list.className = 'log-list';
 
-        const table = document.createElement('table');
-        table.appendChild(buildTableHead());
-
-        const tbody = document.createElement('tbody');
         group.rows.forEach(function(item){
-          tbody.appendChild(buildHistoryRow(item.record, seq));
+          list.appendChild(buildHistoryRow(item.record, seq));
           seq += 1;
         });
-        table.appendChild(tbody);
-        wrap.appendChild(table);
-        block.appendChild(wrap);
+
+        block.appendChild(list);
         el.historyArea.appendChild(block);
       });
     }
 
-    function buildTableHead(){
-      const thead = document.createElement('thead');
-      const tr = document.createElement('tr');
-      [
-        '#',
-        '日期',
-        '班',
-        '機台',
-        '狀態',
-        '作業料號',
-        '例',
-        '時間',
-        '編輯'
-      ].forEach(function(text){
-        const th = document.createElement('th');
-        th.textContent = text;
-        tr.appendChild(th);
-      });
-      thead.appendChild(tr);
-      return thead;
-    }
-
     function buildHistoryRow(record, seq){
-      const tr = document.createElement('tr');
-      const historyKey = getHistoryKey(record);
-      const keyParts = parseHistoryKey(historyKey);
+      const row = document.createElement('div');
+      row.className = 'log-row';
 
-      appendCell(tr, makeSeq(seq));
-      appendCell(tr, formatTableDateText(keyParts.dateText));
-      appendCell(tr, keyParts.shift || '');
-      appendCell(tr, getDisplayMachineId(record));
-      appendCell(tr, getDisplayItem(record, 1));
-      appendCell(tr, getDisplayItem(record, 2));
-      appendCell(tr, formatRoutineCheck(getDisplayRoutineCheck(record)));
-      appendCell(tr, getDisplayWorkTime(record));
+      appendLogCell(row, makeSeq(seq), 'log-cell');
+      appendLogCell(row, getDisplayMachineId(record), 'log-cell log-machine');
+      appendLogCell(row, getDisplayItem(record, 1), 'log-cell log-status');
+      appendLogCell(row, getDisplayItem(record, 2), 'log-cell log-part');
+      appendLogCell(row, formatRoutineCheckShort(getDisplayRoutineCheck(record)), 'log-cell log-routine');
+      appendLogCell(row, getDisplayWorkTime(record), 'log-cell log-time');
 
-      const actionTd = document.createElement('td');
+      const action = document.createElement('div');
+      action.className = 'log-cell';
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn';
@@ -682,22 +677,23 @@
       btn.addEventListener('click', function(){
         passRecordToForm(record);
       });
-      actionTd.appendChild(btn);
-      tr.appendChild(actionTd);
+      action.appendChild(btn);
+      row.appendChild(action);
 
-      return tr;
+      return row;
     }
 
-    function appendCell(tr, content){
-      const td = document.createElement('td');
-      if (content instanceof Node) td.appendChild(content);
-      else td.textContent = content == null ? '' : String(content);
-      tr.appendChild(td);
+    function appendLogCell(row, content, className){
+      const cell = document.createElement('div');
+      cell.className = className || 'log-cell';
+      if (content instanceof Node) cell.appendChild(content);
+      else cell.textContent = content == null ? '' : String(content);
+      row.appendChild(cell);
     }
 
     function makeSeq(seq){
       const span = document.createElement('span');
-      span.className = 'seq';
+      span.className = 'log-seq';
       span.textContent = String(seq);
       return span;
     }
@@ -853,6 +849,11 @@
       if (v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1') return '是';
       if (v === 'FALSE' || v === 'N' || v === 'NO' || v === '0' || v === '') return '否';
       return value;
+    }
+
+    function formatRoutineCheckShort(value){
+      const v = formatRoutineCheck(value);
+      return v === '是' ? '例' : '';
     }
 
     function formatWorkTimeText(raw){
