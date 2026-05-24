@@ -1,6 +1,6 @@
 /**
  * 巡檢人員點檢確認表{記錄} - GAS
- * Version: v0.2.8
+ * Version: v0.3.1
  * 人員主檔：A id、B pass、C name、D shift、E active、F admin
  * 表單記錄：sh
  */
