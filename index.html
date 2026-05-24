@@ -76,6 +76,7 @@
 
     .top-link:active,
     .edit-btn:active,
+    .tool-btn:active,
     .clear-btn:active{ transform:scale(.98); }
 
     .status-line{
@@ -284,8 +285,29 @@
 
     .clear-area{
       display:flex;
-      justify-content:center;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
       margin-top:15px;
+      padding:0 2px;
+    }
+
+    .tool-btn{
+      width:42px;
+      height:40px;
+      min-width:42px;
+      border:1px solid rgba(37,99,235,.18);
+      border-radius:999px;
+      color:#1d4ed8;
+      background:#eff6ff;
+      font-size:19px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .tool-btn.hidden{
+      visibility:hidden;
+      pointer-events:none;
     }
 
     .clear-btn{
@@ -378,6 +400,7 @@
     </section>
 
     <div class="clear-area">
+      <button type="button" class="tool-btn hidden" id="adminToolBtn" title="管理工具" aria-label="管理工具">🛠</button>
       <button type="button" class="clear-btn" id="clearLoginDraftBtn">登陸</button>
     </div>
     <div class="msg" id="actionMsg"></div>
@@ -386,7 +409,7 @@
   <script>
     'use strict';
 
-    const INDEX_VERSION = 'index v0.2.2';
+    const INDEX_VERSION = 'index v0.2.3';
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
     const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
@@ -400,6 +423,7 @@
       recordCountText:document.getElementById('recordCountText'),
       historyArea:document.getElementById('historyArea'),
       historyMsg:document.getElementById('historyMsg'),
+      adminToolBtn:document.getElementById('adminToolBtn'),
       clearLoginDraftBtn:document.getElementById('clearLoginDraftBtn'),
       actionMsg:document.getElementById('actionMsg')
     };
@@ -418,6 +442,7 @@
 
     function bindEvents(){
       el.clearLoginDraftBtn.addEventListener('click', handleAuthButton);
+      el.adminToolBtn.addEventListener('click', handleAdminToolButton);
 
       window.addEventListener('focus', loadAndRenderHistory);
       window.addEventListener('pageshow', loadAndRenderHistory);
@@ -445,6 +470,12 @@
       setMsg(el.actionMsg, 'ok', '已登出');
     }
 
+
+    function handleAdminToolButton(){
+      if (!hasAdminAccess()) return;
+      window.location.href = './admin.html';
+    }
+
     function readJsonStorage(key, fallback){
       try{
         const raw = localStorage.getItem(key);
@@ -470,11 +501,33 @@
       ).toUpperCase();
     }
 
+    function hasAdminAccess(){
+      const shortAuth = readJsonStorage(SHORT_AUTH_KEY, null);
+      if (!shortAuth || typeof shortAuth !== 'object') return false;
+      const id = normalizeText(shortAuth.id).toUpperCase();
+      if (!id) return false;
+      if (!isShortAuthAlive(shortAuth)) return false;
+      return isAdminValue(shortAuth.admin);
+    }
+
+    function isShortAuthAlive(shortAuth){
+      const expireTime = Number(shortAuth && shortAuth.expire_time || 0);
+      if (!expireTime) return false;
+      return Date.now() <= expireTime;
+    }
+
+    function isAdminValue(value){
+      if (value === true) return true;
+      const v = String(value == null ? '' : value).trim().toUpperCase();
+      return v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1';
+    }
+
     function renderCurrentId(){
       const id = getCurrentId();
       el.currentIdText.textContent = id || '訪客';
       el.clearLoginDraftBtn.textContent = id ? '登出' : '登陸';
       el.clearLoginDraftBtn.classList.toggle('logout', !!id);
+      el.adminToolBtn.classList.toggle('hidden', !hasAdminAccess());
     }
 
     function startClock(){
@@ -591,7 +644,8 @@
       }
 
       el.historyArea.className = '';
-      groupedTodayHistory.forEach(function(group){
+      groupedTodayHistory.forEach(function(group, groupIndex){
+        const canEditGroup = groupIndex === 0;
         let seq = 1;
         const block = document.createElement('section');
         block.className = 'group-block';
@@ -613,7 +667,7 @@
         list.className = 'log-list';
 
         group.rows.forEach(function(item){
-          list.appendChild(buildHistoryRow(item.record, seq));
+          list.appendChild(buildHistoryRow(item.record, seq, canEditGroup));
           seq += 1;
         });
 
@@ -622,12 +676,12 @@
       });
     }
 
-    function buildHistoryRow(record, seq){
+    function buildHistoryRow(record, seq, canEdit){
       const row = document.createElement('div');
       row.className = 'log-row';
 
       appendLogCell(row, String(seq), 'log-cell log-seq');
-      appendEditButton(row, record);
+      appendEditButton(row, record, canEdit);
       appendLogCell(row, getDisplayWorkTime(record), 'log-cell log-time');
       appendLogCell(row, formatRoutineCheckShort(getDisplayRoutineCheck(record)), 'log-cell log-routine');
       appendLogCell(row, getDisplayMachineId(record), 'log-cell log-machine');
@@ -637,20 +691,22 @@
       return row;
     }
 
-    function appendEditButton(row, record){
+    function appendEditButton(row, record, canEdit){
       const cell = document.createElement('div');
       cell.className = 'log-cell';
 
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'edit-btn';
-      btn.textContent = '✎';
-      btn.setAttribute('aria-label', '編輯');
-      btn.addEventListener('click', function(){
-        passRecordToForm(record);
-      });
+      if (canEdit){
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'edit-btn';
+        btn.textContent = '✎';
+        btn.setAttribute('aria-label', '編輯');
+        btn.addEventListener('click', function(){
+          passRecordToForm(record);
+        });
+        cell.appendChild(btn);
+      }
 
-      cell.appendChild(btn);
       row.appendChild(cell);
     }
 
