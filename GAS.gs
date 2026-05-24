@@ -15,7 +15,7 @@ const LOCK_MAINT_MS = 180000;
 
 function doGet(e) {
   return json_({
-    //version: 'v0.2.8',
+    //version: 'v0.3.1',
     //ts: new Date().toISOString(),
     action: 'gas_alive',
 	status: 'ok'
