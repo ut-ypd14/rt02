@@ -291,13 +291,19 @@
     .clear-btn{
       min-width:122px;
       min-height:40px;
-      border:1px solid rgba(220,38,38,.2);
+      border:1px solid rgba(37,99,235,.22);
       border-radius:999px;
-      color:#b91c1c;
-      background:#fff5f5;
+      color:#1d4ed8;
+      background:#eff6ff;
       font-size:15px;
       font-weight:900;
       cursor:pointer;
+    }
+
+    .clear-btn.logout{
+      border-color:rgba(220,38,38,.2);
+      color:#b91c1c;
+      background:#fff5f5;
     }
 
     .msg{
@@ -372,7 +378,7 @@
     </section>
 
     <div class="clear-area">
-      <button type="button" class="clear-btn" id="clearLoginDraftBtn">清除</button>
+      <button type="button" class="clear-btn" id="clearLoginDraftBtn">登陸</button>
     </div>
     <div class="msg" id="actionMsg"></div>
   </main>
@@ -380,7 +386,7 @@
   <script>
     'use strict';
 
-    const INDEX_VERSION = 'index v0.2.1';
+    const INDEX_VERSION = 'index v0.2.2';
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
     const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
@@ -411,7 +417,7 @@
     }
 
     function bindEvents(){
-      el.clearLoginDraftBtn.addEventListener('click', clearLoginDrafts);
+      el.clearLoginDraftBtn.addEventListener('click', handleAuthButton);
 
       window.addEventListener('focus', loadAndRenderHistory);
       window.addEventListener('pageshow', loadAndRenderHistory);
@@ -423,12 +429,20 @@
       });
     }
 
-    function clearLoginDrafts(){
+    function handleAuthButton(){
+      const id = getCurrentId();
+
+      if (!id){
+        sessionStorage.setItem('PI_RETURN_TO', 'index.html');
+        window.location.href = './login.html';
+        return;
+      }
+
       localStorage.removeItem(LOGIN_DRAFT_KEY);
       localStorage.removeItem(SHORT_AUTH_KEY);
       sessionStorage.removeItem(FORM_RESTORE_KEY);
       renderCurrentId();
-      setMsg(el.actionMsg, 'ok', '已清除');
+      setMsg(el.actionMsg, 'ok', '已登出');
     }
 
     function readJsonStorage(key, fallback){
@@ -459,6 +473,8 @@
     function renderCurrentId(){
       const id = getCurrentId();
       el.currentIdText.textContent = id || '訪客';
+      el.clearLoginDraftBtn.textContent = id ? '登出' : '登陸';
+      el.clearLoginDraftBtn.classList.toggle('logout', !!id);
     }
 
     function startClock(){
