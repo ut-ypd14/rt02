@@ -8,10 +8,8 @@
   <style>
     :root{
       --bg:#f4f7fb;
-      --card:#ffffff;
       --text:#1f2937;
       --muted:#64748b;
-      --line:#e5e7eb;
       --main:#2563eb;
       --main2:#1d4ed8;
       --ok:#16a34a;
@@ -284,10 +282,10 @@
     }
 
     .clear-area{
-      display:flex;
+      display:grid;
+      grid-template-columns:56px minmax(0,1fr) 56px;
       align-items:center;
-      justify-content:space-between;
-      gap:12px;
+      gap:8px;
       margin-top:15px;
       padding:0 2px;
     }
@@ -296,6 +294,7 @@
       width:42px;
       height:40px;
       min-width:42px;
+      justify-self:start;
       border:1px solid rgba(37,99,235,.18);
       border-radius:999px;
       color:#1d4ed8;
@@ -311,6 +310,7 @@
     }
 
     .clear-btn{
+      justify-self:center;
       min-width:122px;
       min-height:40px;
       border:1px solid rgba(37,99,235,.22);
@@ -326,6 +326,12 @@
       border-color:rgba(220,38,38,.2);
       color:#b91c1c;
       background:#fff5f5;
+    }
+
+    .clear-spacer{
+      width:42px;
+      height:40px;
+      justify-self:end;
     }
 
     .msg{
@@ -371,6 +377,13 @@
         min-width:1.42rem;
         font-size:16px;
       }
+      .clear-area{
+        grid-template-columns:48px minmax(0,1fr) 48px;
+        gap:6px;
+      }
+      .tool-btn,
+      .clear-spacer{ width:40px; height:38px; min-width:40px; }
+      .clear-btn{ min-width:112px; min-height:38px; font-size:14px; }
       .log-part{ letter-spacing:-.045em; }
     }
   </style>
@@ -379,7 +392,7 @@
   <main class="page">
     <section class="hero">
       <h1 class="title">巡檢人員點檢首頁</h1>
-      <a class="top-link" href="./form.html" id="formEntryLink">進入點檢表</a>
+      <a class="top-link" href="./form.html">進入點檢表</a>
     </section>
 
     <section class="status-line" aria-label="目前狀態">
@@ -399,9 +412,10 @@
       </div>
     </section>
 
-    <div class="clear-area">
+    <div class="clear-area" aria-label="快捷操作">
       <button type="button" class="tool-btn hidden" id="adminToolBtn" title="管理工具" aria-label="管理工具">🛠</button>
-      <button type="button" class="clear-btn" id="clearLoginDraftBtn">登陸</button>
+      <button type="button" class="clear-btn" id="clearLoginDraftBtn">登錄</button>
+      <span class="clear-spacer" aria-hidden="true"></span>
     </div>
     <div class="msg" id="actionMsg"></div>
   </main>
@@ -409,7 +423,6 @@
   <script>
     'use strict';
 
-    const INDEX_VERSION = 'index v0.2.3';
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
     const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
@@ -525,7 +538,7 @@
     function renderCurrentId(){
       const id = getCurrentId();
       el.currentIdText.textContent = id || '訪客';
-      el.clearLoginDraftBtn.textContent = id ? '登出' : '登陸';
+      el.clearLoginDraftBtn.textContent = id ? '登出' : '登錄';
       el.clearLoginDraftBtn.classList.toggle('logout', !!id);
       el.adminToolBtn.classList.toggle('hidden', !hasAdminAccess());
     }
@@ -862,15 +875,9 @@
       return s;
     }
 
-    function formatRoutineCheck(value){
-      const v = String(value || '').trim().toUpperCase();
-      if (v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1') return '是';
-      if (v === 'FALSE' || v === 'N' || v === 'NO' || v === '0' || v === '') return '否';
-      return value;
-    }
-
     function formatRoutineCheckShort(value){
-      return formatRoutineCheck(value) === '是' ? '例' : '';
+      const v = String(value || '').trim().toUpperCase();
+      return (v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1') ? '例' : '';
     }
 
     function formatWorkTimeText(raw){
