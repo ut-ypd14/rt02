@@ -78,9 +78,9 @@
 
     .status-line{
       display:grid;
-      grid-template-columns:1fr auto auto;
-      gap:10px;
+      grid-template-columns:1fr 1fr 1fr;
       align-items:center;
+      gap:8px;
       min-height:46px;
       margin-bottom:14px;
       padding:10px 12px;
@@ -99,9 +99,11 @@
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      text-align:center;
     }
 
     .gas-inline{
+      min-width:0;
       display:inline-flex;
       align-items:center;
       justify-content:flex-end;
@@ -110,6 +112,7 @@
       font-size:15px;
       font-weight:900;
       white-space:nowrap;
+      overflow:hidden;
     }
 
     .gas-dot{
@@ -306,8 +309,9 @@
       .hero{ align-items:flex-start; }
       .title{ font-size:20px; }
       .top-link{ margin-top:1px; padding:8px 11px; }
-      .status-line{ grid-template-columns:1fr auto; }
-      .gas-inline{ grid-column:1 / -1; justify-content:flex-start; }
+      .status-line{ gap:6px; padding:9px 10px; }
+      .status-text{ font-size:14px; }
+      .gas-inline{ font-size:14px; }
       .card-head{ padding:12px 13px 9px; }
       .card-body{ padding:12px 13px 14px; }
     }
@@ -327,9 +331,9 @@
     </section>
 
     <section class="grid">
-      <section class="card" aria-label="今日編輯清單">
+      <section class="card" aria-label="工作日誌">
         <div class="card-head">
-          <h2 class="card-title">今日編輯清單</h2>
+          <h2 class="card-title">工作日誌</h2>
           <span class="count-pill" id="recordCountText">0 筆</span>
         </div>
         <div class="card-body">
@@ -495,23 +499,21 @@
     }
 
     function normalizeHistoryList(data){
-      if (Array.isArray(data)) return data.filter(Boolean);
+      if (Array.isArray(data)){
+        if (isHistoryRowArray(data)) return [data];
+        return data.filter(isHistoryRowArray);
+      }
 
       if (data && typeof data === 'object'){
-        const list = [];
-        Object.keys(data).forEach(function(key){
-          const group = data[key];
-          if (Array.isArray(group)){
-            group.forEach(function(item){
-              if (item && typeof item === 'object' && !item.history_key) item.history_key = key;
-              if (item) list.push(item);
-            });
-          }
-        });
-        return list;
+        const rows = data.records || data.rows || data.list || data.history || data.data;
+        if (Array.isArray(rows)) return normalizeHistoryList(rows);
       }
 
       return [];
+    }
+
+    function isHistoryRowArray(data){
+      return Array.isArray(data) && data.length >= 31;
     }
 
     function buildTodayGroups(records){
@@ -669,15 +671,7 @@
         return;
       }
 
-      const selectedDraft = {
-        source:'index_history',
-        created_at_ms:Date.now(),
-        created_at_local:formatLocalDateTime(new Date()),
-        history_key:getHistoryKey(record),
-        record:record
-      };
-
-      writeSessionJsonStorage(FORM_RESTORE_KEY, selectedDraft);
+      writeSessionJsonStorage(FORM_RESTORE_KEY, record);
       window.location.href = './form.html';
     }
 
@@ -693,26 +687,8 @@
     }
 
     function getHistoryKey(record){
-      const payload = getRecordPayload(record);
-
-      const direct = normalizeText(
-        getFirstValue(record, ['history_key', 'shift_key', 'date_shift_key']) ||
-        getFirstValue(payload, ['history_key', 'shift_key', 'date_shift_key']) ||
-        ''
-      );
-      if (direct) return direct;
-
-      const dateText = normalizeText(
-        getFirstValue(record, ['form_date', 'date_text', 'display_date']) ||
-        getFirstValue(payload, ['form_date', 'date_text', 'display_date']) ||
-        ''
-      );
-      const shift = normalizeText(
-        getFirstValue(record, ['shift']) ||
-        getFirstValue(payload, ['shift']) ||
-        ''
-      ).toUpperCase();
-
+      const dateText = getDisplayFormDate(record);
+      const shift = normalizeText(record[3]).toUpperCase();
       if (dateText && shift) return dateText + '|' + shift;
       return '';
     }
@@ -753,46 +729,25 @@
       return 0;
     }
 
-    function getRecordPayload(record){
-      if (record && record.payload && typeof record.payload === 'object') return record.payload;
-      return record && typeof record === 'object' ? record : {};
+    function getRecordOwnerId(record){
+      return normalizeText(record[4]).toUpperCase();
     }
 
-    function getRecordOwnerId(record){
-      const payload = getRecordPayload(record);
-      return normalizeText(
-        getFirstValue(record, ['id', 'user_id', 'inspector']) ||
-        getFirstValue(payload, ['id', 'user_id', 'inspector']) ||
-        ''
-      ).toUpperCase();
+    function getDisplayFormDate(record){
+      return formatFormDateValue(record[2]);
     }
 
     function getDisplayMachineId(record){
-      const payload = getRecordPayload(record);
-      return normalizeText(
-        getFirstValue(record, ['machine_id', 'machine', 'machineId']) ||
-        getFirstValue(payload, ['machine_id', 'machine', 'machineId']) ||
-        ''
-      );
+      return normalizeText(record[5]);
     }
 
     function getDisplayItem(record, no){
-      const payload = getRecordPayload(record);
-      const n = String(no).padStart(2, '0');
-      return normalizeText(
-        getFirstValue(record, ['item_' + n, 'item' + n, 'item_' + no, 'item' + no]) ||
-        getFirstValue(payload, ['item_' + n, 'item' + n, 'item_' + no, 'item' + no]) ||
-        ''
-      );
+      const index = 6 + Number(no);
+      return normalizeText(record[index]);
     }
 
     function getDisplayRoutineCheck(record){
-      const payload = getRecordPayload(record);
-      return normalizeText(
-        getFirstValue(record, ['routine_check', 'routineCheck']) ||
-        getFirstValue(payload, ['routine_check', 'routineCheck']) ||
-        ''
-      );
+      return normalizeText(record[6]);
     }
 
     function getDisplayWorkTime(record){
@@ -806,12 +761,29 @@
     }
 
     function getRecordTimeRaw(record){
-      const payload = getRecordPayload(record);
-      return normalizeText(
-        getFirstValue(record, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
-        getFirstValue(payload, ['saved_at_local', 'submit_time', 'submitted_at_local', 'work_time', 'server_time']) ||
-        ''
-      );
+      return normalizeText(record[1]);
+    }
+
+    function formatFormDateValue(value){
+      const s = String(value == null ? '' : value).trim();
+      if (!s) return '';
+
+      if (/^\d+(?:\.\d+)?$/.test(s)){
+        const serial = Number(s);
+        if (serial > 20000 && serial < 80000){
+          const ms = Math.round((serial - 25569) * 86400000);
+          const d = new Date(ms);
+          return d.getUTCFullYear() + '/' + pad2(d.getUTCMonth() + 1) + '/' + pad2(d.getUTCDate());
+        }
+      }
+
+      const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (m) return m[1] + '/' + pad2(m[2]) + '/' + pad2(m[3]);
+
+      const md = s.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+      if (md) return new Date().getFullYear() + '/' + pad2(md[1]) + '/' + pad2(md[2]);
+
+      return s;
     }
 
     function formatRoutineCheck(value){
