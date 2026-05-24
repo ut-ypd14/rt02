@@ -80,12 +80,12 @@
 
     .status-line{
       display:grid;
-      grid-template-columns:5.3em 1fr 3.8em;
+      grid-template-columns:4.7em minmax(0,1fr) 3.2em;
       align-items:center;
       gap:3px;
       min-height:40px;
       margin-bottom:12px;
-      padding:7px 8px;
+      padding:7px 11px 7px 8px;
       border:1px solid rgba(226,232,240,.95);
       border-radius:15px;
       background:rgba(255,255,255,.94);
@@ -118,6 +118,7 @@
       align-items:center;
       justify-content:flex-end;
       gap:5px;
+      padding-right:4px;
     }
 
     .gas-dot{
@@ -203,14 +204,14 @@
 
     .log-row{
       display:grid;
-      grid-template-columns:2ch 1.85rem 5ch 1.6ch 4.4ch 4ch minmax(0,1fr);
+      grid-template-columns:2ch 1.65rem 5ch 2ch 5.1ch 4.6ch minmax(0,1fr);
       align-items:center;
-      column-gap:.22rem;
-      min-height:32px;
-      padding:4px 0;
+      column-gap:.34rem;
+      min-height:34px;
+      padding:4px 1px;
       border-bottom:1px solid rgba(226,232,240,.8);
       color:#1f2937;
-      font-size:12px;
+      font-size:12.8px;
       font-weight:850;
       white-space:nowrap;
     }
@@ -229,18 +230,19 @@
     }
 
     .edit-btn{
-      width:1.68rem;
-      height:1.68rem;
-      min-width:1.68rem;
-      border:1px solid rgba(37,99,235,.16);
-      border-radius:999px;
-      color:#fff;
-      background:linear-gradient(135deg, var(--main), var(--main2));
-      font-size:14px;
-      font-weight:900;
+      width:1.55rem;
+      height:1.55rem;
+      min-width:1.55rem;
+      border:0;
+      border-radius:0;
+      color:var(--main2);
+      background:transparent;
+      font-size:17px;
+      font-weight:950;
       line-height:1;
       cursor:pointer;
-      box-shadow:0 6px 13px rgba(37,99,235,.15);
+      box-shadow:none;
+      padding:0;
     }
 
     .log-time{
@@ -315,8 +317,8 @@
       .title{ font-size:19px; }
       .top-link{ min-height:34px; padding:7px 9px; font-size:13px; }
       .status-line{
-        grid-template-columns:4.8em 1fr 3.35em;
-        padding:7px 7px;
+        grid-template-columns:4.4em minmax(0,1fr) 3.05em;
+        padding:7px 10px 7px 7px;
         gap:2px;
       }
       .status-id,
@@ -330,18 +332,18 @@
       .card-body{ padding:8px 7px 10px; }
       .group-title{ font-size:13.5px; }
       .log-row{
-        grid-template-columns:1.8ch 1.75rem 4.75ch 1.45ch 4.05ch 3.65ch minmax(0,1fr);
-        column-gap:.16rem;
-        min-height:31px;
-        font-size:11.2px;
+        grid-template-columns:1.8ch 1.48rem 4.85ch 1.8ch 4.65ch 4.1ch minmax(0,1fr);
+        column-gap:.24rem;
+        min-height:32px;
+        font-size:12px;
       }
       .edit-btn{
-        width:1.56rem;
-        height:1.56rem;
-        min-width:1.56rem;
-        font-size:13px;
+        width:1.42rem;
+        height:1.42rem;
+        min-width:1.42rem;
+        font-size:16px;
       }
-      .log-part{ letter-spacing:-.055em; }
+      .log-part{ letter-spacing:-.045em; }
     }
   </style>
 </head>
@@ -378,7 +380,7 @@
   <script>
     'use strict';
 
-    const INDEX_VERSION = 'index v0.2.0';
+    const INDEX_VERSION = 'index v0.2.1';
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
     const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
@@ -573,9 +575,8 @@
       }
 
       el.historyArea.className = '';
-      let seq = 1;
-
       groupedTodayHistory.forEach(function(group){
+        let seq = 1;
         const block = document.createElement('section');
         block.className = 'group-block';
 
