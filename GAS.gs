@@ -1,6 +1,6 @@
 /**
  * 巡檢人員點檢確認表{記錄} - GAS
- * Version: v0.3.1
+ * Version: v0.3.2
  * 人員主檔：A id、B pass、C name、D shift、E active、F admin
  * 表單記錄：sh
  */
@@ -8,14 +8,14 @@ const SPREADSHEET_ID = '1TCEeGdAQvRTuxdknDeGKRXAbYS8iTYdda2XybPqDzNY';
 
 const SH_USER = 'id';
 const SH_FORM = 'sh';
-
+const FORM_ITEM_COUNT = 24;
 const LOCK_USER_MS = 10000;
 const LOCK_WRITE_MS = 60000;
 const LOCK_MAINT_MS = 180000;
 
 function doGet(e) {
   return json_({
-    //version: 'v0.3.1',
+    //version: 'v0.3.2',
     //ts: new Date().toISOString(),
     action: 'gas_alive',
 	status: 'ok'
@@ -32,24 +32,24 @@ function doPost(e) {
       return routeAuth_(p, ss, SH_USER);
     }
 
-    if (action === 'personnel_save') {
-      return routePersonnelSave_(p, ss, SH_USER);
-    }
-
-    if (action === 'personnel_delete') {
-      return routePersonnelDelete_(p, ss, SH_USER);
-    }
-
     if (action === 'form_write') {
       return routeFormWrite_(p, ss, SH_FORM);
+    }
+
+    if (action === 'form_upData') {
+	  return routeFormUpdate_(p, ss, SH_FORM);
     }
 
     if (action === 'mail_send') {
       return routeMailSend_(p, ss, SH_FORM);
     }
 
-    if (action === 'form_upData') {
-      return routeFormDelete_(p, ss, SH_FORM);
+    if (action === 'personnel_save') {
+      return routePersonnelSave_(p, ss, SH_USER);
+    }
+
+    if (action === 'personnel_delete') {
+      return routePersonnelDelete_(p, ss, SH_USER);
     }
 
     return json_({ status: 'error', action: action || '', msg: 'unknown_action' });
@@ -77,10 +77,10 @@ function routeAuth_(p, ss, sheetName) {
   if (user.active !== true) return json_({ status: 'error', action: 'auth', msg: 'account_disabled' });
 
   return json_({
-    status: 'ok',
     action: 'auth',
     fields: ['id', 'name', 'shift', 'admin'],
-    values: [user.id, user.name, user.shift, user.admin]
+    values: [user.id, user.name, user.shift, user.admin],
+	status: 'ok'
   });
 }
 
@@ -161,10 +161,10 @@ function routePersonnelDelete_(p, ss, sheetName) {
     sh.getRange(target.row, 5).setValue('FALSE');
 
     return json_({
-      status: 'ok',
       action: 'personnel_delete',
       fields: ['id', 'active'],
-      values: [target.id, 'FALSE']
+      values: [target.id, 'FALSE'],
+	  status: 'ok'
     });
   });
 }
@@ -181,8 +181,8 @@ function routeFormWrite_(p, ss, sheetName) {
     );
 
     const row = [
-	  record_id,
-      gasTimeText,
+	  record_id,		// uuid | Google GAS 隨機生成
+      gasTimeText,		// GAS 時間(UTC +8:00)
       param_(p, 'date'),
       param_(p, 'shift'),
       param_(p, 'machine_id'),
@@ -191,7 +191,7 @@ function routeFormWrite_(p, ss, sheetName) {
       param_(p, 'routine_check')
     ];
 
-    for (let i = 1; i <= 24; i++) {
+    for (let i = 1; i <= FORM_ITEM_COUNT; i++) {
       row.push(param_(p, 'item_' + pad2_(i)));
     }
 
@@ -203,6 +203,81 @@ function routeFormWrite_(p, ss, sheetName) {
       status: 'ok'
     });
   });
+}
+
+function routeFormUpdate_(p, ss, sheetName) {
+  return withLock_(LOCK_WRITE_MS, 'form_update', function () {
+    const sh = getSheet_(ss, sheetName);
+    const record_id = String(param_(p, 'record_id') || '').trim();
+
+    if (!record_id) {
+      return json_({
+        action: 'form_update',
+        msg: 'missing_record',
+		status: 'error'
+      });
+    }
+
+    const targetRow = findFormRecordRow_(sh, record_id);
+
+    if (targetRow <= 0) {
+      return json_({
+        action: 'form_update',
+        msg: 'record_not_found',
+        record_id: record_id,
+		status: 'error'
+      });
+    }
+
+    const gasTimeText = Utilities.formatDate(
+      new Date(),
+      'Asia/Taipei',
+      'yyyy/MM/dd HH:mm:ss'
+    );
+
+    const values = [gasTimeText].concat(buildFormDataValues_(p));
+
+    sh.getRange(targetRow, 2, 1, values.length).setValues([values]);
+
+    return json_({
+      action: 'form_update',
+      record_id: record_id,
+      row_index: targetRow,
+      server_time: gasTimeText,
+	  status: 'ok',
+    });
+  });
+}
+
+function findFormRecordRow_(sh, record_id) {
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const values = sh.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
+
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0] || '').trim() === record_id) {
+      return i + 2;
+    }
+  }
+
+  return 0;
+}
+
+function buildFormDataValues_(p) {
+  const row = [
+    param_(p, 'date'),
+    param_(p, 'shift'),
+    param_(p, 'machine_id'),
+    param_(p, 'name'),
+    param_(p, 'routine_check')
+  ];
+
+  for (let i = 1; i <= FORM_ITEM_COUNT; i++) {
+    row.push(param_(p, 'item_' + pad2_(i)));
+  }
+
+  return row;
 }
 
 function routeMailSend_(p, ss, sheetName) {
@@ -322,7 +397,7 @@ function parseBool_(v) {
 
   const s = String(v || '').trim().toUpperCase();
 
-  return s === 'TRUE' || s === 'Y' || s === 'YES' || s === '1' || s === '是';
+  return s === 'TRUE' || s === '1';
 }
 
 function parseActive_(v) {
@@ -330,10 +405,9 @@ function parseActive_(v) {
 
   const s = String(v || '').trim().toUpperCase();
 
-  if (s === '' || s === 'TRUE' || s === 'Y' || s === 'YES' || s === '1' || s === '是') return true;
-  if (s === 'FALSE' || s === 'N' || s === 'NO' || s === '0' || s === '否') return false;
+  if (s === 'TRUE' || s === '1') return true;
 
-  return true;
+  return false;
 }
 
 function json_(obj) {

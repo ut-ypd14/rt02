@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
+  <script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F07725804-bf99-491d-ab73-0a8fc81d22eb.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
@@ -73,7 +73,7 @@
   var VERSION = 'admin.html v0.1.8';
   var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
   var SHORT_KEY = 'PI_SHORT_AUTH_V001';
-  var SHORT_AUTH_MS = 13 * 60 * 60 * 1000;
+  var SHORT_AUTH_MS = 2 * 60 * 60 * 1000;
 
   var gasStatus = document.getElementById('gasStatus');
   var gateStatus = document.getElementById('gateStatus');
@@ -130,7 +130,7 @@
     if (!url) return Promise.reject(new Error('api_url_not_set'));
     var params = new URLSearchParams();
     params.append('action', action);
-    params.append('_t', String(Date.now()));
+    params.append('_t', String(window.CFG_now));
     if (payload) {
       Object.keys(payload).forEach(function(k){ params.append(k, payload[k] == null ? '' : String(payload[k])); });
     }
@@ -150,7 +150,7 @@
   function redirectLogin(reason){
     setGate(reason + '，2 秒後跳轉登入頁。', 'warn');
     sessionStorage.setItem('PI_RETURN_TO', 'admin.html');
-    setTimeout(function(){ location.replace('login.html?from=admin.html&r=' + Date.now()); }, 2000);
+    setTimeout(function(){ location.replace('login.html?from=admin.html&r=' + window.CFG_now); }, 2000);
   }
 
   function writeLoginDraft(user){
@@ -161,7 +161,7 @@
   }
 
   function writeShortAuth(user){
-    var now = Date.now();
+    var now = window.CFG_now();
     var data = {
       id: normalizeId(user.id || loginDraft.id),
       name: String(user.name || ''),
@@ -184,7 +184,7 @@
 
   function shortDraftValid(){
     var sd = readJson(SHORT_KEY);
-    var now = Date.now();
+    var now = window.CFG_now;
     if (!sd.id || !sd.expire_time) return false;
     if (now > Number(sd.expire_time)) return false;
     if (normalizeId(sd.id) !== normalizeId(loginDraft.id)) return false;
@@ -193,7 +193,7 @@
 
 function ping(){
   setGasStatus('檢查中...', 'warn');
-  fetch(api_url + '?t=' + Date.now())
+  fetch(api_url + '?t=' + window.CFG_now)
     .then(function(res){
       return res.text();
     })
@@ -210,12 +210,12 @@ function ping(){
 }
 
   function startGate(){
-    if (!loadLoginDraft()) { redirectLogin('無帳密草稿'); return; }
+    if (!loadLoginDraft()) { redirectLogin('無帳密資料'); return; }
     if (shortDraftValid()) {
       authAdmin('驗證管理權限中...');
       return;
     }
-    authAdmin('短暫通行草稿失效，使用帳密草稿原地認證中...');
+    authAdmin('臨時通行證失效，使用預設帳密原地認證中...');
   }
 
   function authAdmin(message){
@@ -232,7 +232,7 @@ function ping(){
           setGate('帳密驗證通過，但無後台管理權限。', 'bad');
           return;
         }
-        setGate('管理權限通過，短暫通行戳已更新。', 'ok');
+        setGate('管理權限通過，臨時通行證已更新。', 'ok');
         adminPanel.classList.remove('hide');
       })
       .catch(function(){

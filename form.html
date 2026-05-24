@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Faabec184-1916-4f1e-95de-9083a59fae55.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
+  <script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Fa53a5427-2234-4d35-b59c-8a6258dbafc5.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Faabec184-1916-4f1e-95de-9083a59fae55.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢確認表</title>
@@ -431,6 +431,9 @@
 	.inline-options.axis-midright.axis-7 {
 	  grid-template-columns: repeat(7, minmax(0, 1fr));
 	}
+	.inline-options.axis-midright.axis-8 {
+	  grid-template-columns: repeat(8, minmax(0, 1fr));
+	}
 	.inline-options.axis-midright .choice {
 	  width: 100%;
 	  min-height: 54px;
@@ -805,11 +808,12 @@
   import { QRScanner } from './js/QRScanner.js';
   //const APP_VERSION = 'v0.2.6';
   const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
-  const WORK_LOG_KEEP_MS = 9 * 60 * 60 * 1000;
+  const WORK_LOG_KEEP_MS = 72 * 60 * 60 * 1000;
 
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
+  const EDIT_RECORD_KEY = 'PI_EDIT_RECORD_V001'
 
   const AUTH_EXPIRE_MS = 2 * 60 * 60 * 1000;
   const GAS_OK_MS = 800;
@@ -821,12 +825,12 @@
   const FREEZE_RELOAD_MS = 10 * 60 * 1000;
   const SHIFT_SELECT_GRACE_MIN = 40;
 
-  const GAS_ACTION_AUTH_CHECK = 'auth_check';
-  const GAS_ACTION_FORM_WRITE = 'form_write';
+  //const GAS_ACTION_AUTH_CHECK = 'auth_check';
+  //const GAS_ACTION_FORM_WRITE = 'form_write';
 
   const ITEMS = [
     {
-	  no: 1, title: '機台狀態', note: '', type: 'selectPlus', 
+	  no: 1, title: '機台狀態', note: '', type: 'selectPlus',
 	  options: [
 	    { value: 'A',label: 'A:量產' },
 	    { value: 'B',label: 'B:試切' },
@@ -845,14 +849,14 @@
     { no: 6, hotkey: 'F8', title: '索引表', note: '補償值', type: 'okng' },
     { no: 7, title: '象限', note: 'FV', type: 'radio', options: ['1', '3'] },
     { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
-    { no: 9, title: '作業高度(H)', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
-    { no: 10, title: '作業深度(Z)', type: 'number', min: 0.355, max: 0.550, step: 0.001, decimals: 3, autoZero: true, clearInvalidOnBlur: true },
+    { no: 9, title: '作業高度(H)', note: '0.9 ~ 1.8', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
+    { no: 10, title: '作業深度(Z)', note: '0.360 ~ 0.550', type: 'number', min: 0.360, max: 0.550, step: 0.001, decimals: 3, autoZero: true, clearInvalidOnBlur: true },
     { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
-    { no: 12, title: '排版數', note: '排版數', type: 'singleAxis', options: ['0', '6', '5', '4', '3', '2', '1'] },
+    { no: 12, title: '排版數', note: '排版數', type: 'singleAxis8', options: ['0', '6', '5', '4', '3', '2', '1', 'P'] },
     { no: 13, title: '軸襯', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
     { no: 14, hotkey: 'F3', title: '檯面速度、行數', note: '', type: 'okng' },
     { no: 15, hotkey: 'F6', title: '檢查刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
-    { no: 16, title: '疊板數', note: '確認板件疊板片數', type: 'singleAxis', options: ['0', '6', '5', '4', '3', '2', '1'] },
+    { no: 16, title: '疊板數', note: '確認板件疊板片數', type: 'singleAxis7', options: ['0', '6', '5', '4', '3', '2', '1'] },
     { no: 17, title: '物料是否符合', note: '無硫紙、蓋板、尿素板、FR4、底板', type: 'okng' },
     { no: 18, title: 'PIN有無漏敲', note: '每1array最少3支pin', type: 'okng' },
     { no: 19, title: '三天重PIN', note: '重PIN日期及班別 | 0 = 免重PIN', type: 'pinDate' },
@@ -860,12 +864,25 @@
     { no: 21, title: '機台日報表', note: '斷刀、軸數、料號、批號', type: 'okng' },
     { no: 22, title: '稼動紀錄表', note: '確認是否有清夾頭', type: 'okng' },
     { no: 23, title: '電木板(有無二人確認簽名)', note: '(螺絲上的綠線是否平行)', type: 'okng' },
-    { no: 24, title: '壓力腳下降確認', note: '', type: 'singleLong', options: [
-      '正常:RT/RS　製程:0.5~1.5Kg/cm²',
-      '加大:RS/RT/DRT　製程:1.8~2.8Kg/cm²',
-      '正常:PP　製程:2.5~3.5Kg/cm²'
-    ]}
+    { no: 24, title: '壓力腳下降確認', note: '', type: 'singleLong',
+	  options: [
+		'正常:RT/RS　製程:0.5~1.5Kg/cm²',
+		'加大:RS/RT/DRT　製程:1.8~2.8Kg/cm²',
+		'正常:PP　製程:2.5~3.5Kg/cm²'
+      ]
+	}
   ];
+
+  const EDIT_COL = {
+    record: 0,
+    local_time: 1,
+    date: 2,
+    shift: 3,
+    machine_id: 4,
+    name: 5,
+    routine_check: 6,
+    item_start: 7
+  };
 
   const ITEM1_RULES = {
     // 預設：項次2~24全部 open。,只在需要限制時填入例外項次。
@@ -905,7 +922,9 @@
   let machineId = '';
   let gasTimer = null;
   let freezeTimer = null;
-  let freezeLastAliveAt = Date.now();
+  let editMode = false;
+  let editRow = null;
+  let freezeLastAliveAt = window.CFG_now;
 
   const el = {
     app: document.getElementById('app'),
@@ -954,6 +973,7 @@
     renderIdentity();
     buildShiftSelect();
     renderItems();
+	prepareEditMode();
     bindEvents();
     startFreezeHeartbeat();
     await updateGasStatus();
@@ -998,19 +1018,19 @@
   function isShortAuthValid(shortAuth, draftId) {
     if (!shortAuth || !shortAuth.id || shortAuth.id !== draftId) return false;
     const expireTime = Number(shortAuth.expire_time || 0);
-    return Number.isFinite(expireTime) && Date.now() < expireTime;
+    return Number.isFinite(expireTime) && window.CFG_now < expireTime;
   }
 
   async function renewAuth(id, pass) {
     try {
       const params = new URLSearchParams();
-      params.set('action', GAS_ACTION_AUTH_CHECK);
+      params.set('action', 'auth');
       params.set('id', id);
       params.set('pass', pass);
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
       if (!data || data.status !== 'ok') return null;
 
-      const now = Date.now();
+      const now = window.CFG_now;
       const renewed = {
         id,
         name: String(data.name || ''),
@@ -1040,18 +1060,17 @@
   }
 
   function updateClock() {
-    el.localTime.textContent = formatHeaderTime(new Date());
+    el.localTime.textContent = formatHeaderTime(window.CFG_now);
   }
 
   function buildShiftSelect() {
-    const now = new Date();
-    const userShift = normalizeShift(authState && authState.shift) || getNearestClockShift(now).shift;
-    const current = getNearestUserShiftRef(userShift, now);
+    const userShift = normalizeShift(authState && authState.shift) || getNearestClockShift(CFG_now).shift;
+    const current = getNearestUserShiftRef(userShift, CFG_now);
     const options = [prevShift(current), current, nextShift(current)].map((opt, index) => ({
       ...opt,
       order: index + 1,
       value: `${opt.date}|${opt.shift}`,
-      selectable: isShiftOptionSelectable(opt, now)
+      selectable: isShiftOptionSelectable(opt, CFG_now)
     }));
     const windowKey = `${current.date}|${current.shift}`;
     const saved = readJson(SHIFT_PICK_KEY);
@@ -1069,12 +1088,12 @@
     const defaultValue = `${current.date}|${current.shift}`;
     const selectedValue = resolveShiftSelectValue(options, saved, windowKey, defaultValue);
     el.shiftSelect.value = selectedValue;
-    writeJson(SHIFT_PICK_KEY, { windowKey, value: selectedValue, saved_at: Date.now() });
+    writeJson(SHIFT_PICK_KEY, { windowKey, value: selectedValue, saved_at: CFG_now });
 
     updateSelectedShiftText();
 
     el.shiftSelect.addEventListener('change', () => {
-      writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: Date.now() });
+      writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: CFG_now });
       updateSelectedShiftText();
     });
   }
@@ -1204,7 +1223,7 @@
   }
 
   function setTime(date, hour, minute) {
-    const d = new Date(date);
+    const d = window.CFG_now;
     d.setHours(hour, minute, 0, 0);
     return d;
   }
@@ -1322,8 +1341,11 @@
 	if (item.type === 'multi') {
 		return `<div class="inline-options axis-options">${item.options.map(v => choiceCheckbox(name, v, item.no)).join('')}</div>`;
 	}
-	if (item.type === 'singleAxis') {
+	if (item.type === 'singleAxis7') {
 	  return `<div class="inline-options axis-midright axis-7">${item.options.map(v => choiceRadio(name, v, item.no)).join('')}</div>`;
+	}
+	if (item.type === 'singleAxis8') {
+	  return `<div class="inline-options axis-midright axis-8">${item.options.map(v => choiceRadio(name, v, item.no)).join('')}</div>`;
 	}
     if (item.type === 'singleLong') {
       return `<div class="inline-options">${item.options.map(v => choiceRadio(name, v, item.no, true)).join('')}</div>`;
@@ -1356,7 +1378,7 @@
   }
 
   function startFreezeHeartbeat() {
-    freezeLastAliveAt = Date.now();
+    freezeLastAliveAt = window.CFG_now;
 
     if (freezeTimer) clearInterval(freezeTimer);
     freezeTimer = setInterval(checkFreezeHeartbeat, FREEZE_HEARTBEAT_MS);
@@ -1369,7 +1391,7 @@
   }
 
   function checkFreezeHeartbeat() {
-    const now = Date.now();
+    const now = window.CFG_now;
     const gap = now - freezeLastAliveAt;
 
     if (gap > FREEZE_RELOAD_MS) {
@@ -1747,10 +1769,15 @@
 	  const data = await postWithTimeout(submitParams, POST_TIMEOUT_MS);
       if (data && data.status === 'ok') {
 		saveWorkLogDraft(data, submitParams),
+	    if (editMode) {
+	      localStorage.removeItem(EDIT_RECORD_KEY);
+	      editMode = false;
+	      editRow = null;
+	    }
         clearAfterSuccess();
 		el.routineCheck.checked = false;
         scrollToTopAfterSuccess();
-        showToast('送出成功，已保留項次 2，並清除機台 ID。', 'ok');
+        showToast('送出成功，已保留作業料號，並清除機台 ID。', 'ok');
       } else {
         const msg = data && data.msg ? data.msg : 'GAS 回應非 status:"ok"。';
         showToast(`送出失敗：${msg}`, 'bad');
@@ -1766,7 +1793,14 @@
     const selected = getSelectedShift();
     const loginDraft = readJson(LOGIN_DRAFT_KEY);
     const params = new URLSearchParams();
-    params.set('action', GAS_ACTION_FORM_WRITE);
+    params.set('action', 'form_write');
+	if (editMode) {
+      params.set('action', 'form_update');
+      params.set('record', getEditRecordId());
+    } else {
+      params.set('action', 'form_write');
+    }
+	//params.set('action', 'form_write');
     params.set('id', authState.id || '');
     params.set('pass', loginDraft && loginDraft.pass ? loginDraft.pass : '');
     params.set('name', authState.name || '');
@@ -1785,6 +1819,52 @@
 
   //上傳成功記錄 - on
   function saveWorkLogDraft(data, submitParams) {
+    const now = window.CFG_now;
+    const cutoff = now - WORK_LOG_KEEP_MS;
+
+    const old = readJson(WORK_LOG_KEY);
+    const list = Array.isArray(old) ? old : [];
+
+    const row = buildWorkLogRow(data, submitParams);
+    const recordId = String(row[0] || '');
+
+    const alive = list.filter(item => Number(item && item.saved_at || 0) >= cutoff);
+
+    if (editMode && recordId) {
+      let replaced = false;
+
+      const next = alive.map(item => {
+      const oldRow = Array.isArray(item && item.row) ? item.row : [];
+      const oldRecordId = String(oldRow[0] || '');
+
+      if (oldRecordId === recordId) {
+        replaced = true;
+        return {
+          saved_at: now,
+          row
+          };
+        }
+        return item;
+      });
+
+      if (!replaced) {
+        next.push({
+          saved_at: now,
+          row
+        });
+      }
+
+      writeJson(WORK_LOG_KEY, next);
+      return;
+    }
+    alive.push({
+      saved_at: now,
+      row
+    });
+    writeJson(WORK_LOG_KEY, alive);
+  } 
+  
+  function saveWorkLogDraft2(data, submitParams) {
 	const now = Date.now();
 	const cutoff = now - WORK_LOG_KEEP_MS;
 
@@ -1802,27 +1882,26 @@
 	writeJson(WORK_LOG_KEY, next);
   }
 
-function buildWorkLogRow(data, submitParams) {
-  const row = [
-    String(data && data.record_id ? data.record_id : ''), // 欄1：record_id
-    String(el.localTime.textContent || ''),                // 欄2：畫面即時時間
+  function buildWorkLogRow(data, submitParams) {
+	const row = [
+	  const recordId = getEditRecordId() || String(data && data.record_id ? data.record_id : '');
+      //String(data && data.record_id ? data.record_id : ''), // 欄1：record_id
+      String(el.localTime.textContent || ''),				  // 欄2：畫面即時時間
+      String(submitParams.get('date') || ''),                 // 表單日期
+      String(submitParams.get('shift') || ''),                // 表單班別
+      String(submitParams.get('machine_id') || ''),           // 機台ID
+      String(submitParams.get('id') || ''),                   // 帳號 ID
+      String(submitParams.get('name') || ''),                 // 人員Name
+      String(submitParams.get('routine_check') || '')         // 例行檢查
+    ];
 
-    String(submitParams.get('date') || ''),
-    String(submitParams.get('shift') || ''),
-    String(submitParams.get('machine_id') || ''),
-    String(submitParams.get('id') || ''),                  // 帳號 ID
-    String(submitParams.get('name') || ''),
-    String(submitParams.get('routine_check') || '')
-  ];
+    ITEMS.forEach(item => {
+      row.push(String(submitParams.get(itemName(item.no)) || ''));
+    });
 
-  ITEMS.forEach(item => {
-    row.push(String(submitParams.get(itemName(item.no)) || ''));
-  });
-
-  row.push(String(submitParams.get('client_time') || ''));
-
-  return row;
-}
+    row.push(String(submitParams.get('client_time') || ''));
+    return row;
+  }
   //上傳成功記錄 - off
 
   function dateTextToSerial(dateText) {
@@ -1982,6 +2061,77 @@ function buildWorkLogRow(data, submitParams) {
       return null;
     }
   }
+
+  function getEditRecordDraft() {
+    const row = readJson(EDIT_RECORD_KEY);
+
+    if (!Array.isArray(row)) {
+      return null;
+    }
+    return row;
+  }
+
+  function isEditModeRequest() {
+    const q = new URLSearchParams(location.search);
+    return q.get('mode') === 'edit';
+  }
+
+  function prepareEditMode() {
+    if (!isEditModeRequest()) {
+	  return;
+    }
+    const row = getEditRecordDraft();
+    if (!row) {
+      editMode = false;
+      editRow = null;
+      showToast('找不到可編輯資料。', 'bad');
+      return;
+    }
+    editMode = true;
+    editRow = row;
+    applyEditBasicInfo(editRow);
+	applyEditItems(editRow);
+    console.log('EDIT_MODE_ROW', editRow);
+    showToast('已讀取編輯資料。', 'ok');
+  }
+
+  function editCell_(row, index) {
+    if (!Array.isArray(row)) return '';
+    const value = row[index];
+    return value === null || value === undefined ? '' : String(value);
+  }
+ 
+  function getEditRecordId() {
+    if (!editMode || !Array.isArray(editRow)) return '';
+    return editCell_(editRow, EDIT_COL.record);
+  }
+
+  function applyEditBasicInfo(row) {
+    const machine = editCell_(row, EDIT_COL.machine_id);
+    const routine = editCell_(row, EDIT_COL.routine_check);
+
+    if (machine) {
+      setMachineId(machine);
+    }
+
+    if (el.routineCheck) {
+      el.routineCheck.checked = String(routine).toUpperCase() === 'TRUE';
+    }
+  }
+
+  function applyEditItems(row) {
+    ITEMS.forEach(item => {
+      const no = Number(item.no || 0);
+      if (!no) return;
+      const index = EDIT_COL.item_start + no - 1;
+      const value = editCell_(row, index);
+      setValueByItemNo(no, value);
+    });
+
+    applyStatusRules();
+    refreshItem2Highlight();
+  }
+
 
   function writeJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
