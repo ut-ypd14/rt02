@@ -89,6 +89,7 @@
       background:rgba(255,255,255,.94);
       box-shadow:0 8px 20px rgba(15,23,42,.06);
       overflow:hidden;
+      white-space:nowrap;
     }
 
     .status-text{
@@ -120,23 +121,18 @@
       height:10px;
       border-radius:999px;
       background:var(--warn);
-      box-shadow:0 0 0 4px rgba(245,158,11,.16);
+      box-shadow:0 0 0 4px rgba(245,158,11,.14);
       flex:0 0 auto;
     }
+    .gas-dot.ok{ background:var(--ok); box-shadow:0 0 0 4px rgba(22,163,74,.13); }
+    .gas-dot.bad{ background:var(--bad); box-shadow:0 0 0 4px rgba(220,38,38,.13); }
 
-    .gas-dot.ok{ background:var(--ok); box-shadow:0 0 0 4px rgba(22,163,74,.15); }
-    .gas-dot.bad{ background:var(--bad); box-shadow:0 0 0 4px rgba(220,38,38,.15); }
-
-    .grid{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:14px;
-    }
+    .grid{ display:grid; gap:14px; }
 
     .card{
-      background:rgba(255,255,255,.94);
-      border:1px solid rgba(226,232,240,.95);
+      border:1px solid rgba(226,232,240,.96);
       border-radius:var(--radius);
+      background:rgba(255,255,255,.96);
       box-shadow:var(--shadow);
       overflow:hidden;
     }
@@ -146,33 +142,36 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding:13px 15px 10px;
-      border-bottom:1px solid var(--line);
+      padding:14px 16px 10px;
+      border-bottom:1px solid rgba(226,232,240,.76);
+      background:linear-gradient(180deg, rgba(248,251,255,.95), rgba(255,255,255,.95));
     }
 
     .card-title{
       margin:0;
-      font-size:16px;
+      font-size:18px;
       font-weight:900;
       letter-spacing:.02em;
     }
 
     .count-pill{
-      flex:0 0 auto;
-      background:var(--soft);
-      color:#1e40af;
-      border:1px solid #bfdbfe;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:28px;
+      padding:4px 10px;
       border-radius:999px;
-      padding:8px 12px;
+      color:#1d4ed8;
+      background:var(--soft);
+      border:1px solid rgba(147,197,253,.42);
       font-size:13px;
       font-weight:900;
       white-space:nowrap;
     }
 
-    .card-body{ padding:14px 15px 15px; }
+    .card-body{ padding:14px 16px 16px; }
 
-    .group-block{ margin-bottom:16px; }
-    .group-block:last-child{ margin-bottom:0; }
+    .group-block + .group-block{ margin-top:16px; }
 
     .group-title{
       display:flex;
@@ -180,8 +179,12 @@
       justify-content:space-between;
       gap:10px;
       margin:0 0 8px;
-      color:#0f172a;
-      font-size:14px;
+      padding:9px 11px;
+      border-radius:14px;
+      background:#f8fafc;
+      border:1px solid rgba(226,232,240,.9);
+      font-size:15px;
+      line-height:1.2;
       font-weight:900;
     }
 
@@ -189,114 +192,113 @@
       color:var(--muted);
       font-size:12px;
       font-weight:900;
+      white-space:nowrap;
     }
 
     .table-wrap{
       width:100%;
       overflow:auto;
-      border:1px solid var(--line);
-      border-radius:15px;
-      background:#fff;
+      border:1px solid rgba(226,232,240,.95);
+      border-radius:14px;
+      background:#ffffff;
     }
 
     table{
       width:100%;
+      min-width:790px;
       border-collapse:separate;
       border-spacing:0;
-      min-width:900px;
+      font-size:14px;
     }
 
-    thead th{
-      position:sticky;
-      top:0;
-      z-index:1;
-      background:#f1f5f9;
-      color:#334155;
-      font-size:12px;
+    th, td{
+      padding:9px 9px;
+      border-bottom:1px solid rgba(226,232,240,.9);
       text-align:left;
-      padding:10px 9px;
-      border-bottom:1px solid var(--line);
-      white-space:nowrap;
-    }
-
-    tbody td{
-      padding:10px 9px;
-      border-bottom:1px solid #eef2f7;
-      font-size:13px;
       vertical-align:middle;
       white-space:nowrap;
     }
 
-    tbody tr:last-child td{ border-bottom:none; }
-    tbody tr:hover{ background:#f8fbff; }
+    th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      color:#475569;
+      background:#f8fafc;
+      font-size:12px;
+      font-weight:900;
+    }
+
+    tr:last-child td{ border-bottom:0; }
+
+    td{ color:#1f2937; font-weight:750; }
 
     .seq{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      width:26px;
-      height:26px;
+      min-width:28px;
+      height:28px;
       border-radius:999px;
-      background:#e0ecff;
       color:#1d4ed8;
+      background:#eff6ff;
+      border:1px solid rgba(147,197,253,.46);
       font-weight:900;
     }
 
     .btn{
-      border:none;
-      border-radius:13px;
-      padding:10px 13px;
-      font-size:14px;
+      min-height:34px;
+      border:0;
+      border-radius:999px;
+      padding:7px 12px;
+      color:#ffffff;
+      background:linear-gradient(135deg, var(--main), var(--main2));
+      font-size:13px;
       font-weight:900;
       cursor:pointer;
-      color:#1e40af;
-      background:#dbeafe;
-      transition:transform .12s ease, background .12s ease, opacity .12s ease;
+      box-shadow:0 8px 18px rgba(37,99,235,.16);
+      white-space:nowrap;
     }
 
     .btn:active{ transform:scale(.98); }
-    .btn:hover{ background:#bfdbfe; }
-    .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+    .empty{
+      padding:22px 12px;
+      color:var(--muted);
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      border-radius:14px;
+      text-align:center;
+      font-size:15px;
+      font-weight:850;
+    }
 
     .clear-area{
       display:flex;
       justify-content:center;
-      margin-top:14px;
+      margin-top:16px;
     }
 
     .clear-btn{
-      min-width:160px;
-      min-height:46px;
-      border:0;
-      border-radius:15px;
-      padding:12px 18px;
-      color:#991b1b;
-      background:#fee2e2;
+      min-width:130px;
+      min-height:42px;
+      border:1px solid rgba(220,38,38,.2);
+      border-radius:999px;
+      color:#b91c1c;
+      background:#fff5f5;
       font-size:15px;
       font-weight:900;
       cursor:pointer;
-      transition:transform .12s ease, background .12s ease;
     }
 
     .clear-btn:active{ transform:scale(.98); }
-    .clear-btn:hover{ background:#fecaca; }
-
-    .empty{
-      padding:18px;
-      text-align:center;
-      color:var(--muted);
-      font-weight:800;
-      background:#f8fafc;
-      border:1px dashed #cbd5e1;
-      border-radius:14px;
-    }
 
     .msg{
-      margin-top:12px;
-      min-height:22px;
+      min-height:21px;
+      margin-top:8px;
       color:var(--muted);
       font-size:13px;
-      font-weight:800;
+      font-weight:850;
       text-align:center;
     }
 
@@ -314,6 +316,7 @@
       .gas-inline{ font-size:14px; }
       .card-head{ padding:12px 13px 9px; }
       .card-body{ padding:12px 13px 14px; }
+      table{ min-width:760px; }
     }
   </style>
 </head>
@@ -352,11 +355,11 @@
   <script>
     'use strict';
 
-    // index v0.1.10：歷史草稿格式固定為 record_id + 當時作業時間 + 原表單29欄。
+    const APP_VERSION = 'index v0.1.11';
 
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
-    const FORM_HISTORY_KEY = 'PI_FORM_HISTORY_V001';
+    const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
     const FORM_RESTORE_KEY = 'PI_FORM_RESTORE_DRAFT_V001';
 
     const el = {
@@ -371,7 +374,6 @@
       actionMsg:document.getElementById('actionMsg')
     };
 
-    let allHistoryRecords = [];
     let groupedTodayHistory = [];
 
     document.addEventListener('DOMContentLoaded', init);
@@ -393,7 +395,7 @@
         if (!document.hidden) loadAndRenderHistory();
       });
       window.addEventListener('storage', function(evt){
-        if (evt && evt.key === FORM_HISTORY_KEY) loadAndRenderHistory();
+        if (!evt || !evt.key || isPossibleWorkLogKey(evt.key)) loadAndRenderHistory();
       });
     }
 
@@ -432,8 +434,8 @@
       const shortAuth = getShortAuthDraft();
       const loginDraft = getLoginDraft();
       return normalizeText(
-        getFirstValue(shortAuth, ['id', 'user_id', 'inspector']) ||
-        getFirstValue(loginDraft, ['id', 'user_id', 'inspector']) ||
+        getFirstValue(shortAuth, ['id']) ||
+        getFirstValue(loginDraft, ['id']) ||
         ''
       ).toUpperCase();
     }
@@ -494,48 +496,65 @@
       renderCurrentId();
       clearMsg(el.historyMsg);
 
-      const data = readJsonStorage(FORM_HISTORY_KEY, []);
-      const rawRecords = normalizeHistoryList(data);
+      const workLogItems = readWorkLogItems();
+      const rawRecords = normalizeWorkLogRows(workLogItems);
       const todayRecords = rawRecords.filter(isRecordWorkTimeToday);
 
-      allHistoryRecords = todayRecords;
-
       if (rawRecords.length > 0 && todayRecords.length === 0){
-        setMsg(el.historyMsg, 'warn', '已讀到 ' + rawRecords.length + ' 筆草稿，但第2欄工作時間未判定為今天');
+        setMsg(el.historyMsg, 'warn', '已讀到 ' + rawRecords.length + ' 筆草稿，但工作時間不是今天');
       }
 
-      groupedTodayHistory = buildTodayGroups(allHistoryRecords);
+      groupedTodayHistory = buildTodayGroups(todayRecords);
       renderTodayGroups(rawRecords.length);
     }
 
-    function normalizeHistoryList(data){
-      const rows = [];
-      collectHistoryRows(data, rows);
-      return rows;
+    function readWorkLogItems(){
+      const exactData = readJsonStorage(WORK_LOG_KEY, null);
+      if (isWorkLogItemList(exactData)) return exactData;
+
+      const candidateKeys = [
+        'WORK_LOG_KEY',
+        'PI_WORK_LOG_DRAFT_V001',
+        'PI_WORK_LOG_V001',
+        'PI_FORM_WORK_LOG_V001',
+        'PI_FORM_HISTORY_V001'
+      ];
+
+      for (let i = 0; i < candidateKeys.length; i++){
+        const key = candidateKeys[i];
+        if (key === WORK_LOG_KEY) continue;
+        const data = readJsonStorage(key, null);
+        if (isWorkLogItemList(data)) return data;
+      }
+
+      for (let i = 0; i < localStorage.length; i++){
+        const key = localStorage.key(i);
+        const data = readJsonStorage(key, null);
+        if (isWorkLogItemList(data)) return data;
+      }
+
+      return [];
     }
 
-    function collectHistoryRows(value, rows){
-      if (isHistoryRowArray(value)){
-        rows.push(value);
-        return;
-      }
-
-      if (Array.isArray(value)){
-        value.forEach(function(item){
-          collectHistoryRows(item, rows);
-        });
-        return;
-      }
-
-      if (value && typeof value === 'object'){
-        Object.keys(value).forEach(function(key){
-          collectHistoryRows(value[key], rows);
-        });
-      }
+    function isPossibleWorkLogKey(key){
+      const k = String(key || '');
+      return k === WORK_LOG_KEY || k.indexOf('WORK_LOG') >= 0 || k.indexOf('FORM_HISTORY') >= 0;
     }
 
-    function isHistoryRowArray(data){
-      return Array.isArray(data) && data.length >= 31;
+    function isWorkLogItemList(data){
+      if (!Array.isArray(data)) return false;
+      if (data.length === 0) return true;
+      return data.some(function(item){
+        return item && typeof item === 'object' && Array.isArray(item.row);
+      });
+    }
+
+    function normalizeWorkLogRows(items){
+      if (!Array.isArray(items)) return [];
+      return items
+        .filter(function(item){ return item && typeof item === 'object' && Array.isArray(item.row); })
+        .map(function(item){ return item.row; })
+        .filter(function(row){ return Array.isArray(row) && row.length >= 10; });
     }
 
     function buildTodayGroups(records){
@@ -705,8 +724,6 @@
       const mmddDash = pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
       const mmddSlash = pad2(today.getMonth() + 1) + '/' + pad2(today.getDate());
 
-      // form.html 草稿第2欄來源為 el.localTime.textContent，通常是 mm-dd HH:mm:ss。
-      // 先用文字前綴/包含判斷，避免 Date 解析差異造成今日資料被誤排除。
       if (raw.indexOf(mmddDash) >= 0 || raw.indexOf(mmddSlash) >= 0) return true;
 
       const timeValue = getRecordTimeValue(record);
@@ -762,7 +779,7 @@
     }
 
     function getRecordOwnerId(record){
-      return normalizeText(record[4]).toUpperCase();
+      return normalizeText(record[5]).toUpperCase();
     }
 
     function getDisplayFormDate(record){
@@ -770,16 +787,16 @@
     }
 
     function getDisplayMachineId(record){
-      return normalizeText(record[5]);
-    }
-
-    function getDisplayItem(record, no){
-      const index = 6 + Number(no);
-      return normalizeText(record[index]);
+      return normalizeText(record[4]);
     }
 
     function getDisplayRoutineCheck(record){
-      return normalizeText(record[6]);
+      return normalizeText(record[7]);
+    }
+
+    function getDisplayItem(record, no){
+      const index = 7 + Number(no);
+      return normalizeText(record[index]);
     }
 
     function getDisplayWorkTime(record){
@@ -793,7 +810,6 @@
     }
 
     function getRecordTimeRaw(record){
-      // row[1] = form.html 寫入草稿時的畫面即時時間：String(el.localTime.textContent || '')
       return normalizeText(record[1]);
     }
 
@@ -892,11 +908,6 @@
 
     function formatMmDdHhMmSs(d){
       return pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' +
-        pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
-    }
-
-    function formatLocalDateTime(d){
-      return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) + ' ' +
         pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
     }
 
