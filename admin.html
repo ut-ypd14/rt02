@@ -161,7 +161,7 @@
   }
 
   function writeShortAuth(user){
-    var now = window.CFG_now;
+    var now = window.CFG_time;
     var data = {
       id: normalizeId(user.id || loginDraft.id),
       name: String(user.name || ''),
@@ -184,7 +184,7 @@
 
   function shortDraftValid(){
     var sd = readJson(SHORT_KEY);
-    var now = window.CFG_now;
+    var now = window.CFG_time;
     if (!sd.id || !sd.expire_time) return false;
     if (now > Number(sd.expire_time)) return false;
     if (normalizeId(sd.id) !== normalizeId(loginDraft.id)) return false;
