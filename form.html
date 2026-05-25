@@ -847,7 +847,6 @@
 
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
-  //const APP_VERSION = 'v0.2.6';
   const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
   const WORK_LOG_KEEP_MS = 72 * 60 * 60 * 1000;
 
@@ -865,9 +864,6 @@
   const FREEZE_HEARTBEAT_MS = 30 * 1000;
   const FREEZE_RELOAD_MS = 10 * 60 * 1000;
   const SHIFT_SELECT_GRACE_MIN = 40;
-
-  //const GAS_ACTION_AUTH_CHECK = 'auth_check';
-  //const GAS_ACTION_FORM_WRITE = 'form_write';
 
   const ITEMS = [
     {
@@ -1419,6 +1415,7 @@ function setTime(date, hour, minute) {
       showToast(`已取得機台 ID：${parsed}`, 'ok');
     });
     el.checkForm.addEventListener('submit', submitForm);
+bindKeyboardScrollKeep();
   }
 
   function startFreezeHeartbeat() {
@@ -2236,6 +2233,75 @@ async function updateGasStatus() {
     if (err.name === 'AbortError') return 'timeout';
     return String(err.message || err);
   }
+
+// keyboard 畫面鎖定 - on
+let keyboardKeepState = {
+  active: false,
+  y: 0,
+  target: null,
+  timer1: null,
+  timer2: null
+};
+
+function isSoftKeyboardInput(node) {
+  if (!node || !node.matches) return false;
+
+  return node.matches(
+    'input[type="text"], input[type="number"], input[type="password"], input[type="search"], input[type="tel"], input[type="email"], textarea'
+  );
+}
+
+function bindKeyboardScrollKeep() {
+  document.addEventListener('focusin', function(evt) {
+    if (!isSoftKeyboardInput(evt.target)) return;
+
+    keyboardKeepState.active = true;
+    keyboardKeepState.target = evt.target;
+    keyboardKeepState.y = window.scrollY || window.pageYOffset || 0;
+
+    clearTimeout(keyboardKeepState.timer1);
+    clearTimeout(keyboardKeepState.timer2);
+
+    // 等鍵盤彈出、畫面被推上去後，記住「推上去後」的位置
+    keyboardKeepState.timer1 = setTimeout(function() {
+      if (!keyboardKeepState.active) return;
+      keyboardKeepState.y = window.scrollY || window.pageYOffset || 0;
+    }, 350);
+  }, true);
+
+  window.addEventListener('scroll', function() {
+    if (!keyboardKeepState.active) return;
+
+    // 鍵盤開啟期間，使用者若自己滑動，就以最後位置為準
+    keyboardKeepState.y = window.scrollY || window.pageYOffset || 0;
+  }, { passive: true });
+
+  document.addEventListener('focusout', function(evt) {
+    if (!keyboardKeepState.active) return;
+    if (keyboardKeepState.target !== evt.target) return;
+
+    const keepY = keyboardKeepState.y;
+
+    keyboardKeepState.active = false;
+    keyboardKeepState.target = null;
+
+    // 若只是切換到另一個輸入框，不處理，避免干擾連續輸入
+    setTimeout(function() {
+      if (isSoftKeyboardInput(document.activeElement)) return;
+
+      window.scrollTo({ top: keepY, left: 0, behavior: 'auto' });
+    }, 80);
+
+    // 手機瀏覽器收鍵盤後 viewport 常延遲變動，再補一次
+    keyboardKeepState.timer2 = setTimeout(function() {
+      if (isSoftKeyboardInput(document.activeElement)) return;
+
+      window.scrollTo({ top: keepY, left: 0, behavior: 'auto' });
+    }, 260);
+  }, true);
+}
+// keyboard 畫面鎖定 - off
+
 
   window.addEventListener('beforeunload', () => {
     if (gasTimer) clearInterval(gasTimer);
