@@ -109,7 +109,7 @@
   }
 
   function saveDrafts(id, pass, user){
-    var now = Date.now();
+    var now = window.CFG_time;
     var name = String(user.name || '');
     localStorage.setItem(LOGIN_KEY, JSON.stringify({ id:id, pass:pass }));
     localStorage.setItem(SHORT_KEY, JSON.stringify({
@@ -147,7 +147,7 @@
 
   function addCacheBust(url){
     var mark = url.indexOf('?') >= 0 ? '&' : '?';
-    return url + mark + 'r=' + Date.now();
+    return url + mark + 'r=' + window.CFG_time;
   }
 
   function loadLoginDraft(){
@@ -163,7 +163,7 @@
   function ping(){
     setGasStatus('檢查中...', 'warn');
 
-    fetch(api_url + '?t=' + Date.now(), {
+    fetch(api_url + '?t=' + window.CFG_time, {
       method: 'GET',
       cache: 'no-store'
     })
