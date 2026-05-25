@@ -1018,7 +1018,7 @@
   function isShortAuthValid(shortAuth, draftId) {
     if (!shortAuth || !shortAuth.id || shortAuth.id !== draftId) return false;
     const expireTime = Number(shortAuth.expire_time || 0);
-    return Number.isFinite(expireTime) && window.CFG_now < expireTime;
+    return Number.isFinite(expireTime) && window.CFG_time < expireTime;
   }
 
   async function renewAuth(id, pass) {
