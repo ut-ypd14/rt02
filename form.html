@@ -750,6 +750,23 @@
       .item-note { margin-left: 70px; }
       .control { margin-left: 70px; }
     }
+
+/* iPhone / iOS 瀏覽器防止輸入時自動放大 */
+@media (max-width: 720px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .control select,
+  .control input[type="text"],
+  .control input[type="number"],
+  .manual-qr input,
+  .hero select {
+    font-size: 16px !important;
+  }
+}
   </style>
 </head>
 <body>
