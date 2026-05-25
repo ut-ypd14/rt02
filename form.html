@@ -879,9 +879,10 @@
     date: 2,
     shift: 3,
     machine_id: 4,
-    name: 5,
-    routine_check: 6,
-    item_start: 7
+    id: 5,
+    name: 6,
+    routine_check: 7,
+    item_start: 8
   };
 
   const ITEM1_RULES = {
@@ -1224,11 +1225,11 @@
     return Math.min(Math.abs(t - s), Math.abs(t - e));
   }
 
-  function setTime(date, hour, minute) {
-    const d = window.CFG_time;
-    d.setHours(hour, minute, 0, 0);
-    return d;
-  }
+function setTime(date, hour, minute) {
+  const d = new Date(date.getTime());
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}
 
   function prevShift(ref) {
     if (ref.shift === 'A') return { date: formatDateSlash(addDays(parseDateSlash(ref.date), -1)), shift: 'C' };
