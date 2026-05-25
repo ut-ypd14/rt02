@@ -2235,12 +2235,14 @@ async function updateGasStatus() {
   }
 
 // keyboard 畫面鎖定 - on
+let keyboardKeepBound = false;
+
 let keyboardKeepState = {
   active: false,
+  closing: false,
   y: 0,
   target: null,
-  timer1: null,
-  timer2: null
+  timers: []
 };
 
 function isSoftKeyboardInput(node) {
@@ -2251,29 +2253,61 @@ function isSoftKeyboardInput(node) {
   );
 }
 
+function getPageY() {
+  return window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+}
+
+function clearKeyboardKeepTimers() {
+  keyboardKeepState.timers.forEach(function(t) {
+    clearTimeout(t);
+  });
+  keyboardKeepState.timers = [];
+}
+
+function rememberKeyboardY() {
+  if (!keyboardKeepState.active || keyboardKeepState.closing) return;
+  keyboardKeepState.y = getPageY();
+}
+
+function restoreKeyboardY(y) {
+  window.scrollTo({ top: y, left: 0, behavior: 'auto' });
+}
+
+function restoreKeyboardYManyTimes(y) {
+  [0, 60, 140, 260, 420, 650, 900].forEach(function(delay) {
+    const t = setTimeout(function() {
+      if (isSoftKeyboardInput(document.activeElement)) return;
+      restoreKeyboardY(y);
+    }, delay);
+
+    keyboardKeepState.timers.push(t);
+  });
+}
+
 function bindKeyboardScrollKeep() {
+  if (keyboardKeepBound) return;
+  keyboardKeepBound = true;
+
   document.addEventListener('focusin', function(evt) {
     if (!isSoftKeyboardInput(evt.target)) return;
 
+    clearKeyboardKeepTimers();
+
     keyboardKeepState.active = true;
+    keyboardKeepState.closing = false;
     keyboardKeepState.target = evt.target;
-    keyboardKeepState.y = window.scrollY || window.pageYOffset || 0;
+    keyboardKeepState.y = getPageY();
 
-    clearTimeout(keyboardKeepState.timer1);
-    clearTimeout(keyboardKeepState.timer2);
-
-    // 等鍵盤彈出、畫面被推上去後，記住「推上去後」的位置
-    keyboardKeepState.timer1 = setTimeout(function() {
-      if (!keyboardKeepState.active) return;
-      keyboardKeepState.y = window.scrollY || window.pageYOffset || 0;
-    }, 350);
+    // 鍵盤彈出後，瀏覽器會把畫面推上去；延後記錄推上去後的位置
+    [120, 280, 480].forEach(function(delay) {
+      const t = setTimeout(rememberKeyboardY, delay);
+      keyboardKeepState.timers.push(t);
+    });
   }, true);
 
   window.addEventListener('scroll', function() {
-    if (!keyboardKeepState.active) return;
-
-    // 鍵盤開啟期間，使用者若自己滑動，就以最後位置為準
-    keyboardKeepState.y = window.scrollY || window.pageYOffset || 0;
+    if (!keyboardKeepState.active || keyboardKeepState.closing) return;
+    keyboardKeepState.y = getPageY();
   }, { passive: true });
 
   document.addEventListener('focusout', function(evt) {
@@ -2283,23 +2317,39 @@ function bindKeyboardScrollKeep() {
     const keepY = keyboardKeepState.y;
 
     keyboardKeepState.active = false;
+    keyboardKeepState.closing = true;
     keyboardKeepState.target = null;
 
-    // 若只是切換到另一個輸入框，不處理，避免干擾連續輸入
-    setTimeout(function() {
-      if (isSoftKeyboardInput(document.activeElement)) return;
+    restoreKeyboardYManyTimes(keepY);
 
-      window.scrollTo({ top: keepY, left: 0, behavior: 'auto' });
-    }, 80);
+    const t = setTimeout(function() {
+      keyboardKeepState.closing = false;
+    }, 1100);
 
-    // 手機瀏覽器收鍵盤後 viewport 常延遲變動，再補一次
-    keyboardKeepState.timer2 = setTimeout(function() {
-      if (isSoftKeyboardInput(document.activeElement)) return;
-
-      window.scrollTo({ top: keepY, left: 0, behavior: 'auto' });
-    }, 260);
+    keyboardKeepState.timers.push(t);
   }, true);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function() {
+      if (keyboardKeepState.active && !keyboardKeepState.closing) {
+        const t = setTimeout(rememberKeyboardY, 80);
+        keyboardKeepState.timers.push(t);
+        return;
+      }
+
+      if (keyboardKeepState.closing) {
+        restoreKeyboardYManyTimes(keyboardKeepState.y);
+      }
+    }, { passive: true });
+
+    window.visualViewport.addEventListener('scroll', function() {
+      if (keyboardKeepState.active && !keyboardKeepState.closing) {
+        keyboardKeepState.y = getPageY();
+      }
+    }, { passive: true });
+  }
 }
+ 
 // keyboard 畫面鎖定 - off
 
 
