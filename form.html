@@ -1977,22 +1977,36 @@ function setTime(date, hour, minute) {
     if (!isSubmitting) applyStatusRules();
   }
 
-  async function updateGasStatus() {
-    const start = performance.now();
-    setGasState('checking', 'GAS 檢查中');
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), GAS_VERY_SLOW_MS);
-      await fetch(getApiUrl(), { method: 'GET', cache: 'no-store', signal: controller.signal });
-      clearTimeout(timer);
-      const ms = Math.round(performance.now() - start);
-      if (ms <= GAS_OK_MS) setGasState('ok', `GAS 順暢 ${ms}ms`);
-      else if (ms <= GAS_SLOW_MS) setGasState('slow', `GAS 高延遲 ${ms}ms`);
-      else setGasState('very-slow', `GAS 嚴重延遲 ${ms}ms`);
-    } catch (err) {
-      setGasState('bad', 'GAS 連線異常');
+
+async function updateGasStatus() {
+  const start = performance.now();
+  setGasState('checking', 'GAS 檢查中');
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GAS_VERY_SLOW_MS);
+
+    const res = await fetch(getApiUrl() + '?t=' + window.CFG_time, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal
+    });
+
+    clearTimeout(timer);
+
+    const ms = Math.round(performance.now() - start);
+
+    if (res && res.ok) {
+      setGasState('ok', `GAS 可作業 ${ms}ms`);
+    } else {
+      setGasState('very-slow', `GAS 回應異常 ${ms}ms`);
     }
+
+  } catch (err) {
+    setGasState('very-slow', 'GAS 延遲過高或無法連線');
   }
+}
+
 
   function setGasState(state, text) {
     el.gasLamp.className = `lamp ${state}`;
