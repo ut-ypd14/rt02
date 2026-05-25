@@ -3,9 +3,9 @@
 
 	/* ===== min Tools ===== */
 	window.epoch = Date.UTC(1899,11,30);
+ window.CFG_time = 0;
 	window.CFG_now = "";
-	function tick() {
-	  const sbT = new Intl.DateTimeFormat("zh-TW", {
+	const sbT = new Intl.DateTimeFormat("zh-TW", {
 		timeZone: "Asia/Taipei",
 		hour12: false,
 		year: "numeric",
@@ -15,7 +15,9 @@
 		minute: "2-digit",
 		second: "2-digit"
 	  });
-	  window.CFG_now = sbT.format(new Date());
+	function tick() {
+  	window.CFG_time = Date.now();
+	  window.CFG_now = sbT.format(window.CFG_time);
 	}
 	tick();
 	setInterval(tick, 1000);
