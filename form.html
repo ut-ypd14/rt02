@@ -1030,7 +1030,7 @@
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
       if (!data || data.status !== 'ok') return null;
 
-      const now = window.CFG_now;
+      const now = window.CFG_time;
       const renewed = {
         id,
         name: String(data.name || ''),
@@ -1060,17 +1060,19 @@
   }
 
   function updateClock() {
-    el.localTime.textContent = formatHeaderTime(window.CFG_now);
+    el.localTime.textContent = window.CFG_now;
+    //el.localTime.textContent = formatHeaderTime(window.CFG_now);
   }
 
   function buildShiftSelect() {
-    const userShift = normalizeShift(authState && authState.shift) || getNearestClockShift(CFG_now).shift;
-    const current = getNearestUserShiftRef(userShift, CFG_now);
+    const now = new Date(window.CFG_time);
+    const userShift = normalizeShift(authState && authState.shift) || getNearestClockShift(now).shift;
+    const current = getNearestUserShiftRef(userShift, now);
     const options = [prevShift(current), current, nextShift(current)].map((opt, index) => ({
       ...opt,
       order: index + 1,
       value: `${opt.date}|${opt.shift}`,
-      selectable: isShiftOptionSelectable(opt, CFG_now)
+      selectable: isShiftOptionSelectable(opt, now)
     }));
     const windowKey = `${current.date}|${current.shift}`;
     const saved = readJson(SHIFT_PICK_KEY);
@@ -1088,7 +1090,7 @@
     const defaultValue = `${current.date}|${current.shift}`;
     const selectedValue = resolveShiftSelectValue(options, saved, windowKey, defaultValue);
     el.shiftSelect.value = selectedValue;
-    writeJson(SHIFT_PICK_KEY, { windowKey, value: selectedValue, saved_at: CFG_now });
+    writeJson(SHIFT_PICK_KEY, { windowKey, value: selectedValue, saved_at: window.CFG_time });
 
     updateSelectedShiftText();
 
@@ -1223,7 +1225,7 @@
   }
 
   function setTime(date, hour, minute) {
-    const d = window.CFG_now;
+    const d = window.CFG_time;
     d.setHours(hour, minute, 0, 0);
     return d;
   }
@@ -1378,7 +1380,7 @@
   }
 
   function startFreezeHeartbeat() {
-    freezeLastAliveAt = window.CFG_now;
+    freezeLastAliveAt = window.CFG_time;
 
     if (freezeTimer) clearInterval(freezeTimer);
     freezeTimer = setInterval(checkFreezeHeartbeat, FREEZE_HEARTBEAT_MS);
@@ -1391,7 +1393,7 @@
   }
 
   function checkFreezeHeartbeat() {
-    const now = window.CFG_now;
+    const now = window.CFG_time;
     const gap = now - freezeLastAliveAt;
 
     if (gap > FREEZE_RELOAD_MS) {
@@ -1812,14 +1814,14 @@
     ITEMS.forEach(item => {
       params.set(itemName(item.no), getValueByItemNo(item.no));
     });
-    params.set('client_time', formatLocalDateTime(new Date()));
+    params.set('client_time', window.CFG_now);
     //params.set('client_version', APP_VERSION);
     return params;
   }
 
   //上傳成功記錄 - on
   function saveWorkLogDraft(data, submitParams) {
-    const now = window.CFG_now;
+    const now = window.CFG_time;
     const cutoff = now - WORK_LOG_KEEP_MS;
 
     const old = readJson(WORK_LOG_KEY);
