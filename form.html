@@ -36,6 +36,11 @@
       overflow-anchor: none;
     }
 
+.keyboard-bottom-spacer {
+  height: 0;
+  transition: none;
+  pointer-events: none;
+}
     .app {
       width: min(1120px, calc(100% - 20px));
       margin: 0 auto;
@@ -2243,6 +2248,7 @@ let keyboardKeepState = {
   closing: false,
   y: 0,
   target: null,
+  spacer: null,
   timers: []
 };
 
@@ -2254,7 +2260,7 @@ function isSoftKeyboardInput(node) {
   );
 }
 
-function getLayoutScrollY() {
+function getScrollYValue() {
   return window.scrollY ||
     window.pageYOffset ||
     document.documentElement.scrollTop ||
@@ -2262,31 +2268,54 @@ function getLayoutScrollY() {
     0;
 }
 
-function getVisualPageTop() {
-  const vv = window.visualViewport;
-  return getLayoutScrollY() + (vv ? vv.offsetTop : 0);
-}
-
-function clearKeyboardKeepTimers() {
+function clearKeyboardTimers() {
   keyboardKeepState.timers.forEach(function(t) {
     clearTimeout(t);
   });
   keyboardKeepState.timers = [];
 }
 
+function getKeyboardGuessHeight() {
+  if (!window.visualViewport) return Math.round(window.innerHeight * 0.45);
+
+  const diff = window.innerHeight - window.visualViewport.height;
+  return Math.max(260, Math.round(diff || window.innerHeight * 0.45));
+}
+
+function ensureKeyboardSpacer() {
+  if (!keyboardKeepState.spacer) {
+    const div = document.createElement('div');
+    div.className = 'keyboard-bottom-spacer';
+    document.body.appendChild(div);
+    keyboardKeepState.spacer = div;
+  }
+
+  keyboardKeepState.spacer.style.height = getKeyboardGuessHeight() + 'px';
+}
+
+function removeKeyboardSpacerLater() {
+  const t = setTimeout(function() {
+    if (!keyboardKeepState.spacer) return;
+
+    keyboardKeepState.spacer.style.height = '0px';
+  }, 1600);
+
+  keyboardKeepState.timers.push(t);
+}
+
 function rememberKeyboardY() {
   if (!keyboardKeepState.active || keyboardKeepState.closing) return;
-  keyboardKeepState.y = getVisualPageTop();
+  keyboardKeepState.y = getScrollYValue();
 }
 
 function forceScrollToY(y) {
-  window.scrollTo({ top: y, left: 0, behavior: 'auto' });
+  window.scrollTo(0, y);
   document.documentElement.scrollTop = y;
   document.body.scrollTop = y;
 }
 
-function restoreKeyboardYManyTimes(y) {
-  [0, 80, 180, 350, 600, 900, 1300, 1800].forEach(function(delay) {
+function restoreManyTimes(y) {
+  [0, 80, 180, 350, 600, 900, 1300].forEach(function(delay) {
     const t = setTimeout(function() {
       if (isSoftKeyboardInput(document.activeElement)) return;
       forceScrollToY(y);
@@ -2303,22 +2332,28 @@ function bindKeyboardScrollKeep() {
   document.addEventListener('focusin', function(evt) {
     if (!isSoftKeyboardInput(evt.target)) return;
 
-    clearKeyboardKeepTimers();
+    clearKeyboardTimers();
 
     keyboardKeepState.active = true;
     keyboardKeepState.closing = false;
     keyboardKeepState.target = evt.target;
-    keyboardKeepState.y = getVisualPageTop();
+    keyboardKeepState.y = getScrollYValue();
 
-    [120, 280, 480, 700].forEach(function(delay) {
-      const t = setTimeout(rememberKeyboardY, delay);
+    ensureKeyboardSpacer();
+
+    [120, 280, 500, 760].forEach(function(delay) {
+      const t = setTimeout(function() {
+        ensureKeyboardSpacer();
+        rememberKeyboardY();
+      }, delay);
+
       keyboardKeepState.timers.push(t);
     });
   }, true);
 
   window.addEventListener('scroll', function() {
     if (!keyboardKeepState.active || keyboardKeepState.closing) return;
-    keyboardKeepState.y = getVisualPageTop();
+    keyboardKeepState.y = getScrollYValue();
   }, { passive: true });
 
   document.addEventListener('focusout', function(evt) {
@@ -2331,11 +2366,13 @@ function bindKeyboardScrollKeep() {
     keyboardKeepState.closing = true;
     keyboardKeepState.target = null;
 
-    restoreKeyboardYManyTimes(keepY);
+    ensureKeyboardSpacer();
+    restoreManyTimes(keepY);
+    removeKeyboardSpacerLater();
 
     const t = setTimeout(function() {
       keyboardKeepState.closing = false;
-    }, 2000);
+    }, 1700);
 
     keyboardKeepState.timers.push(t);
   }, true);
@@ -2343,21 +2380,14 @@ function bindKeyboardScrollKeep() {
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', function() {
       if (keyboardKeepState.active && !keyboardKeepState.closing) {
-        [60, 160, 320].forEach(function(delay) {
-          const t = setTimeout(rememberKeyboardY, delay);
-          keyboardKeepState.timers.push(t);
-        });
-        return;
+        ensureKeyboardSpacer();
+        rememberKeyboardY();
       }
 
       if (keyboardKeepState.closing) {
-        restoreKeyboardYManyTimes(keyboardKeepState.y);
+        ensureKeyboardSpacer();
+        restoreManyTimes(keyboardKeepState.y);
       }
-    }, { passive: true });
-
-    window.visualViewport.addEventListener('scroll', function() {
-      if (!keyboardKeepState.active || keyboardKeepState.closing) return;
-      keyboardKeepState.y = getVisualPageTop();
     }, { passive: true });
   }
 }
