@@ -193,7 +193,7 @@
 
 function ping(){
   setGasStatus('檢查中...', 'warn');
-  fetch(api_url + '?t=' + window.CFG_now)
+  fetch(api_url + '?t=' + window.CFG_time)
     .then(function(res){
       return res.text();
     })
