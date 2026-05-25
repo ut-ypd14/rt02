@@ -526,7 +526,7 @@
     function isShortAuthAlive(shortAuth){
       const expireTime = Number(shortAuth && shortAuth.expire_time || 0);
       if (!expireTime) return false;
-      return Date.now() <= expireTime;
+      return window.CFG_time <= expireTime;
     }
 
     function isAdminValue(value){
@@ -748,7 +748,7 @@
       const raw = getRecordTimeRaw(record);
       if (!raw) return false;
 
-      const today = new Date();
+      const today = new Date(window.CFG_time);
       const mmddDash = pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
       const mmddSlash = pad2(today.getMonth() + 1) + '/' + pad2(today.getDate());
 
@@ -912,7 +912,7 @@
 
       m = s.match(/^(\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
       if (m){
-        const now = new Date();
+        const now = new Date(window.CFG_time);
         return new Date(
           now.getFullYear(),
           Number(m[1]) - 1,
