@@ -198,6 +198,27 @@
       white-space: nowrap;
     }
 
+.home-jump-btn {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid #c8d8f2;
+  background: #eef4ff;
+  color: var(--brand2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 6px 14px rgba(37,95,188,.12);
+}
+
+.home-jump-btn:active {
+  transform: scale(.96);
+}
     .qr-actions {
       display: flex;
       gap: 10px;
@@ -751,10 +772,11 @@
     </section>
 
     <section class="panel">
-      <div class="panel-title">
+        <div class="panel-title">
         <h2>機台 QR 掃描</h2>
-        <div class="qr-actions">
-          <button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
+        <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
+          <div class="qr-actions">
+            <button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
           <button type="button" class="btn btn-soft" id="clearMachineBtn">清除機台</button>
         </div>
       </div>
