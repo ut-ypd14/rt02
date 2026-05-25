@@ -161,7 +161,7 @@
   }
 
   function writeShortAuth(user){
-    var now = window.CFG_now();
+    var now = window.CFG_now;
     var data = {
       id: normalizeId(user.id || loginDraft.id),
       name: String(user.name || ''),
