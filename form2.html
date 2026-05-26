@@ -1,0 +1,2479 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <script src="./config.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>巡檢人員點檢確認表</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #152033;
+      --muted: #667085;
+      --line: #d9e2ef;
+      --brand: #255fbc;
+      --brand2: #174c99;
+      --ok: #19a15f;
+      --slow: #f2c94c;
+      --very-slow: #f97316;
+      --bad: #e5484d;
+      --neutral: #98a2b3;
+      --soft-bad: #ffecec;
+      --focus: #fff3cd;
+      --shadow: 0 10px 28px rgba(15, 23, 42, .10);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: linear-gradient(180deg, #eef5ff 0%, var(--bg) 42%, #f9fbff 100%);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .app {
+      width: min(1120px, calc(100% - 20px));
+      margin: 0 auto;
+      padding: 12px 0 28px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1f5fbf, #163e88);
+      color: #fff;
+      border-radius: 24px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 8px;
+      z-index: 20;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: clamp(20px, 4.8vw, 34px);
+      margin: 0;
+      line-height: 1.2;
+      letter-spacing: .02em;
+    }
+
+    .pill {
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-weight: 900;
+      font-size: 12px;
+      white-space: nowrap;
+      background: rgba(255,255,255,.13);
+    }
+
+    .status-row,
+    .shift-row,
+    .identity-row {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .status-row { grid-template-columns: minmax(0, 1fr) 64px; }
+    .shift-row { grid-template-columns: 1fr; }
+    .identity-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .mini-card {
+      border: 1px solid rgba(255,255,255,.24);
+      background: rgba(255,255,255,.13);
+      border-radius: 16px;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .mini-value {
+      font-size: 16px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+
+    .time-value { text-align: left; letter-spacing: .02em; }
+
+    .gas-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    .lamp {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--neutral);
+      box-shadow: 0 0 0 5px rgba(255,255,255,.18), 0 0 18px rgba(255,255,255,.25);
+      flex: 0 0 auto;
+    }
+    .lamp.checking { background: var(--neutral); }
+    .lamp.ok { background: var(--ok); }
+    .lamp.slow { background: var(--slow); }
+    .lamp.very-slow { background: var(--very-slow); }
+    .lamp.bad { background: var(--bad); }
+
+    select, input, button, textarea { font: inherit; }
+
+    .hero select {
+      width: 100%;
+      border: 0;
+      outline: none;
+      border-radius: 13px;
+      padding: 10px 12px;
+      font-weight: 900;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-top: 14px;
+      padding: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .panel-title h2 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .routine-check-wrap {
+      margin-left: auto;
+      margin-right: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 32px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .routine-check-wrap input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--brand2);
+    }
+    .selected-shift-badge {
+      min-width: 86px;
+      text-align: right;
+      font-size: 15px;
+      font-weight: 950;
+      color: var(--brand2);
+      background: #eef4ff;
+      border: 1px solid #c8d8f2;
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+	.home-jump-btn {
+	  flex: 0 0 auto;
+	  width: 44px;
+	  height: 44px;
+	  border-radius: 14px;
+	  border: 1px solid #c8d8f2;
+	  background: #eef4ff;
+	  color: var(--brand2);
+	  display: inline-flex;
+	  align-items: center;
+	  justify-content: center;
+	  text-decoration: none;
+	  font-size: 24px;
+	  font-weight: 950;
+	  line-height: 1;
+	  box-shadow: 0 6px 14px rgba(37,95,188,.12);
+	}
+
+	.home-jump-btn:active {
+	  transform: scale(.96);
+	}
+    .qr-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .12s ease, opacity .12s ease, box-shadow .12s ease;
+      min-height: 44px;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(37,95,188,.24);
+    }
+    .btn-soft {
+      background: #eef4ff;
+      color: var(--brand2);
+    }
+    .btn-submit {
+      width: 100%;
+      font-size: 20px;
+      padding: 15px 18px;
+      border-radius: 18px;
+      margin-top: 14px;
+    }
+    .next-step-pulse {
+      animation: nextStepPulse 1.25s ease-in-out 0s 2;
+      box-shadow: 0 0 0 5px rgba(47, 107, 230, .18), var(--shadow);
+    }
+    @keyframes nextStepPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.045); }
+      100% { transform: scale(1); }
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .qr-box {
+      display: none;
+      margin-top: 12px;
+      border: 1px dashed #9bb7df;
+      background: #f7fbff;
+      border-radius: 18px;
+      padding: 12px;
+    }
+    .qr-box.active { display: block; }
+    .qr-stage {
+      position: relative;
+      height: clamp(260px, 72vw, 360px);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0f172a;
+      display: block;
+    }
+    #qrVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #0f172a;
+    }
+
+    .manual-qr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .manual-qr input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item-card {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 17px;
+      padding: 12px;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) minmax(230px, 380px);
+      gap: 10px;
+      align-items: center;
+      transition: background .12s ease, opacity .12s ease, transform .12s ease, border-color .12s ease;
+    }
+    .item-card.hidden { display: none; }
+    .item-card.locked { opacity: .72; background: #f5f7fb; }
+    .item-card.focus-required {
+      border-color: var(--bad);
+      box-shadow: 0 0 0 4px rgba(229, 72, 77, .16), var(--shadow);
+    }
+    .item-card.warn-empty {
+      background: var(--focus);
+      border-color: #f2c94c;
+    }
+
+    .item-index {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+    }
+    .item-no {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #edf4ff;
+      color: var(--brand2);
+      font-weight: 950;
+      font-size: 14px;
+    }
+    .hotkey-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 22px;
+      padding: 0 5px;
+      border-radius: 999px;
+      border: 1px solid #b7cae8;
+      background: #f6faff;
+      color: #174c99;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .item-title {
+      font-size: 15px;
+      line-height: 1.28;
+      font-weight: 950;
+    }
+    .item-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      margin-top: 4px;
+      min-height: 16px;
+    }
+
+    .control select,
+    .control input[type="text"],
+    .control input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 10px 10px;
+      outline: none;
+      background: #fff;
+      min-height: 43px;
+    }
+    .control input:focus,
+    .control select:focus {
+      border-color: #6aa1ff;
+      box-shadow: 0 0 0 4px rgba(37,95,188,.10);
+    }
+    .control.invalid input { border-color: var(--bad); background: var(--soft-bad); }
+
+    .inline-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+    .inline-options.yesno {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .inline-options.yesno .choice {
+      justify-content: center;
+      border-radius: 14px;
+      font-size: 18px;
+    }
+    .inline-options.axis-options {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .inline-options.axis-options .choice {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border-radius: 12px;
+      padding: 7px 4px;
+      min-width: 0;
+      min-height: 54px;
+    }
+    .inline-options.axis-options .choice input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+    .inline-options.axis-options .choice span {
+      font-size: 12px;
+      line-height: 1;
+      text-align: center;
+    }
+	
+	.control:has(.axis-midright) {
+	  margin-left: 40px;
+	  width: calc(100% - 40px);
+	}
+	.inline-options.axis-midright {
+	  width: 100%;
+	  display: grid;
+	  gap: 6px;
+	}
+	.inline-options.axis-midright.axis-7 {
+	  grid-template-columns: repeat(7, minmax(0, 1fr));
+	}
+	.inline-options.axis-midright.axis-8 {
+	  grid-template-columns: repeat(8, minmax(0, 1fr));
+	}
+	.inline-options.axis-midright .choice {
+	  width: 100%;
+	  min-height: 54px;
+	  flex-direction: column;
+	  justify-content: center;
+	  align-items: center;
+	  gap: 4px;
+	  text-align: center;
+	  padding: 6px 4px;
+   border-radius: 12px;
+	}
+	.inline-options.axis-midright .choice input {
+	  margin: 0;
+	}
+	.inline-options.axis-midright .choice span {
+	  font-size: 12px;
+	  line-height: 1.1;
+	}
+	
+    .choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 11px;
+      background: #fff;
+      min-height: 42px;
+      cursor: pointer;
+      font-weight: 850;
+      user-select: none;
+    }
+    .choice input { width: 18px; height: 18px; }
+    .choice span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .choice.long {
+      width: 100%;
+      border-radius: 14px;
+      justify-content: flex-start;
+      white-space: normal;
+      line-height: 1.35;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(20px);
+      min-width: min(92vw, 520px);
+      padding: 13px 14px;
+      background: #111827;
+      color: #fff;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 80;
+      font-weight: 850;
+      text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.ok { background: #0f7a45; }
+    .toast.bad { background: #b42318; }
+    .toast.warn { background: #8a5a00; }
+
+    .loading-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .58);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 70;
+      backdrop-filter: blur(5px);
+    }
+    .loading-mask.active { display: flex; }
+    .loading-card {
+      width: min(86vw, 360px);
+      background: #fff;
+      border-radius: 24px;
+      padding: 26px 22px;
+      text-align: center;
+      box-shadow: 0 18px 54px rgba(0,0,0,.28);
+    }
+    .spinner {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 6px solid #dce8fb;
+      border-top-color: var(--brand);
+      margin: 0 auto 15px;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-title { font-size: 19px; font-weight: 950; }
+    .loading-sub { color: var(--muted); margin-top: 6px; font-size: 13px; }
+
+    .footer-version {
+      color: #7a8798;
+      text-align: center;
+      padding: 18px 0 4px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .auth-block {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-top: 22px;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .app { width: min(100% - 14px, 1120px); }
+      .hero { top: 4px; padding: 14px; }
+      .status-row { grid-template-columns: minmax(0, 1fr) 56px; }
+      .identity-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .mini-card { padding: 9px 8px; border-radius: 14px; }
+      .mini-value { font-size: 14px; }
+      .time-value { font-size: 13px; }
+      .lamp { width: 22px; height: 22px; }
+      .item-card {
+        grid-template-columns: 40px minmax(0, 1fr);
+        align-items: start;
+        gap: 8px;
+        padding: 10px;
+      }
+      .item-no { width: 28px; height: 28px; font-size: 13px; }
+      .hotkey-badge { min-width: 30px; height: 20px; font-size: 10px; }
+      .item-title { font-size: 14px; }
+      .item-note { font-size: 11px; }
+      .control { grid-column: 1 / -1; }
+      .choice { padding: 8px 9px; font-size: 13px; }
+      .control select, .control input[type="text"], .control input[type="number"] { padding: 9px 8px; font-size: 14px; }
+    }
+
+    .hero {
+      background: rgba(255,255,255,.92);
+      color: var(--ink);
+      border: 1px solid rgba(217,226,239,.90);
+      backdrop-filter: blur(8px);
+    }
+    .top-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto 34px;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+    }
+    .top-line h1 {
+      color: var(--ink);
+      font-size: clamp(18px, 4.6vw, 30px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .time-inline {
+      font-size: 13px;
+      font-weight: 950;
+      color: #344054;
+      white-space: nowrap;
+      letter-spacing: .02em;
+    }
+    .gas-inline {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .info-row {
+      display: grid;
+      grid-template-columns: .82fr 1fr 1.1fr 58px;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .info-value {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: #f8fbff;
+      border-radius: 14px;
+      padding: 9px 8px;
+      font-size: 14px;
+      line-height: 1.15;
+      font-weight: 950;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hero select {
+      width: 58px;
+      min-width: 58px;
+      text-align: center;
+      text-align-last: center;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 9px 4px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.15;
+      font-weight: 950;
+      min-height: 38px;
+    }
+    .lamp {
+      width: 22px;
+      height: 22px;
+      box-shadow: 0 0 0 4px rgba(37,95,188,.08), 0 0 14px rgba(37,95,188,.16);
+    }
+    .item-card {
+      display: block;
+      grid-template-columns: none;
+      padding: 11px 12px;
+    }
+    .item-head {
+      display: grid;
+      grid-template-columns: 32px 42px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .hotkey-slot {
+      width: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hotkey-badge.hotkey-empty {
+      visibility: hidden;
+    }
+    .item-title {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .item-note {
+      margin: 7px 0 0 80px;
+      min-height: 14px;
+    }
+    .control {
+      margin: 9px 0 0 80px;
+    }
+    .item-card.item-24 .control {
+      margin-left: 0;
+    }
+    .item-card.item-24 .inline-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .top-line {
+        grid-template-columns: minmax(0, 1fr) auto 28px;
+        gap: 6px;
+      }
+      .top-line h1 { font-size: 18px; }
+      .time-inline { font-size: 12px; }
+      .info-row {
+        grid-template-columns: .82fr 1fr 1fr 54px;
+        gap: 6px;
+      }
+      .info-value { padding: 8px 5px; font-size: 13px; border-radius: 12px; }
+      .hero select { width: 54px; min-width: 54px; padding: 8px 2px; border-radius: 12px; }
+      .lamp { width: 20px; height: 20px; }
+      .item-card { padding: 10px; }
+      .item-head { grid-template-columns: 30px 40px minmax(0, 1fr); gap: 5px; }
+      .hotkey-slot { width: 40px; }
+      .item-no { width: 28px; height: 28px; font-size: 13px; }
+      .hotkey-badge { min-width: 34px; height: 20px; }
+      .item-note { margin-left: 75px; }
+      .control { margin-left: 75px; }
+      .item-card.item-24 .control { margin-left: 0; }
+    }
+
+    @media (max-width: 380px) {
+      .top-line h1 { font-size: 16px; }
+      .time-inline { font-size: 11px; }
+      .info-row { grid-template-columns: .8fr .95fr 1fr 50px; }
+      .hero select { width: 50px; min-width: 50px; }
+      .item-head { grid-template-columns: 28px 38px minmax(0, 1fr); }
+      .hotkey-slot { width: 38px; }
+      .item-note { margin-left: 70px; }
+      .control { margin-left: 70px; }
+    }
+
+	/* iPhone / iOS 瀏覽器防止輸入時自動放大 */
+	@media (max-width: 720px) {
+	  input,
+	  select,
+	  textarea {
+		font-size: 16px !important;
+	  }
+
+	  .control select,
+	  .control input[type="text"],
+	  .control input[type="number"],
+	  .manual-qr input,
+	  .hero select {
+		font-size: 16px !important;
+	  }
+	}
+
+	/* 代理輸入框 */
+	.proxy-input-mask {
+	  position: fixed;
+	  inset: 0;
+	  display: none;
+	  align-items: flex-start;
+	  justify-content: center;
+	  padding: 92px 12px 12px;
+	  background: rgba(15, 23, 42, .38);
+	  z-index: 90;
+	}
+
+	.proxy-input-mask.active {
+	  display: flex;
+	}
+
+	.proxy-input-card {
+	  width: min(94vw, 520px);
+	  border-radius: 22px;
+	  background: #fff;
+	  border: 1px solid var(--line);
+	  box-shadow: 0 18px 52px rgba(15, 23, 42, .24);
+	  padding: 16px;
+	}
+
+	.proxy-input-title {
+	  font-size: 17px;
+	  font-weight: 950;
+	  margin-bottom: 10px;
+	  color: var(--ink);
+	}
+
+	.proxy-input {
+	  width: 100%;
+	  min-height: 52px;
+	  border: 1px solid var(--line);
+	  border-radius: 16px;
+	  padding: 11px 12px;
+	  font-size: 18px;
+	  outline: none;
+	}
+
+	.proxy-input:focus {
+	  border-color: var(--brand);
+	  box-shadow: 0 0 0 4px rgba(37, 95, 188, .12);
+	}
+
+	.proxy-input-actions {
+	  display: grid;
+	  grid-template-columns: 1fr 1fr;
+	  gap: 10px;
+	  margin-top: 14px;
+	}
+
+	.proxy-input-actions .btn {
+	  width: 100%;
+	}
+  </style>
+</head>
+<body>
+  <main class="app" id="app" hidden>
+    <section class="hero">
+      <div class="top-line">
+        <h1>巡檢人員點檢確認表</h1>
+        <div class="time-inline" id="localTime">-- --:--:--</div>
+        <div class="gas-inline" id="gasStatusWrap" title="GAS 連線狀態" aria-label="GAS 連線狀態">
+          <span class="lamp checking" id="gasLamp"></span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-value" id="userIdText">----</div>
+        <div class="info-value" id="userNameText">----</div>
+        <div class="info-value" id="machineIdText">未掃描</div>
+        <select id="shiftSelect" aria-label="歸屬日期與班別"></select>
+      </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-title">
+        <h2>機台 QR 掃描</h2>
+        <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
+          <div class="qr-actions">
+            <button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
+          <button type="button" class="btn btn-soft" id="clearMachineBtn">清除機台</button>
+        </div>
+      </div>
+      <div class="qr-box" id="qrBox">
+        <div class="qr-stage">
+          <video id="qrVideo" playsinline muted></video>
+          <canvas id="qrCanvas" hidden></canvas>
+        </div>
+        <div class="manual-qr">
+          <input id="manualQrText" type="text" placeholder="手動貼上 QR 文字，例如 ?-A6-?">
+          <button type="button" class="btn btn-soft" id="parseManualBtn">解析</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <h2>點檢項目</h2>
+        <label class="routine-check-wrap" for="routineCheck">
+          <input type="checkbox" id="routineCheck">
+          <span>接班檢查</span>
+        </label>
+        <div class="selected-shift-badge" id="selectedShiftText">-- --</div>
+      </div>
+      <form id="checkForm" autocomplete="off">
+        <div class="items-list" id="itemsGrid"></div>
+        <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">確認 / 送出</button>
+      </form>
+    </section>
+
+    <footer class="footer-version">巡檢人員點檢確認表 v0.3.2</footer>
+  </main>
+
+  <section class="app" id="authGate">
+    <div class="auth-block">
+      <h2>正在確認登入狀態</h2>
+      <p id="authGateText">檢查中，請稍候...</p>
+    </div>
+  </section>
+
+  <div class="loading-mask" id="loadingMask" aria-live="polite">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <div class="loading-title">資料傳送中...</div>
+      <div class="loading-sub">請勿關閉畫面或重複點擊</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="proxy-input-mask" id="proxyInputMask">
+    <div class="proxy-input-card">
+      <div class="proxy-input-title" id="proxyInputTitle">輸入資料</div>
+      <input id="proxyInput" class="proxy-input" type="text" inputmode="text" autocomplete="off">
+        <div class="proxy-input-actions">
+          <button type="button" class="btn btn-soft" id="proxyCancelBtn">取消</button>
+          <button type="button" class="btn btn-primary" id="proxyDoneBtn">完成</button>
+        </div>
+    </div>
+  </div>
+
+<script type="module">
+  import { QRScanner } from './js/QRScanner.js';
+  const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
+  const WORK_LOG_KEEP_MS = 72 * 60 * 60 * 1000;
+
+  const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
+  const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
+  const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
+  const EDIT_RECORD_KEY = 'PI_EDIT_RECORD_V001';
+
+  const AUTH_EXPIRE_MS = 2 * 60 * 60 * 1000;
+  const GAS_OK_MS = 800;
+  const GAS_SLOW_MS = 2500;
+  const GAS_VERY_SLOW_MS = 6000;
+  const POST_TIMEOUT_MS = 15000;
+  const GAS_STATUS_INTERVAL_MS = 60000;
+  const FREEZE_HEARTBEAT_MS = 30 * 1000;
+  const FREEZE_RELOAD_MS = 10 * 60 * 1000;
+  const SHIFT_SELECT_GRACE_MIN = 40;
+
+  const ITEMS = [
+    {
+	  no: 1, title: '機台狀態', note: '', type: 'selectPlus',
+	  options: [
+	    { value: 'A',label: 'A:量產' },
+	    { value: 'B',label: 'B:試切' },
+	    { value: 'F',label: 'F:首趟' },
+	    { value: 'G',label: 'G:維修' },
+	    { value: 'L',label: 'L:其它' },
+	    { value: 'R',label: 'R:重工' },
+	    { value: 'C',label: 'C:( 空機 | 架料 | 物料 )' },
+	    { value: 'Q',label: 'Q:待( 臨條 | 量測 | QA )' }
+	  ]
+	},
+    { no: 2, title: '機台作業料號', note: '註明料號', type: 'text', allow: 'alphaNumDotParen', highlightIfEmpty: true },
+    { no: 3, title: '臨條&ERP&內通&謀規', note: '作業資料表條件', type: 'okng' },
+    { no: 4, title: '核對參數對照表', note: '作業資料表參數', type: 'okng' },
+    { no: 5, title: '轉速、下刀、壽命', note: 'S、F、N', type: 'okng' },
+    { no: 6, hotkey: 'F8', title: '索引表', note: '補償值', type: 'okng' },
+    { no: 7, title: '象限', note: 'FV', type: 'radio', options: ['1', '3'] },
+    { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
+    { no: 9, title: '作業高度(H)', note: '0.9 ~ 1.8', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
+    { no: 10, title: '作業深度(Z)', note: '0.360 ~ 0.550', type: 'number', min: 0.360, max: 0.550, step: 0.001, decimals: 3, autoZero: true, clearInvalidOnBlur: true },
+    { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
+    { no: 12, title: '排版數', note: '排版數', type: 'singleAxis8', options: ['0', '6', '5', '4', '3', '2', '1', 'P'] },
+    { no: 13, title: '軸襯', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
+    { no: 14, hotkey: 'F3', title: '檯面速度、行數', note: '', type: 'okng' },
+    { no: 15, hotkey: 'F6', title: '檢查刀盤', note: '鑽頭殘屑、尺寸、色環、切刀位置', type: 'okng' },
+    { no: 16, title: '疊板數', note: '確認板件疊板片數', type: 'singleAxis7', options: ['0', '6', '5', '4', '3', '2', '1'] },
+    { no: 17, title: '物料是否符合', note: '無硫紙、蓋板、尿素板、FR4、底板', type: 'okng' },
+    { no: 18, title: 'PIN有無漏敲', note: '每1array最少3支pin', type: 'okng' },
+    { no: 19, title: '三天重PIN', note: '重PIN日期及班別 | 0 = 免重PIN', type: 'pinDate' },
+    { no: 20, title: 'D槽A資料夾', note: '是否有非作業料號之程式', type: 'okng' },
+    { no: 21, title: '機台日報表', note: '斷刀、軸數、料號、批號', type: 'okng' },
+    { no: 22, title: '稼動紀錄表', note: '確認是否有清夾頭', type: 'okng' },
+    { no: 23, title: '電木板(有無二人確認簽名)', note: '(螺絲上的綠線是否平行)', type: 'okng' },
+    { no: 24, title: '壓力腳下降確認', note: '', type: 'singleLong',
+	  options: [
+		'正常:RT/RS　製程:0.5~1.5Kg/cm²',
+		'加大:RS/RT/DRT　製程:1.8~2.8Kg/cm²',
+		'正常:PP　製程:2.5~3.5Kg/cm²'
+      ]
+	}
+  ];
+
+  const EDIT_COL = {
+    record: 0,
+    local_time: 1,
+    date: 2,
+    shift: 3,
+    machine_id: 4,
+    id: 5,
+    name: 6,
+    routine_check: 7,
+    item_start: 8
+  };
+
+  const ITEM1_RULES = {
+    // 預設：項次2~24全部 open。,只在需要限制時填入例外項次。
+    // { mode: 'open' }
+    // { mode: 'hide' }
+    // { mode: 'lock', value: '√' }
+    // { mode: 'hideLock', value: 'N/A' }
+    A: [],
+    B: [],
+    F: [],
+    G: [],
+    L: [],
+    R: [],
+    C: [],
+    Q: []
+  };
+
+  const ITEM1_REQUIRED_RULES = {
+    // 預設：項次2~24不強制必填。
+    // 只在需要必填時填入項次號，例如：
+    // A: [3, 4, 5]
+    // 送出時只檢查最終值是否非空；不做格式、範圍或文字提示。
+    A: [],
+    B: [],
+    F: [],
+    G: [],
+    L: [],
+    R: [],
+    C: [],
+    Q: []
+  };
+
+  let authState = null;
+  let qrScanner = null;
+  let qrRunning = false;
+  let scanLocked = false;
+  let machineId = '';
+  let gasTimer = null;
+  let freezeTimer = null;
+  let editMode = false;
+  let editRow = null;
+  let freezeLastAliveAt = window.CFG_now;
+
+  let proxyInputState = {
+    target: null,
+    rule: '',
+    beforeValue: ''
+  };
+
+  const PROXY_RULES = {
+    item2Text: {
+      inputMode: 'text',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDone_
+    },
+
+    numberDecimal: {
+      inputMode: 'decimal',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDoneWithBlur_
+    },
+
+    pinDate: {
+      inputMode: 'text',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDoneWithBlur_
+    },
+
+    plain: {
+      inputMode: 'text',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDone_
+    }
+  };
+
+
+
+
+  const el = {
+    app: document.getElementById('app'),
+    authGate: document.getElementById('authGate'),
+    authGateText: document.getElementById('authGateText'),
+    localTime: document.getElementById('localTime'),
+    gasLamp: document.getElementById('gasLamp'),
+    gasStatusWrap: document.getElementById('gasStatusWrap'),
+    shiftSelect: document.getElementById('shiftSelect'),
+    selectedShiftText: document.getElementById('selectedShiftText'),
+    routineCheck: document.getElementById('routineCheck'),
+    userIdText: document.getElementById('userIdText'),
+    userNameText: document.getElementById('userNameText'),
+    machineIdText: document.getElementById('machineIdText'),
+    openQrBtn: document.getElementById('openQrBtn'),
+    clearMachineBtn: document.getElementById('clearMachineBtn'),
+    qrBox: document.getElementById('qrBox'),
+    qrVideo: document.getElementById('qrVideo'),
+    qrCanvas: document.getElementById('qrCanvas'),
+    manualQrText: document.getElementById('manualQrText'),
+    parseManualBtn: document.getElementById('parseManualBtn'),
+    itemsGrid: document.getElementById('itemsGrid'),
+    checkForm: document.getElementById('checkForm'),
+    submitBtn: document.getElementById('submitBtn'),
+    loadingMask: document.getElementById('loadingMask'),
+    toast: document.getElementById('toast'),
+
+	proxyInputMask: document.getElementById('proxyInputMask'),
+	proxyInputTitle: document.getElementById('proxyInputTitle'),
+	proxyInput: document.getElementById('proxyInput'),
+	proxyCancelBtn: document.getElementById('proxyCancelBtn'),
+	proxyDoneBtn: document.getElementById('proxyDoneBtn')	
+  };
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  async function init() {
+    if (!getApiUrl()) {
+      gateMessage('找不到 config.js 內的 api_url，無法連線 GAS。');
+      return;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    const ok = await prepareAuth();
+    if (!ok) return;
+
+    el.authGate.hidden = true;
+    el.app.hidden = false;
+
+    renderIdentity();
+    buildShiftSelect();
+    renderItems();
+	prepareEditMode();
+    bindEvents();
+    startFreezeHeartbeat();
+    await updateGasStatus();
+    gasTimer = setInterval(updateGasStatus, GAS_STATUS_INTERVAL_MS);
+  }
+
+  function getApiUrl() {
+    return typeof window.api_url === 'string' && window.api_url.trim() ? window.api_url.trim() : '';
+  }
+
+  function gateMessage(msg) {
+    el.authGateText.textContent = msg;
+  }
+
+  async function prepareAuth() {
+    const loginDraft = readJson(LOGIN_DRAFT_KEY);
+    const shortAuth = readJson(SHORT_AUTH_KEY);
+
+    if (!loginDraft || !loginDraft.id || !loginDraft.pass) {
+      gateMessage('找不到帳密，1 秒後返回登入頁。');
+      redirectLoginLater();
+      return false;
+    }
+
+    if (isShortAuthValid(shortAuth, loginDraft.id)) {
+      authState = shortAuth;
+      return true;
+    }
+
+    gateMessage('通行證失效，使用帳密原地驗證。');
+    const renewed = await renewAuth(loginDraft.id, loginDraft.pass);
+    if (renewed) {
+      authState = renewed;
+      return true;
+    }
+
+    gateMessage('驗證失敗，1 秒後返回登入頁。');
+    redirectLoginLater();
+    return false;
+  }
+
+  function isShortAuthValid(shortAuth, draftId) {
+    if (!shortAuth || !shortAuth.id || shortAuth.id !== draftId) return false;
+    const expireTime = Number(shortAuth.expire_time || 0);
+    return Number.isFinite(expireTime) && window.CFG_time < expireTime;
+  }
+
+  async function renewAuth(id, pass) {
+    try {
+      const params = new URLSearchParams();
+      params.set('action', 'auth');
+      params.set('id', id);
+      params.set('pass', pass);
+      const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+      if (!data || data.status !== 'ok') return null;
+
+      const now = window.CFG_time;
+      const renewed = {
+        id,
+        name: String(data.name || ''),
+        shift: String(data.shift || ''),
+        admin: String(data.admin || ''),
+        auth_time: now,
+        expire_time: now + AUTH_EXPIRE_MS
+      };
+      writeJson(SHORT_AUTH_KEY, renewed);
+      return renewed;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function redirectLoginLater() {
+    window.setTimeout(() => {
+      const here = encodeURIComponent(location.pathname + location.search);
+      location.href = `login.html?return=${here}`;
+    }, 1000);
+  }
+
+  function renderIdentity() {
+    el.userIdText.textContent = authState.id || '----';
+    el.userNameText.textContent = authState.name || '----';
+    setMachineId(machineId);
+  }
+
+  function updateClock() {
+    el.localTime.textContent = window.CFG_now;
+    //el.localTime.textContent = formatHeaderTime(window.CFG_now);
+  }
+
+  function buildShiftSelect() {
+    const now = new Date(window.CFG_time);
+    const userShift = normalizeShift(authState && authState.shift) || getNearestClockShift(now).shift;
+    const current = getNearestUserShiftRef(userShift, now);
+    const options = [prevShift(current), current, nextShift(current)].map((opt, index) => ({
+      ...opt,
+      order: index + 1,
+      value: `${opt.date}|${opt.shift}`,
+      selectable: isShiftOptionSelectable(opt, now)
+    }));
+    const windowKey = `${current.date}|${current.shift}`;
+    const saved = readJson(SHIFT_PICK_KEY);
+
+    el.shiftSelect.innerHTML = '';
+    options.forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.shift;
+      o.title = `${opt.date} ${opt.shift}${opt.selectable ? '' : '（目前不可選）'}`;
+      o.disabled = !opt.selectable;
+      el.shiftSelect.appendChild(o);
+    });
+
+    const defaultValue = `${current.date}|${current.shift}`;
+    const selectedValue = resolveShiftSelectValue(options, saved, windowKey, defaultValue);
+    el.shiftSelect.value = selectedValue;
+    writeJson(SHIFT_PICK_KEY, { windowKey, value: selectedValue, saved_at: window.CFG_time });
+
+    updateSelectedShiftText();
+
+    el.shiftSelect.addEventListener('change', () => {
+      writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: CFG_now });
+      updateSelectedShiftText();
+    });
+  }
+
+  function resolveShiftSelectValue(options, saved, windowKey, defaultValue) {
+    const savedOption = saved && saved.windowKey === windowKey
+      ? options.find(opt => opt.value === saved.value)
+      : null;
+
+    if (savedOption && savedOption.selectable) {
+      return savedOption.value;
+    }
+
+    const defaultOption = options.find(opt => opt.value === defaultValue);
+    if (!savedOption && defaultOption && defaultOption.selectable) {
+      return defaultOption.value;
+    }
+
+    const fallbackOrder = [2, 3, 1];
+    for (const order of fallbackOrder) {
+      const opt = options.find(item => item.order === order && item.selectable);
+      if (opt) return opt.value;
+    }
+
+    return defaultValue;
+  }
+
+  function isShiftOptionSelectable(opt, now) {
+    const span = getShiftSelectableSpan(opt.date, opt.shift);
+    const t = now.getTime();
+    return t >= span.start.getTime() && t <= span.end.getTime();
+  }
+
+  function getShiftSelectableSpan(refDateText, shift) {
+    const d = parseDateSlash(refDateText);
+    if (shift === 'A') {
+      return {
+        start: setTime(d, 8, 0),
+        end: setTime(d, 16, SHIFT_SELECT_GRACE_MIN)
+      };
+    }
+    if (shift === 'B') {
+      return {
+        start: setTime(d, 16, 0),
+        end: setTime(addDays(d, 1), 0, SHIFT_SELECT_GRACE_MIN)
+      };
+    }
+    return {
+      start: setTime(addDays(d, 1), 0, 0),
+      end: setTime(addDays(d, 1), 8, SHIFT_SELECT_GRACE_MIN)
+    };
+  }
+
+  function updateSelectedShiftText() {
+    const selected = getSelectedShift();
+    if (!selected.date || !selected.shift) {
+      el.selectedShiftText.textContent = '-- --';
+      return;
+    }
+    el.selectedShiftText.textContent = `${formatDateMonthDay(selected.date)} ${selected.shift}`;
+  }
+
+  function formatDateMonthDay(dateText) {
+    const m = String(dateText || '').match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (!m) return '--';
+    return `${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+  }
+
+  function normalizeShift(value) {
+    const v = String(value || '').trim().toUpperCase();
+    return /^[ABC]$/.test(v) ? v : '';
+  }
+
+  function getNearestUserShiftRef(userShift, now) {
+    const base = startOfDay(now);
+    const candidates = [];
+    for (let offset = -3; offset <= 3; offset++) {
+      const refDate = formatDateSlash(addDays(base, offset));
+      const span = getShiftSpan(refDate, userShift);
+      candidates.push({
+        date: refDate,
+        shift: userShift,
+        distance: distanceToSpan(now, span.start, span.end),
+        startMs: span.start.getTime()
+      });
+    }
+    candidates.sort((a, b) => a.distance - b.distance || a.startMs - b.startMs);
+    return { date: candidates[0].date, shift: candidates[0].shift };
+  }
+
+  function getNearestClockShift(now) {
+    const base = startOfDay(now);
+    const candidates = [];
+    ['A', 'B', 'C'].forEach(shift => {
+      for (let offset = -2; offset <= 2; offset++) {
+        const refDate = formatDateSlash(addDays(base, offset));
+        const span = getShiftSpan(refDate, shift);
+        candidates.push({
+          date: refDate,
+          shift,
+          distance: distanceToSpan(now, span.start, span.end),
+          startMs: span.start.getTime()
+        });
+      }
+    });
+    candidates.sort((a, b) => a.distance - b.distance || a.startMs - b.startMs);
+    return { date: candidates[0].date, shift: candidates[0].shift };
+  }
+
+  function getShiftSpan(refDateText, shift) {
+    const d = parseDateSlash(refDateText);
+    if (shift === 'A') {
+      return { start: setTime(d, 8, 0), end: setTime(d, 16, 30) };
+    }
+    if (shift === 'B') {
+      return { start: setTime(d, 16, 0), end: setTime(addDays(d, 1), 0, 30) };
+    }
+    return { start: setTime(addDays(d, 1), 0, 0), end: setTime(addDays(d, 1), 8, 30) };
+  }
+
+  function distanceToSpan(now, start, end) {
+    const t = now.getTime();
+    const s = start.getTime();
+    const e = end.getTime();
+    if (t >= s && t <= e) return 0;
+    return Math.min(Math.abs(t - s), Math.abs(t - e));
+  }
+
+function setTime(date, hour, minute) {
+  const d = new Date(date.getTime());
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}
+
+  function prevShift(ref) {
+    if (ref.shift === 'A') return { date: formatDateSlash(addDays(parseDateSlash(ref.date), -1)), shift: 'C' };
+    if (ref.shift === 'B') return { date: ref.date, shift: 'A' };
+    return { date: ref.date, shift: 'B' };
+  }
+
+  function nextShift(ref) {
+    if (ref.shift === 'A') return { date: ref.date, shift: 'B' };
+    if (ref.shift === 'B') return { date: ref.date, shift: 'C' };
+    return { date: formatDateSlash(addDays(parseDateSlash(ref.date), 1)), shift: 'A' };
+  }
+
+  function renderItems() {
+    el.itemsGrid.innerHTML = '';
+    ITEMS.forEach(item => {
+      const card = document.createElement('article');
+      card.className = `item-card item-${item.no}`;
+      card.dataset.no = String(item.no);
+      card.innerHTML = `
+        <div class="item-head">
+          <div class="item-no">${item.no}</div>
+          <div class="hotkey-slot">${item.hotkey ? `<div class="hotkey-badge">${escapeHtml(item.hotkey)}</div>` : `<div class="hotkey-badge hotkey-empty" aria-hidden="true"></div>`}</div>
+          <div class="item-title">${escapeHtml(item.title)}</div>
+        </div>
+        <div class="item-note">${escapeHtml(item.note || '')}</div>
+        <div class="control">${renderControl(item)}</div>
+      `;
+      el.itemsGrid.appendChild(card);
+    });
+
+    const item1 = getFirstInputByItemNo(1);
+    if (item1) item1.addEventListener('change', () => applyStatusRules());
+
+    const item2 = getFirstInputByItemNo(2);
+    if (item2) {
+      item2.addEventListener('input', () => {
+        normalizeItem2(item2);
+        refreshItem2Highlight();
+      });
+      refreshItem2Highlight();
+    }
+
+    const item19 = getFirstInputByItemNo(19);
+    if (item19) {
+      item19.addEventListener('input', () => normalizePinDateRaw(item19));
+      item19.addEventListener('blur', () => normalizePinDateField(item19, true));
+    }
+
+    bindClearOnReEdit([9, 10, 19]);
+
+    document.querySelectorAll('[data-number-item]').forEach(input => {
+      input.addEventListener('input', () => {
+        normalizeNumberRaw(input);
+        validateNumberInput(input);
+      });
+      input.addEventListener('blur', () => {
+        normalizeNumberOnBlur(input);
+        clearInvalidNumberOnBlur(input);
+      });
+    });
+
+    applyStatusRules();
+  }
+
+  function bindClearOnReEdit(itemNos) {
+    itemNos.forEach(no => {
+      const input = getFirstInputByItemNo(no);
+      if (!input) return;
+      input.addEventListener('focus', () => {
+        if (!input.value) return;
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+  }
+
+  function renderControl(item) {
+    const name = itemName(item.no);
+    if (item.type === 'select') {
+      const opts = ['<option value="">請選擇</option>'].concat(item.options.map(v => `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`));
+      return `<select name="${name}" data-item-no="${item.no}">${opts.join('')}</select>`;
+    }
+	if (item.type === 'selectPlus') {
+	  return `<select name="${name}" data-item-no="${item.no}">
+	  <option value="">請選擇</option>
+	    ${item.options.map(opt => {
+	    const value = typeof opt === 'object' ? opt.value : opt;
+	    const label = typeof opt === 'object' ? opt.label : opt;
+	    return `<option value="${value}">${label}</option>`;
+	    }).join('')}
+	  </select>`;
+	}
+    if (item.type === 'text') {
+      return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
+    }
+    if (item.type === 'pinDate') {
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
+    }
+    if (item.type === 'number') {
+      const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
+      const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
+      const clearInvalid = item.clearInvalidOnBlur ? ' data-clear-invalid-on-blur="true"' : '';
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} inputmode="decimal" autocomplete="off">`;
+    }
+    if (item.type === 'okng') {
+      return `<div class="inline-options yesno">${choiceRadio(name, '√', item.no)}${choiceRadio(name, '×', item.no)}</div>`;
+    }
+	if (item.type === 'radio') {
+	  return `<div class="inline-options yesno">${item.options.map(v => choiceRadio(name, v, item.no)).join('')}</div>`;
+	}
+	if (item.type === 'multi') {
+		return `<div class="inline-options axis-options">${item.options.map(v => choiceCheckbox(name, v, item.no)).join('')}</div>`;
+	}
+	if (item.type === 'singleAxis7') {
+	  return `<div class="inline-options axis-midright axis-7">${item.options.map(v => choiceRadio(name, v, item.no)).join('')}</div>`;
+	}
+	if (item.type === 'singleAxis8') {
+	  return `<div class="inline-options axis-midright axis-8">${item.options.map(v => choiceRadio(name, v, item.no)).join('')}</div>`;
+	}
+    if (item.type === 'singleLong') {
+      return `<div class="inline-options">${item.options.map(v => choiceRadio(name, v, item.no, true)).join('')}</div>`;
+    }
+    return `<input type="text" name="${name}" data-item-no="${item.no}">`;
+  }
+
+  function choiceRadio(name, value, no, long = false) {
+    return `<label class="choice${long ? ' long' : ''}"><input type="radio" name="${name}" value="${escapeAttr(value)}" data-item-no="${no}"><span>${escapeHtml(value)}</span></label>`;
+  }
+
+  function choiceCheckbox(name, value, no) {
+    return `<label class="choice"><input type="checkbox" name="${name}" value="${escapeAttr(value)}" data-item-no="${no}"><span>${escapeHtml(value)}</span></label>`;
+  }
+
+  function bindEvents() {
+    el.openQrBtn.addEventListener('click', toggleQr);
+    el.clearMachineBtn.addEventListener('click', () => setMachineId(''));
+    el.parseManualBtn.addEventListener('click', () => {
+      const parsed = parseMachineId(el.manualQrText.value);
+      if (!parsed) {
+        showToast('QR code格式不符，請再次確認', 'bad');
+		//需為 ?-A6-? 或 ?-N57-? 這類格式。
+        return;
+      }
+      setMachineId(parsed);
+      showToast(`已取得機台 ID：${parsed}`, 'ok');
+    });
+    el.checkForm.addEventListener('submit', submitForm);
+	bindProxyInputEvents();
+  }
+
+  function bindProxyInputEvents() {
+    if (!el.proxyInputMask || !el.proxyInput || !el.proxyCancelBtn || !el.proxyDoneBtn) return;
+
+    el.proxyInput.addEventListener('input', () => {
+      const target = proxyInputState.target;
+      const rule = getProxyRule_(proxyInputState.rule);
+
+      if (!target || !rule || typeof rule.onInput !== 'function') return;
+
+      rule.onInput(el.proxyInput, target);
+    });
+
+    el.proxyCancelBtn.addEventListener('click', () => {
+      closeProxyInput(true);
+    });
+
+    el.proxyDoneBtn.addEventListener('click', () => {
+      const target = proxyInputState.target;
+      const rule = getProxyRule_(proxyInputState.rule);
+
+      if (target && rule && typeof rule.onDone === 'function') {
+        rule.onDone(el.proxyInput, target);
+      }
+
+      closeProxyInput(false);
+    });
+
+    el.proxyInputMask.addEventListener('click', evt => {
+      if (evt.target === el.proxyInputMask) {
+        closeProxyInput(true);
+      }
+    });
+
+    el.proxyInput.addEventListener('keydown', evt => {
+      if (evt.key === 'Enter') {
+        evt.preventDefault();
+
+        const target = proxyInputState.target;
+        const rule = getProxyRule_(proxyInputState.rule);
+
+        if (target && rule && typeof rule.onDone === 'function') {
+          rule.onDone(el.proxyInput, target);
+        }
+
+        closeProxyInput(false);
+        return;
+      }
+
+      if (evt.key === 'Escape') {
+        evt.preventDefault();
+        closeProxyInput(true);
+      }
+    });
+  }
+
+
+  function startFreezeHeartbeat() {
+    freezeLastAliveAt = window.CFG_time;
+
+    if (freezeTimer) clearInterval(freezeTimer);
+    freezeTimer = setInterval(checkFreezeHeartbeat, FREEZE_HEARTBEAT_MS);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') checkFreezeHeartbeat();
+    });
+
+    window.addEventListener('focus', checkFreezeHeartbeat);
+  }
+
+  function checkFreezeHeartbeat() {
+    const now = window.CFG_time;
+    const gap = now - freezeLastAliveAt;
+
+    if (gap > FREEZE_RELOAD_MS) {
+      location.reload();
+      return;
+    }
+    freezeLastAliveAt = now;
+  }
+
+  async function toggleQr() {
+    el.qrBox.classList.toggle('active');
+    if (el.qrBox.classList.contains('active')) {
+      await nextAnimationFrame();
+      await startQrScanner();
+    } else {
+      await stopQrScanner();
+    }
+  }
+
+  function nextAnimationFrame() {
+    return new Promise(resolve => requestAnimationFrame(resolve));
+  }
+
+  async function startQrScanner() {
+    if (qrRunning) return;
+    scanLocked = false;
+    try {
+      const onScan = async decodedText => {
+        if (scanLocked) return false;
+        const parsed = parseMachineId(decodedText);
+        if (!parsed) return false;
+        scanLocked = true;
+        setMachineId(parsed);
+        showToast(`已取得機台 ID：${parsed}`, 'ok');
+        await stopQrScanner();
+        el.qrBox.classList.remove('active');
+        return true;
+      };
+
+      if (QRScanner && typeof QRScanner.mount === 'function') {
+        const mounted = QRScanner.mount({
+          videoEl: '#qrVideo',
+          canvasEl: '#qrCanvas',
+          formats: ['qr'],
+          mode: 'stop-on-valid',
+          blink: true,
+          isValid: txt => !!parseMachineId(txt),
+          onOk: txt => { void onScan(txt); },
+          onResult: txt => { void onScan(txt); },
+          onError: err => showToast(`QR 掃描錯誤：${formatError(err)}`, 'bad')
+        });
+        qrScanner = mounted || QRScanner;
+        if (qrScanner && typeof qrScanner.start === 'function') await qrScanner.start();
+        else if (typeof QRScanner.start === 'function') await QRScanner.start();
+        else throw new Error('QRScanner 缺少 start 方法');
+        qrRunning = true;
+        return;
+      }
+
+      if (typeof QRScanner === 'function') {
+        qrScanner = new QRScanner(el.qrVideo, el.qrCanvas, {
+          flash: false,
+          mode: 'once',
+          onResult: txt => { void onScan(txt); },
+          onOk: txt => { void onScan(txt); },
+          onError: err => showToast(`QR 掃描錯誤：${formatError(err)}`, 'bad')
+        });
+        if (typeof qrScanner.loadLibs === 'function') await qrScanner.loadLibs();
+        if (typeof qrScanner.init === 'function') await qrScanner.init();
+        else if (typeof qrScanner.start === 'function') await qrScanner.start();
+        else throw new Error('QRScanner 缺少 init/start 方法');
+        qrRunning = true;
+        return;
+      }
+
+      throw new Error('QRScanner 介面不符');
+    } catch (err) {
+      qrRunning = false;
+      showToast(`QR 掃描啟動失敗：${formatError(err)}`, 'bad');
+    }
+  }
+
+  async function stopQrScanner() {
+    if (!qrScanner && !qrRunning) return;
+    try {
+      if (qrScanner && typeof qrScanner.stop === 'function') await qrScanner.stop();
+      else if (QRScanner && typeof QRScanner.stop === 'function') await QRScanner.stop();
+    } catch (err) {
+      // 停止失敗不阻斷表單流程。
+    } finally {
+      qrRunning = false;
+    }
+  }
+
+  function parseMachineId(text) {
+    const raw = String(text || '').trim();
+    const parts = raw.split('-');
+    if (parts.length < 3) return '';
+    const mid = String(parts[1] || '').trim().toUpperCase();
+    return /^[A-Z0-9]+$/.test(mid) ? mid : '';
+  }
+
+  function setMachineId(value) {
+    machineId = String(value || '').trim().toUpperCase();
+    el.machineIdText.textContent = machineId || '未掃描';
+  }
+
+  function applyStatusRules() {
+    const status = getValueByItemNo(1);
+    const rules = ITEM1_RULES[status] || {};
+
+    ITEMS.forEach(item => {
+      const card = getCardByItemNo(item.no);
+      if (!card) return;
+
+      card.classList.remove('hidden', 'locked');
+      setItemDisabled(item.no, false);
+
+      if (item.no < 2 || item.no > 24) return;
+
+      const rule = rules[item.no] || rules[String(item.no)] || { mode: 'open' };
+      applySingleItemRule(item.no, rule);
+    });
+    refreshItem2Highlight();
+  }
+
+  function applySingleItemRule(no, rule) {
+    const card = getCardByItemNo(no);
+    if (!card) return;
+
+    const mode = String(rule && rule.mode ? rule.mode : 'open');
+    const hasValue = rule && Object.prototype.hasOwnProperty.call(rule, 'value');
+
+    if (mode === 'open') {
+      return;
+    }
+
+    if (mode === 'hide') {
+      setValueByItemNo(no, '');
+      setItemDisabled(no, false);
+      card.classList.add('hidden');
+      return;
+    }
+
+    if (mode === 'lock') {
+      if (hasValue) setValueByItemNo(no, rule.value);
+      setItemDisabled(no, true);
+      card.classList.add('locked');
+      return;
+    }
+
+    if (mode === 'hideLock') {
+      if (hasValue) setValueByItemNo(no, rule.value);
+      setItemDisabled(no, true);
+      card.classList.add('hidden', 'locked');
+      return;
+    }
+  }
+
+  function normalizeItem2(input) {
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9.()]/g, '');
+  }
+
+  function refreshItem2Highlight() {
+    const card = getCardByItemNo(2);
+    if (!card) return;
+    const empty = !getValueByItemNo(2);
+    card.classList.toggle('warn-empty', empty);
+  }
+
+  function normalizeNumberRaw(input) {
+    let value = String(input.value || '').replace(/[^0-9.]/g, '');
+
+    const firstDot = value.indexOf('.');
+    if (firstDot >= 0) {
+      value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
+    }
+
+    const decimalsText = input.dataset.decimals;
+    const hasDecimalLimit = decimalsText !== undefined && decimalsText !== '';
+    const decimals = hasDecimalLimit ? Number(decimalsText) : NaN;
+
+    if (Number.isFinite(decimals) && decimals >= 0 && value.includes('.')) {
+      const parts = value.split('.');
+      value = `${parts[0]}.${String(parts[1] || '').slice(0, decimals)}`;
+    }
+    input.value = value;
+  }
+
+  function normalizeNumberOnBlur(input) {
+    normalizeNumberRaw(input);
+
+    if (input.dataset.autoZero === 'true') {
+      if (input.value.startsWith('.')) input.value = `0${input.value}`;
+    }
+
+    const decimalsText = input.dataset.decimals;
+    const decimals = decimalsText !== undefined && decimalsText !== '' ? Number(decimalsText) : NaN;
+    const value = String(input.value || '').trim();
+
+    if (Number.isFinite(decimals) && decimals >= 0 && value !== '' && /^\d+(?:\.\d*)?$/.test(value)) {
+      const parts = value.split('.');
+      const intPart = parts[0] || '0';
+      const decPart = String(parts[1] || '').padEnd(decimals, '0').slice(0, decimals);
+      input.value = decimals > 0 ? `${intPart}.${decPart}` : intPart;
+    }
+  }
+
+  function clearInvalidNumberOnBlur(input) {
+    if (!validateNumberInput(input) && input.dataset.clearInvalidOnBlur === 'true') {
+      input.value = '';
+      validateNumberInput(input);
+    }
+  }
+
+  function validateNumberInput(input) {
+    const wrap = input.closest('.control');
+    const value = String(input.value || '').trim();
+    if (!value) {
+      if (wrap) wrap.classList.remove('invalid');
+      return true;
+    }
+
+    const num = Number(value);
+    const min = Number(input.dataset.min || input.getAttribute('min'));
+    const max = Number(input.dataset.max || input.getAttribute('max'));
+    const valid = Number.isFinite(num) && num >= min && num <= max;
+
+    if (wrap) wrap.classList.toggle('invalid', !valid);
+    return valid;
+  }
+
+  function normalizePinDateRaw(input) {
+    input.value = input.value.toUpperCase().replace(/[^0-9/\-ABC\s]/g, '');
+  }
+
+  function normalizePinDateBeforeSubmit() {
+    const input = getFirstInputByItemNo(19);
+    if (!input) return;
+    normalizePinDateField(input, false);
+  }
+
+  function normalizePinDateField(input, showWarning) {
+    normalizePinDateRaw(input);
+    const raw = input.value.trim().toUpperCase();
+    if (!raw) return true;
+
+    const normalized = parsePinDateValue(raw, getSelectedShift().date);
+    if (normalized) {
+      input.value = normalized;
+      return true;
+    }
+
+    input.value = '';
+    if (showWarning) showToast('項次19格式或日期範圍不符，已清空。', 'warn');
+    return false;
+  }
+
+  function parsePinDateValue(rawValue, baseDateText) {
+    const raw = String(rawValue || '').replace(/\s+/g, '').toUpperCase();
+    if (raw === '0') return 'N/A';
+
+    const baseDate = parseDateSlash(baseDateText);
+    if (!isValidDate(baseDate)) return '';
+
+    let y = baseDate.getFullYear();
+    let m = 0;
+    let d = 0;
+    let shift = '';
+
+    let match = raw.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})([ABC])$/);
+    if (match) {
+      y = Number(match[1]);
+      m = Number(match[2]);
+      d = Number(match[3]);
+      shift = match[4];
+    } else {
+      match = raw.match(/^(\d{1,2})[/-](\d{1,2})([ABC])$/);
+      if (match) {
+        m = Number(match[1]);
+        d = Number(match[2]);
+        shift = match[3];
+      } else {
+        match = raw.match(/^(\d{3,4})([ABC])$/);
+        if (!match) return '';
+        const md = match[1];
+        if (md.length === 3) {
+          m = Number(md.slice(0, 1));
+          d = Number(md.slice(1));
+        } else {
+          m = Number(md.slice(0, 2));
+          d = Number(md.slice(2));
+        }
+        shift = match[2];
+      }
+    }
+
+    const parsed = new Date(y, m - 1, d);
+    if (!isValidDate(parsed)) return '';
+    if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) return '';
+    if (!isPinDateWithinRange(parsed, baseDate)) return '';
+
+    return `${parsed.getFullYear()}/${pad2(parsed.getMonth() + 1)}/${pad2(parsed.getDate())} ${shift}`;
+  }
+
+  function isPinDateWithinRange(targetDate, baseDate) {
+    const base = startOfDay(baseDate).getTime();
+    const target = startOfDay(targetDate).getTime();
+    const max = startOfDay(addDays(baseDate, 4)).getTime();
+    return target >= base && target <= max;
+  }
+
+  function startOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  function isValidDate(date) {
+    return date instanceof Date && !Number.isNaN(date.getTime());
+  }
+
+  function validateRequiredBeforeSubmit() {
+    if (!hasItemValue(1)) {
+      focusItemNo(1);
+      return false;
+    }
+
+    const status = getValueByItemNo(1);
+    const requiredNos = ITEM1_REQUIRED_RULES[status] || ITEM1_REQUIRED_RULES[String(status)] || [];
+
+    for (const no of requiredNos) {
+      if (!hasItemValue(no)) {
+        focusItemNo(no);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function hasItemValue(no) {
+    return String(getValueByItemNo(no) || '').trim() !== '';
+  }
+
+  function focusItemNo(no) {
+    const card = getCardByItemNo(no);
+    const input = getFirstInputByItemNo(no);
+
+    if (card) {
+      card.classList.add('focus-required');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => card.classList.remove('focus-required'), 1200);
+    }
+
+    if (input && !input.disabled && typeof input.focus === 'function') {
+      setTimeout(() => input.focus({ preventScroll: true }), 180);
+    }
+  }
+
+  async function submitForm(evt) {
+    evt.preventDefault();
+    refreshItem2Highlight();
+
+    if (!machineId) {
+      showToast('請先掃描或解析機台 ID。', 'bad');
+      return;
+    }
+
+    if (!validateRequiredBeforeSubmit()) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+	  const submitParams = buildSubmitParams();
+	  const data = await postWithTimeout(submitParams, POST_TIMEOUT_MS);
+      if (data && data.status === 'ok') {
+		saveWorkLogDraft(data, submitParams);
+	    if (editMode) {
+	      localStorage.removeItem(EDIT_RECORD_KEY);
+	      editMode = false;
+	      editRow = null;
+	    }
+        clearAfterSuccess();
+		el.routineCheck.checked = false;
+        scrollToTopAfterSuccess();
+        showToast('送出成功，已保留作業料號，並清除機台 ID。', 'ok');
+      } else {
+        const msg = data && data.msg ? data.msg : 'GAS 回應非 status:"ok"。';
+        showToast(`送出失敗：${msg}`, 'bad');
+      }
+    } catch (err) {
+      showToast(`送出失敗：${formatError(err)}`, 'bad');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function buildSubmitParams() {
+    const selected = getSelectedShift();
+    const loginDraft = readJson(LOGIN_DRAFT_KEY);
+    const params = new URLSearchParams();
+
+	if (editMode) {
+      params.set('action', 'form_update');
+      params.set('record_id', getEditRecordId());
+    } else {
+      params.set('action', 'form_write');
+    }
+	//params.set('action', 'form_write');
+    params.set('id', authState.id || '');
+    params.set('pass', loginDraft && loginDraft.pass ? loginDraft.pass : '');
+    params.set('name', authState.name || '');
+    params.set('date', dateTextToSerial(selected.date));
+    params.set('shift', selected.shift);
+    params.set('machine_id', machineId);
+    params.set('routine_check', el.routineCheck.checked ? 'TRUE' : '');
+
+    ITEMS.forEach(item => {
+      params.set(itemName(item.no), getValueByItemNo(item.no));
+    });
+    params.set('client_time', window.CFG_now);
+    //params.set('client_version', APP_VERSION);
+    return params;
+  }
+
+  //上傳成功記錄 - on
+  function saveWorkLogDraft(data, submitParams) {
+    const now = window.CFG_time;
+    const cutoff = now - WORK_LOG_KEEP_MS;
+
+    const old = readJson(WORK_LOG_KEY);
+    const list = Array.isArray(old) ? old : [];
+
+    const row = buildWorkLogRow(data, submitParams);
+    const recordId = String(row[0] || '');
+
+    const alive = list.filter(item => Number(item && item.saved_at || 0) >= cutoff);
+
+    if (editMode && recordId) {
+      let replaced = false;
+
+      const next = alive.map(item => {
+      const oldRow = Array.isArray(item && item.row) ? item.row : [];
+      const oldRecordId = String(oldRow[0] || '');
+
+      if (oldRecordId === recordId) {
+        replaced = true;
+        return {
+          saved_at: now,
+          row
+          };
+        }
+        return item;
+      });
+
+      if (!replaced) {
+        next.push({
+          saved_at: now,
+          row
+        });
+      }
+
+      writeJson(WORK_LOG_KEY, next);
+      return;
+    }
+    alive.push({
+      saved_at: now,
+      row
+    });
+    writeJson(WORK_LOG_KEY, alive);
+  } 
+  
+  function saveWorkLogDraft2(data, submitParams) {
+	const now = Date.now();
+	const cutoff = now - WORK_LOG_KEEP_MS;
+
+	const old = readJson(WORK_LOG_KEY);
+	const list = Array.isArray(old) ? old : [];
+
+	const row = buildWorkLogRow(data, submitParams);
+
+	const next = list
+	.filter(item => Number(item && item.saved_at || 0) >= cutoff)
+	.concat([{
+	saved_at: now,
+	row
+	}]);
+	writeJson(WORK_LOG_KEY, next);
+  }
+
+  function buildWorkLogRow(data, submitParams) {
+    const recordId = getEditRecordId() || String(data && data.record_id ? data.record_id : '');
+
+    const row = [
+      recordId, // 欄1：record_id
+      String(el.localTime.textContent || ''), // 欄2：畫面即時時間
+      String(submitParams.get('date') || ''), // 表單日期
+      String(submitParams.get('shift') || ''), // 表單班別
+      String(submitParams.get('machine_id') || ''), // 機台ID
+      String(submitParams.get('id') || ''), // 帳號 ID
+      String(submitParams.get('name') || ''), // 人員 Name
+      String(submitParams.get('routine_check') || '') // 例行檢查
+    ];
+
+    ITEMS.forEach(item => {
+      row.push(String(submitParams.get(itemName(item.no)) || ''));
+    });
+
+    row.push(String(submitParams.get('client_time') || ''));
+    return row;
+  }
+  //上傳成功記錄 - off
+
+  function dateTextToSerial(dateText) {
+    const m = String(dateText || '').match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if (!m) return '';
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    const utcMs = Date.UTC(y, mo - 1, d);
+    if (!Number.isFinite(utcMs)) return '';
+    return String(Math.floor(utcMs / 86400000) + 25569);
+  }
+
+  function getSelectedShift() {
+    const [date, shift] = String(el.shiftSelect.value || '').split('|');
+    return { date: date || '', shift: shift || '' };
+  }
+
+  function clearAfterSuccess() {
+    const clearNos = [1];
+    for (let i = 3; i <= 24; i++) clearNos.push(i);
+    clearNos.forEach(no => setValueByItemNo(no, ''));
+    setMachineId('');
+    applyStatusRules();
+    refreshItem2Highlight();
+  }
+
+  function scrollToTopAfterSuccess() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    el.openQrBtn.classList.remove('next-step-pulse');
+    void el.openQrBtn.offsetWidth;
+    el.openQrBtn.classList.add('next-step-pulse');
+
+    setTimeout(() => {
+      el.openQrBtn.classList.remove('next-step-pulse');
+    }, 2800);
+  }
+
+  function setSubmitting(isSubmitting) {
+    el.loadingMask.classList.toggle('active', isSubmitting);
+    el.submitBtn.disabled = isSubmitting;
+    Array.from(el.checkForm.elements).forEach(node => {
+      if (node !== el.submitBtn) node.disabled = isSubmitting;
+    });
+    if (!isSubmitting) applyStatusRules();
+  }
+
+
+async function updateGasStatus() {
+  const start = performance.now();
+  setGasState('checking', 'GAS 檢查中');
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GAS_VERY_SLOW_MS);
+
+    const res = await fetch(getApiUrl() + '?t=' + window.CFG_time, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal
+    });
+
+    clearTimeout(timer);
+
+    const ms = Math.round(performance.now() - start);
+
+    if (res && res.ok) {
+      setGasState('ok', `GAS 可作業 ${ms}ms`);
+    } else {
+      setGasState('very-slow', `GAS 回應異常 ${ms}ms`);
+    }
+
+  } catch (err) {
+    setGasState('very-slow', 'GAS 延遲過高或無法連線');
+  }
+}
+
+
+  function setGasState(state, text) {
+    el.gasLamp.className = `lamp ${state}`;
+    el.gasStatusWrap.title = text;
+    el.gasStatusWrap.setAttribute('aria-label', text);
+  }
+
+  async function postWithTimeout(params, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(getApiUrl(), {
+        method: 'POST',
+        body: params,
+        signal: controller.signal
+      });
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        throw new Error('GAS 回傳不是 JSON');
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function itemName(no) {
+    return `item_${String(no).padStart(2, '0')}`;
+  }
+
+  function getCardByItemNo(no) {
+    return document.querySelector(`.item-card[data-no="${no}"]`);
+  }
+
+  function getFirstInputByItemNo(no) {
+    return document.querySelector(`[data-item-no="${no}"]`);
+  }
+
+  function getInputsByItemNo(no) {
+    return Array.from(document.querySelectorAll(`[data-item-no="${no}"]`));
+  }
+
+  function getValueByItemNo(no) {
+    const inputs = getInputsByItemNo(no);
+    if (!inputs.length) return '';
+    const first = inputs[0];
+    if (first.type === 'radio') {
+      const checked = inputs.find(x => x.checked);
+      return checked ? checked.value : '';
+    }
+    if (first.type === 'checkbox') {
+      return inputs.filter(x => x.checked).map(x => x.value).join(',');
+    }
+    return first.value || '';
+  }
+
+  function setValueByItemNo(no, value) {
+    const inputs = getInputsByItemNo(no);
+    if (!inputs.length) return;
+    const first = inputs[0];
+    const val = String(value || '');
+    if (first.type === 'radio') {
+      inputs.forEach(x => { x.checked = x.value === val; });
+      return;
+    }
+    if (first.type === 'checkbox') {
+      const values = new Set(val.split(',').map(x => x.trim()).filter(Boolean));
+      inputs.forEach(x => { x.checked = values.has(x.value); });
+      return;
+    }
+    first.value = val;
+  }
+
+  function setItemDisabled(no, disabled) {
+    getInputsByItemNo(no).forEach(node => { node.disabled = disabled; });
+  }
+
+  function showToast(message, type = '') {
+    el.toast.textContent = message;
+    el.toast.className = `toast show ${type}`;
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => {
+      el.toast.className = 'toast';
+    }, 3500);
+  }
+
+  function openProxyInput(target, rule) {
+    if (!target || !el.proxyInputMask || !el.proxyInput) return;
+
+    proxyInputState.target = target;
+    proxyInputState.rule = String(rule || '');
+	proxyInputState.beforeValue = String(target.value || '');
+	const proxyRule = getProxyRule_(proxyInputState.rule);
+	el.proxyInput.setAttribute('inputmode', proxyRule.inputMode || 'text');
+    const no = target.getAttribute('data-item-no') || '';
+    el.proxyInputTitle.textContent = no ? `項次 ${no} 輸入` : '輸入資料';
+
+    el.proxyInput.value = proxyInputState.beforeValue;
+    el.proxyInputMask.classList.add('active');
+
+    setTimeout(() => {
+      el.proxyInput.focus();
+      el.proxyInput.select();
+    }, 80);
+  }
+
+  function closeProxyInput(restoreOldValue) {
+    const target = proxyInputState.target;
+
+    if (restoreOldValue && target) {
+      target.value = proxyInputState.beforeValue;
+    }
+
+    proxyInputState.target = null;
+    proxyInputState.rule = '';
+    proxyInputState.beforeValue = '';
+
+    if (el.proxyInput) {
+      el.proxyInput.value = '';
+      el.proxyInput.blur();
+  }
+    if (el.proxyInputMask) {
+      el.proxyInputMask.classList.remove('active');
+    }
+  }
+
+  function getProxyRule_(ruleName) {
+    return PROXY_RULES[ruleName] || PROXY_RULES.plain;
+  }
+
+  function proxySyncInput_(proxy, target) {
+    if (!proxy || !target) return;
+
+    target.value = proxy.value;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+
+// 原欄位 input 事件可能已經標準化內容，所以代理框要讀回標準化後的值
+    proxy.value = target.value;
+  }
+
+  function proxySyncDone_(proxy, target) {
+    if (!proxy || !target) return;
+
+    target.value = proxy.value;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+
+    proxy.value = target.value;
+  }
+
+  function proxySyncDoneWithBlur_(proxy, target) {
+    if (!proxy || !target) return;
+
+    target.value = proxy.value;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    target.dispatchEvent(new Event('blur'));
+
+    proxy.value = target.value;
+  }
+
+  function readJson(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function getEditRecordDraft() {
+    const row = readJson(EDIT_RECORD_KEY);
+
+    if (!Array.isArray(row)) {
+      return null;
+    }
+    return row;
+  }
+
+  function isEditModeRequest() {
+    const q = new URLSearchParams(location.search);
+    return q.get('mode') === 'edit';
+  }
+
+  function prepareEditMode() {
+    if (!isEditModeRequest()) {
+	  return;
+    }
+    const row = getEditRecordDraft();
+    if (!row) {
+      editMode = false;
+      editRow = null;
+      showToast('找不到可編輯資料。', 'bad');
+      return;
+    }
+    editMode = true;
+    editRow = row;
+    applyEditBasicInfo(editRow);
+	applyEditItems(editRow);
+    console.log('EDIT_MODE_ROW', editRow);
+    showToast('已讀取編輯資料。', 'ok');
+  }
+
+  function editCell_(row, index) {
+    if (!Array.isArray(row)) return '';
+    const value = row[index];
+    return value === null || value === undefined ? '' : String(value);
+  }
+ 
+  function getEditRecordId() {
+    if (!editMode || !Array.isArray(editRow)) return '';
+    return editCell_(editRow, EDIT_COL.record);
+  }
+
+  function applyEditBasicInfo(row) {
+    const machine = editCell_(row, EDIT_COL.machine_id);
+    const routine = editCell_(row, EDIT_COL.routine_check);
+
+    if (machine) {
+      setMachineId(machine);
+    }
+
+    if (el.routineCheck) {
+      el.routineCheck.checked = String(routine).toUpperCase() === 'TRUE';
+    }
+  }
+
+  function applyEditItems(row) {
+    ITEMS.forEach(item => {
+      const no = Number(item.no || 0);
+      if (!no) return;
+      const index = EDIT_COL.item_start + no - 1;
+      const value = editCell_(row, index);
+      setValueByItemNo(no, value);
+    });
+
+    applyStatusRules();
+    refreshItem2Highlight();
+  }
+
+  function writeJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function formatHeaderTime(date) {
+    return `${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+  }
+
+  function formatLocalDateTime(date) {
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+  }
+
+  function formatDateSlash(date) {
+    return `${date.getFullYear()}/${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}`;
+  }
+
+  function parseDateSlash(yyyyMmDd) {
+    const [y, m, d] = String(yyyyMmDd || '').split('/').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function addDays(date, days) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/'/g, '&#39;');
+  }
+
+  function formatError(err) {
+    if (!err) return 'unknown_error';
+    if (err.name === 'AbortError') return 'timeout';
+    return String(err.message || err);
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (gasTimer) clearInterval(gasTimer);
+    void stopQrScanner();
+  });
+</script>
+</body>
+</html>
