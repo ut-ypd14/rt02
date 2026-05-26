@@ -1468,17 +1468,30 @@ function setTime(date, hour, minute) {
 	    }).join('')}
 	  </select>`;
 	}
+    //if (item.type === 'text') {
+    //  return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
+    //}
     if (item.type === 'text') {
-      return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
+      const proxyRule = item.allow === 'alphaNumDotParen' ? 'item2Text' : 'plain';
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-proxy-rule="${proxyRule}" inputmode="text" autocomplete="off">`;
     }
+    //if (item.type === 'pinDate') {
+    //  return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
+    //}
     if (item.type === 'pinDate') {
-      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" data-proxy-rule="pinDate" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
     }
+    //if (item.type === 'number') {
+    //  const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
+    //  const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
+    //  const clearInvalid = item.clearInvalidOnBlur ? ' data-clear-invalid-on-blur="true"' : '';
+    //  return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} inputmode="decimal" autocomplete="off">`;
+    //}
     if (item.type === 'number') {
       const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
       const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
       const clearInvalid = item.clearInvalidOnBlur ? ' data-clear-invalid-on-blur="true"' : '';
-      return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} inputmode="decimal" autocomplete="off">`;
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} data-proxy-rule="numberDecimal" inputmode="decimal" autocomplete="off">`;
     }
     if (item.type === 'okng') {
       return `<div class="inline-options yesno">${choiceRadio(name, '√', item.no)}${choiceRadio(name, '×', item.no)}</div>`;
@@ -1524,6 +1537,7 @@ function setTime(date, hour, minute) {
     });
     el.checkForm.addEventListener('submit', submitForm);
 	bindProxyInputEvents();
+	bindProxyTargets();
   }
 
   function bindProxyInputEvents() {
@@ -1581,6 +1595,23 @@ function setTime(date, hour, minute) {
     });
   }
 
+
+  function bindProxyTargets() {
+    document.querySelectorAll('[data-proxy-rule]').forEach(target => {
+      target.setAttribute('readonly', 'readonly');
+
+      target.addEventListener('click', evt => {
+        evt.preventDefault();
+        openProxyInput(target, target.dataset.proxyRule);
+      });
+
+      target.addEventListener('focus', evt => {
+        evt.preventDefault();
+        target.blur();
+        openProxyInput(target, target.dataset.proxyRule);
+      });
+    });
+  }
 
   function startFreezeHeartbeat() {
     freezeLastAliveAt = window.CFG_time;
