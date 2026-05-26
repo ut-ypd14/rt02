@@ -1186,9 +1186,38 @@
   }
 
   function isShortAuthValid(shortAuth, draftId) {
-    if (!shortAuth || !shortAuth.id || shortAuth.id !== draftId) return false;
+    if (!shortAuth || !shortAuth.id) return false;
+
+    const a = String(shortAuth.id || '').trim().toUpperCase();
+    const b = String(draftId || '').trim().toUpperCase();
+
+    if (!a || !b || a !== b) return false;
+
     const expireTime = Number(shortAuth.expire_time || 0);
+
     return Number.isFinite(expireTime) && window.CFG_time < expireTime;
+  }
+
+  function authResponseToMap(data) {
+    const out = {};
+
+    if (!data || !Array.isArray(data.fields) || !Array.isArray(data.values)) {
+      return out;
+    }
+
+    data.fields.forEach((key, index) => {
+      out[key] = data.values[index];
+    });
+
+    return out;
+  }
+
+  function isTrueFlag(value) {
+    if (value === true) return true;
+
+    const v = String(value == null ? '' : value).trim().toUpperCase();
+
+    return v === 'TRUE' || v === 'T' || v === '1' || v === 'Y' || v === 'YES';
   }
 
   async function renewAuth(id, pass) {
@@ -1198,19 +1227,26 @@
       params.set('id', id);
       params.set('pass', pass);
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
-      if (!data || data.status !== 'ok') return null;
 
+      if (!data || data.status !== 'ok') {
+        return null;
+      }
+
+      const user = authResponseToMap(data);
       const now = window.CFG_time;
+
       const renewed = {
-        id,
-        name: String(data.name || ''),
-        shift: String(data.shift || ''),
-        admin: String(data.admin || ''),
+        id: String(user.id || id || '').trim().toUpperCase(),
+        name: String(user.name || ''),
+        shift: String(user.shift || '').trim().toUpperCase(),
+        admin: isTrueFlag(user.admin),
         auth_time: now,
         expire_time: now + AUTH_EXPIRE_MS
       };
+
       writeJson(SHORT_AUTH_KEY, renewed);
-      return renewed;
+        return renewed;
+
     } catch (err) {
       return null;
     }
