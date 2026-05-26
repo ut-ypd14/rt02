@@ -227,6 +227,25 @@
       align-items: center;
     }
 
+	.qr-panel-title {
+	  justify-content: flex-end;
+	}
+
+	.qr-panel-title .qr-actions {
+	  margin-left: auto;
+	  display: flex;
+	  align-items: center;
+	  justify-content: flex-end;
+	  flex-wrap: nowrap;
+	  gap: 8px;
+	  min-width: 0;
+	}
+
+	.qr-panel-title .qr-actions .btn {
+	  white-space: nowrap;
+	  flex: 0 0 auto;
+	}
+
     .btn {
       border: 0;
       border-radius: 14px;
@@ -852,14 +871,14 @@
     </section>
 
     <section class="panel">
-        <div class="panel-title">
-        <h2>機台 QR 掃描</h2>
-        <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
-          <div class="qr-actions">
-            <button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
-          <button type="button" class="btn btn-soft" id="clearMachineBtn">清除機台</button>
-        </div>
-      </div>
+	  <div class="panel-title qr-panel-title" aria-label="機台 QR 操作">
+		<div class="qr-actions">
+			<a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
+			<button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
+			<button type="button" class="btn btn-soft" id="clearMachineBtn">清除機台</button>
+		</div>
+	  </div>
+
       <div class="qr-box" id="qrBox">
         <div class="qr-stage">
           <video id="qrVideo" playsinline muted></video>
@@ -1545,6 +1564,16 @@ function setTime(date, hour, minute) {
 	bindProxyTargets();
   }
 
+  function commitProxyInput() {
+    const target = proxyInputState.target;
+    const rule = getProxyRule_(proxyInputState.rule);
+
+    if (target && rule && typeof rule.onDone === 'function') {
+      rule.onDone(el.proxyInput, target);
+    }
+    closeProxyInput(false);
+  }
+  
   function bindProxyInputEvents() {
     if (!el.proxyInputMask || !el.proxyInput || !el.proxyCancelBtn || !el.proxyDoneBtn) return;
 
@@ -1562,36 +1591,21 @@ function setTime(date, hour, minute) {
     });
 
     el.proxyDoneBtn.addEventListener('click', () => {
-      const target = proxyInputState.target;
-      const rule = getProxyRule_(proxyInputState.rule);
-
-      if (target && rule && typeof rule.onDone === 'function') {
-        rule.onDone(el.proxyInput, target);
-      }
-
-      closeProxyInput(false);
+      commitProxyInput();
     });
 
     el.proxyInputMask.addEventListener('click', evt => {
       if (evt.target === el.proxyInputMask) {
-        closeProxyInput(true);
+        commitProxyInput();
       }
     });
 
     el.proxyInput.addEventListener('keydown', evt => {
       if (evt.key === 'Enter') {
         evt.preventDefault();
-
-        const target = proxyInputState.target;
-        const rule = getProxyRule_(proxyInputState.rule);
-
-        if (target && rule && typeof rule.onDone === 'function') {
-          rule.onDone(el.proxyInput, target);
-        }
-
-        closeProxyInput(false);
+        commitProxyInput();
         return;
-      }
+        }
 
       if (evt.key === 'Escape') {
         evt.preventDefault();
@@ -1600,7 +1614,7 @@ function setTime(date, hour, minute) {
     });
   }
 
-  function proxyElementsReady_() {
+    function proxyElementsReady_() {
     return !!(
       el.proxyInputMask &&
       el.proxyInputTitle &&
