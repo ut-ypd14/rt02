@@ -33,14 +33,8 @@
       color: var(--ink);
       min-height: 100vh;
       -webkit-text-size-adjust: 100%;
-      overflow-anchor: none;
     }
 
-.keyboard-bottom-spacer {
-  height: 0;
-  transition: none;
-  pointer-events: none;
-}
     .app {
       width: min(1120px, calc(100% - 20px));
       margin: 0 auto;
@@ -205,33 +199,52 @@
       white-space: nowrap;
     }
 
-.home-jump-btn {
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  border: 1px solid #c8d8f2;
-  background: #eef4ff;
-  color: var(--brand2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  font-size: 24px;
-  font-weight: 950;
-  line-height: 1;
-  box-shadow: 0 6px 14px rgba(37,95,188,.12);
-}
+	.home-jump-btn {
+	  flex: 0 0 auto;
+	  width: 44px;
+	  height: 44px;
+	  border-radius: 14px;
+	  border: 1px solid #c8d8f2;
+	  background: #eef4ff;
+	  color: var(--brand2);
+	  display: inline-flex;
+	  align-items: center;
+	  justify-content: center;
+	  text-decoration: none;
+	  font-size: 24px;
+	  font-weight: 950;
+	  line-height: 1;
+	  box-shadow: 0 6px 14px rgba(37,95,188,.12);
+	}
 
-.home-jump-btn:active {
-  transform: scale(.96);
-}
+	.home-jump-btn:active {
+	  transform: scale(.96);
+	}
     .qr-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       align-items: center;
     }
+
+	.qr-panel-title {
+	  justify-content: flex-end;
+	}
+
+	.qr-panel-title .qr-actions {
+	  margin-left: auto;
+	  display: flex;
+	  align-items: center;
+	  justify-content: flex-end;
+	  flex-wrap: nowrap;
+	  gap: 8px;
+	  min-width: 0;
+	}
+
+	.qr-panel-title .qr-actions .btn {
+	  white-space: nowrap;
+	  flex: 0 0 auto;
+	}
 
     .btn {
       border: 0;
@@ -607,7 +620,6 @@
       .control select, .control input[type="text"], .control input[type="number"] { padding: 9px 8px; font-size: 14px; }
     }
 
-
     .hero {
       background: rgba(255,255,255,.92);
       color: var(--ink);
@@ -758,22 +770,85 @@
       .control { margin-left: 70px; }
     }
 
-/* iPhone / iOS 瀏覽器防止輸入時自動放大 */
-@media (max-width: 720px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
+	/* iPhone / iOS 瀏覽器防止輸入時自動放大 */
+	@media (max-width: 720px) {
+	  input,
+	  select,
+	  textarea {
+		font-size: 16px !important;
+	  }
 
-  .control select,
-  .control input[type="text"],
-  .control input[type="number"],
-  .manual-qr input,
-  .hero select {
-    font-size: 16px !important;
-  }
-}
+	  .control select,
+	  .control input[type="text"],
+	  .control input[type="number"],
+	  .manual-qr input,
+	  .hero select {
+		font-size: 16px !important;
+	  }
+	}
+
+	/* 代理輸入框 */
+	.proxy-input-mask {
+	  position: fixed;
+	  inset: 0;
+	  display: none;
+	  align-items: flex-start;
+	  justify-content: center;
+	  padding: 92px 12px 12px;
+	  background: rgba(15, 23, 42, .38);
+	  z-index: 90;
+	}
+
+	.proxy-input-mask.active {
+	  display: flex;
+	}
+
+	.proxy-input-card {
+	  width: min(94vw, 520px);
+	  border-radius: 22px;
+	  background: #fff;
+	  border: 1px solid var(--line);
+	  box-shadow: 0 18px 52px rgba(15, 23, 42, .24);
+	  padding: 16px;
+	}
+
+	.proxy-input-title {
+	  font-size: 17px;
+	  font-weight: 950;
+	  margin-bottom: 10px;
+	  color: var(--ink);
+	}
+
+	.proxy-input {
+	  width: 100%;
+	  min-height: 52px;
+	  border: 1px solid var(--line);
+	  border-radius: 16px;
+	  padding: 11px 12px;
+	  font-size: 18px;
+	  outline: none;
+	}
+
+	.proxy-input:focus {
+	  border-color: var(--brand);
+	  box-shadow: 0 0 0 4px rgba(37, 95, 188, .12);
+	}
+
+	.proxy-input.invalid {
+	 border-color: var(--bad);
+	  background: var(--soft-bad);
+	}
+
+	.proxy-input-actions {
+	  display: grid;
+	  grid-template-columns: 1fr 1fr;
+	  gap: 10px;
+	  margin-top: 14px;
+	}
+
+	.proxy-input-actions .btn {
+	  width: 100%;
+	}
   </style>
 </head>
 <body>
@@ -796,14 +871,14 @@
     </section>
 
     <section class="panel">
-        <div class="panel-title">
-        <h2>機台 QR 掃描</h2>
-        <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
-          <div class="qr-actions">
-            <button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
-          <button type="button" class="btn btn-soft" id="clearMachineBtn">清除機台</button>
-        </div>
-      </div>
+	  <div class="panel-title qr-panel-title" aria-label="機台 QR 操作">
+		<div class="qr-actions">
+			<a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
+			<button type="button" class="btn btn-primary" id="openQrBtn">掃描 QR</button>
+			<button type="button" class="btn btn-soft" id="clearMachineBtn">清除機台</button>
+		</div>
+	  </div>
+
       <div class="qr-box" id="qrBox">
         <div class="qr-stage">
           <video id="qrVideo" playsinline muted></video>
@@ -850,6 +925,16 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div class="proxy-input-mask" id="proxyInputMask">
+    <div class="proxy-input-card">
+      <div class="proxy-input-title" id="proxyInputTitle">輸入資料</div>
+      <input id="proxyInput" class="proxy-input" type="text" inputmode="text" autocomplete="off">
+        <div class="proxy-input-actions">
+          <button type="button" class="btn btn-soft" id="proxyCancelBtn">取消</button>
+          <button type="button" class="btn btn-primary" id="proxyDoneBtn">完成</button>
+        </div>
+    </div>
+  </div>
 
 <script type="module">
   import { QRScanner } from './js/QRScanner.js';
@@ -970,6 +1055,41 @@
   let editRow = null;
   let freezeLastAliveAt = window.CFG_now;
 
+  let proxyInputState = {
+    target: null,
+    rule: '',
+    beforeValue: ''
+  };
+
+  const PROXY_RULES = {
+    item2Text: {
+      inputMode: 'text',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDone_
+    },
+
+    numberDecimal: {
+      inputMode: 'decimal',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDoneWithBlur_
+    },
+
+    pinDate: {
+      inputMode: 'text',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDoneWithBlur_
+    },
+
+    plain: {
+      inputMode: 'text',
+      onInput: proxySyncInput_,
+      onDone: proxySyncDone_
+    }
+  };
+
+
+
+
   const el = {
     app: document.getElementById('app'),
     authGate: document.getElementById('authGate'),
@@ -994,7 +1114,13 @@
     checkForm: document.getElementById('checkForm'),
     submitBtn: document.getElementById('submitBtn'),
     loadingMask: document.getElementById('loadingMask'),
-    toast: document.getElementById('toast')
+    toast: document.getElementById('toast'),
+
+	proxyInputMask: document.getElementById('proxyInputMask'),
+	proxyInputTitle: document.getElementById('proxyInputTitle'),
+	proxyInput: document.getElementById('proxyInput'),
+	proxyCancelBtn: document.getElementById('proxyCancelBtn'),
+	proxyDoneBtn: document.getElementById('proxyDoneBtn')	
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -1060,9 +1186,38 @@
   }
 
   function isShortAuthValid(shortAuth, draftId) {
-    if (!shortAuth || !shortAuth.id || shortAuth.id !== draftId) return false;
+    if (!shortAuth || !shortAuth.id) return false;
+
+    const a = String(shortAuth.id || '').trim().toUpperCase();
+    const b = String(draftId || '').trim().toUpperCase();
+
+    if (!a || !b || a !== b) return false;
+
     const expireTime = Number(shortAuth.expire_time || 0);
+
     return Number.isFinite(expireTime) && window.CFG_time < expireTime;
+  }
+
+  function authResponseToMap(data) {
+    const out = {};
+
+    if (!data || !Array.isArray(data.fields) || !Array.isArray(data.values)) {
+      return out;
+    }
+
+    data.fields.forEach((key, index) => {
+      out[key] = data.values[index];
+    });
+
+    return out;
+  }
+
+  function isTrueFlag(value) {
+    if (value === true) return true;
+
+    const v = String(value == null ? '' : value).trim().toUpperCase();
+
+    return v === 'TRUE' || v === 'T' || v === '1' || v === 'Y' || v === 'YES';
   }
 
   async function renewAuth(id, pass) {
@@ -1072,19 +1227,26 @@
       params.set('id', id);
       params.set('pass', pass);
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
-      if (!data || data.status !== 'ok') return null;
 
+      if (!data || data.status !== 'ok') {
+        return null;
+      }
+
+      const user = authResponseToMap(data);
       const now = window.CFG_time;
+
       const renewed = {
-        id,
-        name: String(data.name || ''),
-        shift: String(data.shift || ''),
-        admin: String(data.admin || ''),
+        id: String(user.id || id || '').trim().toUpperCase(),
+        name: String(user.name || ''),
+        shift: String(user.shift || '').trim().toUpperCase(),
+        admin: isTrueFlag(user.admin),
         auth_time: now,
         expire_time: now + AUTH_EXPIRE_MS
       };
+
       writeJson(SHORT_AUTH_KEY, renewed);
-      return renewed;
+        return renewed;
+
     } catch (err) {
       return null;
     }
@@ -1366,17 +1528,30 @@ function setTime(date, hour, minute) {
 	    }).join('')}
 	  </select>`;
 	}
+    //if (item.type === 'text') {
+    //  return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
+    //}
     if (item.type === 'text') {
-      return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
+      const proxyRule = item.allow === 'alphaNumDotParen' ? 'item2Text' : 'plain';
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-proxy-rule="${proxyRule}" inputmode="text" autocomplete="off">`;
     }
+    //if (item.type === 'pinDate') {
+    //  return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
+    //}
     if (item.type === 'pinDate') {
-      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" data-proxy-rule="pinDate" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
     }
+    //if (item.type === 'number') {
+    //  const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
+    //  const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
+    //  const clearInvalid = item.clearInvalidOnBlur ? ' data-clear-invalid-on-blur="true"' : '';
+    //  return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} inputmode="decimal" autocomplete="off">`;
+    //}
     if (item.type === 'number') {
       const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
       const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
       const clearInvalid = item.clearInvalidOnBlur ? ' data-clear-invalid-on-blur="true"' : '';
-      return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} inputmode="decimal" autocomplete="off">`;
+      return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} data-proxy-rule="numberDecimal" inputmode="decimal" autocomplete="off">`;
     }
     if (item.type === 'okng') {
       return `<div class="inline-options yesno">${choiceRadio(name, '√', item.no)}${choiceRadio(name, '×', item.no)}</div>`;
@@ -1421,8 +1596,92 @@ function setTime(date, hour, minute) {
       showToast(`已取得機台 ID：${parsed}`, 'ok');
     });
     el.checkForm.addEventListener('submit', submitForm);
-bindKeyboardScrollKeep();
+	bindProxyInputEvents();
+	bindProxyTargets();
   }
+
+  function commitProxyInput() {
+    const target = proxyInputState.target;
+    const rule = getProxyRule_(proxyInputState.rule);
+
+    if (target && rule && typeof rule.onDone === 'function') {
+      rule.onDone(el.proxyInput, target);
+    }
+    closeProxyInput(false);
+  }
+  
+  function bindProxyInputEvents() {
+    if (!el.proxyInputMask || !el.proxyInput || !el.proxyCancelBtn || !el.proxyDoneBtn) return;
+
+    el.proxyInput.addEventListener('input', () => {
+      const target = proxyInputState.target;
+      const rule = getProxyRule_(proxyInputState.rule);
+
+      if (!target || !rule || typeof rule.onInput !== 'function') return;
+
+      rule.onInput(el.proxyInput, target);
+    });
+
+    el.proxyCancelBtn.addEventListener('click', () => {
+      closeProxyInput(true);
+    });
+
+    el.proxyDoneBtn.addEventListener('click', () => {
+      commitProxyInput();
+    });
+
+    el.proxyInputMask.addEventListener('click', evt => {
+      if (evt.target === el.proxyInputMask) {
+        commitProxyInput();
+      }
+    });
+
+    el.proxyInput.addEventListener('keydown', evt => {
+      if (evt.key === 'Enter') {
+        evt.preventDefault();
+        commitProxyInput();
+        return;
+        }
+
+      if (evt.key === 'Escape') {
+        evt.preventDefault();
+        closeProxyInput(true);
+      }
+    });
+  }
+
+    function proxyElementsReady_() {
+    return !!(
+      el.proxyInputMask &&
+      el.proxyInputTitle &&
+      el.proxyInput &&
+      el.proxyCancelBtn &&
+      el.proxyDoneBtn
+    );
+  }
+
+  function bindProxyTargets() {
+    if (!proxyElementsReady_()) {
+      console.warn('代理輸入框元素未完整建立，保留原輸入框模式。');
+      return;
+    }
+
+    document.querySelectorAll('[data-proxy-rule]').forEach(target => {
+      target.setAttribute('readonly', 'readonly');
+
+      target.addEventListener('click', evt => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        openProxyInput(target, target.dataset.proxyRule);
+      });
+
+      target.addEventListener('focus', evt => {
+        evt.preventDefault();
+        target.blur();
+      });
+    });
+  }
+
 
   function startFreezeHeartbeat() {
     freezeLastAliveAt = window.CFG_time;
@@ -2115,6 +2374,113 @@ async function updateGasStatus() {
     }, 3500);
   }
 
+  function focusProxyInput_() {
+    if (!el.proxyInput) return;
+
+    try {
+      el.proxyInput.focus({ preventScroll: true });
+      } catch (err) {
+      el.proxyInput.focus();
+    }
+
+    try {
+      el.proxyInput.select();
+      } catch (err) {}
+  }
+
+  function openProxyInput(target, rule) {
+    if (!target || !el.proxyInputMask || !el.proxyInput) return;
+
+    proxyInputState.target = target;
+    proxyInputState.rule = String(rule || '');
+    proxyInputState.beforeValue = String(target.value || '');
+
+    const proxyRule = getProxyRule_(proxyInputState.rule);
+    el.proxyInput.setAttribute('inputmode', proxyRule.inputMode || 'text');
+
+    const no = target.getAttribute('data-item-no') || '';
+    el.proxyInputTitle.textContent = no ? `項次 ${no} 輸入` : '輸入資料';
+
+    el.proxyInput.value = proxyInputState.beforeValue;
+    el.proxyInput.classList.remove('invalid');
+    syncProxyInvalidFromTarget_(target);
+
+    el.proxyInputMask.classList.add('active');
+
+    // 第一次要同步執行，部分手機瀏覽器才會彈鍵盤
+    focusProxyInput_();
+
+    // 補強：少數瀏覽器 layout 尚未完成時，延後再 focus
+    setTimeout(focusProxyInput_, 60);
+    setTimeout(focusProxyInput_, 180);
+  }
+
+  function closeProxyInput(restoreOldValue) {
+    const target = proxyInputState.target;
+
+    if (restoreOldValue && target) {
+      target.value = proxyInputState.beforeValue;
+    }
+
+    proxyInputState.target = null;
+    proxyInputState.rule = '';
+    proxyInputState.beforeValue = '';
+
+    if (el.proxyInput) {
+      el.proxyInput.value = '';
+      el.proxyInput.classList.remove('invalid');
+      el.proxyInput.blur();
+    }
+
+    if (el.proxyInputMask) {
+      el.proxyInputMask.classList.remove('active');
+    }
+  }
+
+  function getProxyRule_(ruleName) {
+    return PROXY_RULES[ruleName] || PROXY_RULES.plain;
+  }
+
+  function syncProxyInvalidFromTarget_(target) {
+    if (!el.proxyInput) return;
+
+    const control = target ? target.closest('.control') : null;
+    const invalid = !!(control && control.classList.contains('invalid'));
+
+    el.proxyInput.classList.toggle('invalid', invalid);
+  }
+
+  function proxySyncInput_(proxy, target) {
+    if (!proxy || !target) return;
+
+    target.value = proxy.value;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+
+    proxy.value = target.value;
+    syncProxyInvalidFromTarget_(target);
+  }
+
+  function proxySyncDone_(proxy, target) {
+    if (!proxy || !target) return;
+
+    target.value = proxy.value;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+
+    proxy.value = target.value;
+    syncProxyInvalidFromTarget_(target);
+  }
+
+  function proxySyncDoneWithBlur_(proxy, target) {
+    if (!proxy || !target) return;
+
+    target.value = proxy.value;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    target.dispatchEvent(new Event('blur'));
+
+    proxy.value = target.value;
+    syncProxyInvalidFromTarget_(target);
+  }
+
   function readJson(key) {
     try {
       const raw = localStorage.getItem(key);
@@ -2194,7 +2560,6 @@ async function updateGasStatus() {
     refreshItem2Highlight();
   }
 
-
   function writeJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
   }
@@ -2239,161 +2604,6 @@ async function updateGasStatus() {
     if (err.name === 'AbortError') return 'timeout';
     return String(err.message || err);
   }
-
-// keyboard 畫面鎖定 - on
-let keyboardKeepBound = false;
-
-let keyboardKeepState = {
-  active: false,
-  closing: false,
-  y: 0,
-  target: null,
-  spacer: null,
-  timers: []
-};
-
-function isSoftKeyboardInput(node) {
-  if (!node || !node.matches) return false;
-
-  return node.matches(
-    'input[type="text"], input[type="number"], input[type="password"], input[type="search"], input[type="tel"], input[type="email"], textarea'
-  );
-}
-
-function getScrollYValue() {
-  return window.scrollY ||
-    window.pageYOffset ||
-    document.documentElement.scrollTop ||
-    document.body.scrollTop ||
-    0;
-}
-
-function clearKeyboardTimers() {
-  keyboardKeepState.timers.forEach(function(t) {
-    clearTimeout(t);
-  });
-  keyboardKeepState.timers = [];
-}
-
-function getKeyboardGuessHeight() {
-  if (!window.visualViewport) return Math.round(window.innerHeight * 0.45);
-
-  const diff = window.innerHeight - window.visualViewport.height;
-  return Math.max(260, Math.round(diff || window.innerHeight * 0.45));
-}
-
-function ensureKeyboardSpacer() {
-  if (!keyboardKeepState.spacer) {
-    const div = document.createElement('div');
-    div.className = 'keyboard-bottom-spacer';
-    document.body.appendChild(div);
-    keyboardKeepState.spacer = div;
-  }
-
-  keyboardKeepState.spacer.style.height = getKeyboardGuessHeight() + 'px';
-}
-
-function removeKeyboardSpacerLater() {
-  const t = setTimeout(function() {
-    if (!keyboardKeepState.spacer) return;
-
-    keyboardKeepState.spacer.style.height = '0px';
-  }, 1600);
-
-  keyboardKeepState.timers.push(t);
-}
-
-function rememberKeyboardY() {
-  if (!keyboardKeepState.active || keyboardKeepState.closing) return;
-  keyboardKeepState.y = getScrollYValue();
-}
-
-function forceScrollToY(y) {
-  window.scrollTo(0, y);
-  document.documentElement.scrollTop = y;
-  document.body.scrollTop = y;
-}
-
-function restoreManyTimes(y) {
-  [0, 80, 180, 350, 600, 900, 1300].forEach(function(delay) {
-    const t = setTimeout(function() {
-      if (isSoftKeyboardInput(document.activeElement)) return;
-      forceScrollToY(y);
-    }, delay);
-
-    keyboardKeepState.timers.push(t);
-  });
-}
-
-function bindKeyboardScrollKeep() {
-  if (keyboardKeepBound) return;
-  keyboardKeepBound = true;
-
-  document.addEventListener('focusin', function(evt) {
-    if (!isSoftKeyboardInput(evt.target)) return;
-
-    clearKeyboardTimers();
-
-    keyboardKeepState.active = true;
-    keyboardKeepState.closing = false;
-    keyboardKeepState.target = evt.target;
-    keyboardKeepState.y = getScrollYValue();
-
-    ensureKeyboardSpacer();
-
-    [120, 280, 500, 760].forEach(function(delay) {
-      const t = setTimeout(function() {
-        ensureKeyboardSpacer();
-        rememberKeyboardY();
-      }, delay);
-
-      keyboardKeepState.timers.push(t);
-    });
-  }, true);
-
-  window.addEventListener('scroll', function() {
-    if (!keyboardKeepState.active || keyboardKeepState.closing) return;
-    keyboardKeepState.y = getScrollYValue();
-  }, { passive: true });
-
-  document.addEventListener('focusout', function(evt) {
-    if (!keyboardKeepState.active) return;
-    if (keyboardKeepState.target !== evt.target) return;
-
-    const keepY = keyboardKeepState.y;
-
-    keyboardKeepState.active = false;
-    keyboardKeepState.closing = true;
-    keyboardKeepState.target = null;
-
-    ensureKeyboardSpacer();
-    restoreManyTimes(keepY);
-    removeKeyboardSpacerLater();
-
-    const t = setTimeout(function() {
-      keyboardKeepState.closing = false;
-    }, 1700);
-
-    keyboardKeepState.timers.push(t);
-  }, true);
-
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', function() {
-      if (keyboardKeepState.active && !keyboardKeepState.closing) {
-        ensureKeyboardSpacer();
-        rememberKeyboardY();
-      }
-
-      if (keyboardKeepState.closing) {
-        ensureKeyboardSpacer();
-        restoreManyTimes(keyboardKeepState.y);
-      }
-    }, { passive: true });
-  }
-}
- 
-// keyboard 畫面鎖定 - off
-
 
   window.addEventListener('beforeunload', () => {
     if (gasTimer) clearInterval(gasTimer);
