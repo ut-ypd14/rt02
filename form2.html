@@ -1600,17 +1600,28 @@ function setTime(date, hour, minute) {
     });
   }
 
+  function proxyElementsReady_() {
+    return !!(
+      el.proxyInputMask &&
+      el.proxyInputTitle &&
+      el.proxyInput &&
+      el.proxyCancelBtn &&
+      el.proxyDoneBtn
+    );
+  }
+
   function bindProxyTargets() {
+    if (!proxyElementsReady_()) {
+      console.warn('代理輸入框元素未完整建立，保留原輸入框模式。');
+      return;
+    }
+
     document.querySelectorAll('[data-proxy-rule]').forEach(target => {
       target.setAttribute('readonly', 'readonly');
 
-      target.addEventListener('pointerdown', evt => {
-        evt.preventDefault();
-        openProxyInput(target, target.dataset.proxyRule);
-      }, { passive: false });
-
       target.addEventListener('click', evt => {
         evt.preventDefault();
+        evt.stopPropagation();
         openProxyInput(target, target.dataset.proxyRule);
       });
 
@@ -2378,6 +2389,15 @@ async function updateGasStatus() {
 
   function getProxyRule_(ruleName) {
     return PROXY_RULES[ruleName] || PROXY_RULES.plain;
+  }
+
+  function syncProxyInvalidFromTarget_(target) {
+    if (!el.proxyInput) return;
+
+    const control = target ? target.closest('.control') : null;
+    const invalid = !!(control && control.classList.contains('invalid'));
+
+    el.proxyInput.classList.toggle('invalid', invalid);
   }
 
   function proxySyncInput_(proxy, target) {
