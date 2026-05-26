@@ -815,6 +815,11 @@
 	  box-shadow: 0 0 0 4px rgba(37, 95, 188, .12);
 	}
 
+	.proxy-input.invalid {
+	 border-color: var(--bad);
+	  background: var(--soft-bad);
+	}
+
 	.proxy-input-actions {
 	  display: grid;
 	  grid-template-columns: 1fr 1fr;
@@ -1595,10 +1600,14 @@ function setTime(date, hour, minute) {
     });
   }
 
-
   function bindProxyTargets() {
     document.querySelectorAll('[data-proxy-rule]').forEach(target => {
       target.setAttribute('readonly', 'readonly');
+
+      target.addEventListener('pointerdown', evt => {
+        evt.preventDefault();
+        openProxyInput(target, target.dataset.proxyRule);
+      }, { passive: false });
 
       target.addEventListener('click', evt => {
         evt.preventDefault();
@@ -1608,10 +1617,10 @@ function setTime(date, hour, minute) {
       target.addEventListener('focus', evt => {
         evt.preventDefault();
         target.blur();
-        openProxyInput(target, target.dataset.proxyRule);
       });
     });
   }
+
 
   function startFreezeHeartbeat() {
     freezeLastAliveAt = window.CFG_time;
@@ -2304,24 +2313,45 @@ async function updateGasStatus() {
     }, 3500);
   }
 
+  function focusProxyInput_() {
+    if (!el.proxyInput) return;
+
+    try {
+      el.proxyInput.focus({ preventScroll: true });
+      } catch (err) {
+      el.proxyInput.focus();
+    }
+
+    try {
+      el.proxyInput.select();
+      } catch (err) {}
+  }
+
   function openProxyInput(target, rule) {
     if (!target || !el.proxyInputMask || !el.proxyInput) return;
 
     proxyInputState.target = target;
     proxyInputState.rule = String(rule || '');
-	proxyInputState.beforeValue = String(target.value || '');
-	const proxyRule = getProxyRule_(proxyInputState.rule);
-	el.proxyInput.setAttribute('inputmode', proxyRule.inputMode || 'text');
+    proxyInputState.beforeValue = String(target.value || '');
+
+    const proxyRule = getProxyRule_(proxyInputState.rule);
+    el.proxyInput.setAttribute('inputmode', proxyRule.inputMode || 'text');
+
     const no = target.getAttribute('data-item-no') || '';
     el.proxyInputTitle.textContent = no ? `項次 ${no} 輸入` : '輸入資料';
 
     el.proxyInput.value = proxyInputState.beforeValue;
+    el.proxyInput.classList.remove('invalid');
+    syncProxyInvalidFromTarget_(target);
+
     el.proxyInputMask.classList.add('active');
 
-    setTimeout(() => {
-      el.proxyInput.focus();
-      el.proxyInput.select();
-    }, 80);
+    // 第一次要同步執行，部分手機瀏覽器才會彈鍵盤
+    focusProxyInput_();
+
+    // 補強：少數瀏覽器 layout 尚未完成時，延後再 focus
+    setTimeout(focusProxyInput_, 60);
+    setTimeout(focusProxyInput_, 180);
   }
 
   function closeProxyInput(restoreOldValue) {
@@ -2337,8 +2367,10 @@ async function updateGasStatus() {
 
     if (el.proxyInput) {
       el.proxyInput.value = '';
+      el.proxyInput.classList.remove('invalid');
       el.proxyInput.blur();
-  }
+    }
+
     if (el.proxyInputMask) {
       el.proxyInputMask.classList.remove('active');
     }
@@ -2354,8 +2386,8 @@ async function updateGasStatus() {
     target.value = proxy.value;
     target.dispatchEvent(new Event('input', { bubbles: true }));
 
-// 原欄位 input 事件可能已經標準化內容，所以代理框要讀回標準化後的值
     proxy.value = target.value;
+    syncProxyInvalidFromTarget_(target);
   }
 
   function proxySyncDone_(proxy, target) {
@@ -2365,6 +2397,7 @@ async function updateGasStatus() {
     target.dispatchEvent(new Event('input', { bubbles: true }));
 
     proxy.value = target.value;
+    syncProxyInvalidFromTarget_(target);
   }
 
   function proxySyncDoneWithBlur_(proxy, target) {
@@ -2375,6 +2408,7 @@ async function updateGasStatus() {
     target.dispatchEvent(new Event('blur'));
 
     proxy.value = target.value;
+    syncProxyInvalidFromTarget_(target);
   }
 
   function readJson(key) {
