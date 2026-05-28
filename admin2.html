@@ -258,7 +258,7 @@
       background: rgba(255,255,255,.98);
       padding: 7px 8px 5px;
       border-bottom: 1px solid rgba(217,226,239,.95);
-      margin: 0 -8px 7px;
+      margin: 0 0 7px;
     }
 
     .person-head-sticky div:nth-child(1),
@@ -322,17 +322,9 @@
 
     .person-row.is-admin {
       background: var(--soft-red);
+      box-shadow: inset 4px 0 0 #fca5a5;
     }
 
-    .person-row.is-admin::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: #fca5a5;
-    }
 
     .person-row.is-admin .cell {
       color: var(--admin-red);
@@ -357,7 +349,7 @@
 
     .person-row.is-selected.is-admin {
       background: #fff1f2;
-      box-shadow: 0 0 0 3px rgba(220,38,38,.12);
+      box-shadow: inset 4px 0 0 #fca5a5, 0 0 0 3px rgba(220,38,38,.12);
     }
 
     .person-row.is-touched {
@@ -393,6 +385,7 @@
     }
 
     .status-text {
+      width: 100%;
       text-align: center;
       font-size: 12px;
       color: #067647;
@@ -428,7 +421,8 @@
     .mode-badge,
     .action-msg-inline,
     #clearFormBtn {
-      min-height: 38px;
+      height: 40px;
+      min-height: 40px;
       display: flex;
       align-items: center;
     }
@@ -640,7 +634,7 @@
         font-size: 11px;
         gap: 4px;
         padding: 6px 6px 4px;
-        margin: 0 -6px 6px;
+        margin: 0 0 6px;
       }
 
       .person-list {
@@ -673,7 +667,8 @@
       .mode-badge,
       .action-msg-inline,
       #clearFormBtn {
-        min-height: 36px;
+        height: 38px;
+        min-height: 38px;
       }
 
       .mode-badge,
@@ -790,15 +785,15 @@
       </div>
 
       <div class="actions single" id="actionButtons">
-        <button type="submit" class="btn btn-primary" id="saveBtn">儲存</button>
         <button type="button" class="btn btn-danger hide" id="disableBtn">停用</button>
         <button type="button" class="btn btn-ok hide" id="enableBtn">啟用</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">儲存</button>
       </div>
     </form>
   </section>
 
 <script>
-  const VERSION = 'admin9.html v0.1.0';
+  const VERSION = 'admin10.html v0.1.0';
 
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -815,7 +810,8 @@
   let currentFilter = 'ALL';
   let selectedRow = null;
   let actionMsgTimer = null;
-  let lastTouchedId = '';
+  let flashId = '';
+  let flashTimer = null;
 
   const el = {
     fixedAdminHeader: document.getElementById('fixedAdminHeader'),
@@ -1083,7 +1079,11 @@
     syncPanelHeights();
   }
 
-  function clearFormForManual() {
+  function clearFormForManual(shouldClearFlash) {
+    if (shouldClearFlash !== false) {
+      clearFlashRow();
+    }
+
     selectedRow = null;
 
     el.idInput.value = '';
@@ -1103,6 +1103,8 @@
   }
 
   function fillFormFromRow(row) {
+    clearFlashRow();
+
     selectedRow = row || null;
 
     el.idInput.value = row.id || '';
@@ -1126,6 +1128,30 @@
     el.actionButtons.classList.toggle('single', !selected);
 
     syncPanelHeights();
+  }
+
+  function startFlashRow(id) {
+    if (flashTimer) {
+      clearTimeout(flashTimer);
+      flashTimer = null;
+    }
+
+    flashId = normalizeId(id);
+
+    flashTimer = setTimeout(function(){
+      flashId = '';
+      flashTimer = null;
+      renderPersonnelList();
+    }, 4500);
+  }
+
+  function clearFlashRow() {
+    if (flashTimer) {
+      clearTimeout(flashTimer);
+      flashTimer = null;
+    }
+
+    flashId = '';
   }
 
   async function savePersonnel(activeValue) {
@@ -1180,7 +1206,7 @@
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
 
       if (data && data.status === 'ok') {
-        lastTouchedId = id;
+        startFlashRow(id);
         setActionMsg('完成，同步中...', 'ok');
 
         if (listLoaded) {
@@ -1191,7 +1217,7 @@
         }
 
         if (activeValue === 'FALSE') {
-          clearFormForManual();
+          clearFormForManual(false);
         }
 
         return;
@@ -1309,7 +1335,7 @@
       btn.type = 'button';
 
       const selected = !!(selectedRow && selectedRow.id === row.id);
-      const touched = !!(lastTouchedId && lastTouchedId === row.id);
+      const touched = !!(flashId && flashId === row.id);
 
       btn.className = 'person-row' +
         (row.admin ? ' is-admin' : '') +
