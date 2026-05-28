@@ -22,23 +22,20 @@
       --admin-red:#b42318;
       --disabled-bg:#e5e7eb;
       --disabled-text:#8a94a6;
+      --flash:#dbeafe;
       --shadow:0 10px 28px rgba(15,23,42,.10);
       --radius:18px;
-      --person-cols:1.05fr 1.35fr .55fr .70fr;
-      --header-h:132px;
+      --person-cols:1.05fr 1.35fr .55fr .7fr;
     }
 
     *{box-sizing:border-box;}
 
-    html,body{
-      margin:0;
-      min-height:100vh;
-    }
-
     body{
+      margin:0;
       font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
       background:linear-gradient(180deg,#eef5ff 0%,var(--bg) 42%,#f9fbff 100%);
       color:var(--ink);
+      min-height:100vh;
       -webkit-text-size-adjust:100%;
     }
 
@@ -47,62 +44,50 @@
 
     .hide{display:none!important;}
 
-    .page-shell{
-      width:min(760px,calc(100% - 20px));
-      margin:0 auto;
-    }
-
     .fixed-admin-header{
-      position:fixed;
+      position:sticky;
       top:0;
-      left:0;
-      right:0;
-      z-index:50;
-      background:rgba(244,247,251,.98);
-      border-bottom:1px solid rgba(217,226,239,.96);
-      box-shadow:0 8px 24px rgba(15,23,42,.08);
+      z-index:30;
+      background:rgba(244,247,251,.97);
       backdrop-filter:blur(8px);
-      padding:6px 0 5px;
-    }
-
-    .header-inner{
-      width:min(760px,calc(100% - 20px));
-      margin:0 auto;
+      border-bottom:1px solid rgba(217,226,239,.95);
+      box-shadow:0 8px 22px rgba(15,23,42,.08);
+      padding:6px max(8px,env(safe-area-inset-left)) 5px max(8px,env(safe-area-inset-left));
       display:grid;
       gap:5px;
     }
 
     .top-line{
       display:grid;
-      grid-template-columns:minmax(0,1fr) auto 40px 28px;
+      grid-template-columns:minmax(0,1fr) auto 40px 26px;
       align-items:center;
-      gap:8px;
+      gap:10px;
       min-height:38px;
     }
 
     .page-title{
       min-width:0;
-      font-size:18px;
-      font-weight:950;
-      line-height:1.1;
-      white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      color:#1f2937;
+      white-space:nowrap;
+      font-size:18px;
+      font-weight:950;
+      color:#24344d;
+      line-height:1.1;
     }
 
     .time-text{
       font-size:12px;
       font-weight:950;
-      color:#344054;
+      color:#475467;
       white-space:nowrap;
-      letter-spacing:.02em;
+      text-align:center;
+      min-width:112px;
     }
 
-    .home-jump-btn,
-    .icon-btn{
+    .home-jump-btn{
       width:40px;
-      height:38px;
+      height:36px;
       border-radius:13px;
       border:1px solid #c8d8f2;
       background:#eef4ff;
@@ -111,31 +96,24 @@
       align-items:center;
       justify-content:center;
       text-decoration:none;
-      font-size:21px;
+      font-size:22px;
       font-weight:950;
       line-height:1;
-      cursor:pointer;
-      padding:0;
-      box-shadow:0 5px 12px rgba(37,95,188,.10);
+      box-shadow:0 5px 12px rgba(37,95,188,.12);
     }
-
-    .home-jump-btn:active,
-    .icon-btn:active{transform:scale(.96);}
-
-    .icon-btn.loading{animation:spin .9s linear infinite;}
-    @keyframes spin{to{transform:rotate(360deg);}}
+    .home-jump-btn:active{transform:scale(.96);}
 
     .gas-lamp-wrap{
-      width:28px;
-      height:28px;
       display:flex;
       align-items:center;
       justify-content:center;
+      width:26px;
+      height:26px;
     }
 
     .gas-lamp{
-      width:21px;
-      height:21px;
+      width:20px;
+      height:20px;
       border-radius:50%;
       background:#98a2b3;
       box-shadow:0 0 0 4px rgba(37,95,188,.08),0 0 14px rgba(37,95,188,.16);
@@ -147,30 +125,58 @@
 
     .tool-line{
       display:grid;
-      grid-template-columns:40px minmax(0,1fr) auto 58px;
+      grid-template-columns:40px minmax(0,1fr) auto;
       align-items:center;
-      gap:7px;
-      min-height:38px;
+      gap:10px;
+      min-height:36px;
+    }
+
+    .icon-btn{
+      width:40px;
+      height:34px;
+      border-radius:13px;
+      border:1px solid #c8d8f2;
+      background:#eef4ff;
+      color:#174c99;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      font-weight:950;
+      cursor:pointer;
+      padding:0;
+      line-height:1;
+    }
+    .icon-btn.loading{animation:spin .9s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    .filter-and-count{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      align-items:center;
+      gap:10px;
+      min-width:0;
     }
 
     .filter-group{
       display:flex;
-      gap:5px;
+      gap:6px;
       flex-wrap:nowrap;
       min-width:0;
       overflow:hidden;
+      justify-content:space-between;
     }
 
     .filter-btn{
-      min-width:40px;
+      min-width:44px;
       height:34px;
       border-radius:999px;
-      padding:6px 7px;
+      padding:6px 8px;
       border:1px solid #c8d8f2;
       background:#fff;
       color:#174c99;
-      font-weight:950;
       font-size:13px;
+      font-weight:950;
       cursor:pointer;
       white-space:nowrap;
       flex:0 0 auto;
@@ -184,47 +190,40 @@
 
     .list-count-text{
       color:var(--muted);
-      font-size:12px;
+      font-size:13px;
       font-weight:950;
       white-space:nowrap;
       text-align:right;
-      min-width:54px;
-    }
-
-    .clear-btn{
       min-width:58px;
-      height:34px;
-      min-height:34px;
-      border-radius:13px;
-      padding:6px 8px;
-      font-size:13px;
     }
 
     .person-head-fixed{
       display:grid;
       grid-template-columns:var(--person-cols);
-      gap:5px;
+      gap:6px;
       align-items:center;
-      border-top:1px solid rgba(217,226,239,.86);
-      padding:5px 7px 1px 11px;
       color:var(--muted);
       font-size:12px;
       font-weight:950;
       white-space:nowrap;
-      min-height:22px;
+      padding:4px 8px 2px 12px;
+      border-top:1px solid rgba(217,226,239,.72);
     }
 
+    .person-head-fixed div:nth-child(1),
+    .person-head-fixed div:nth-child(3),
+    .person-head-fixed div:nth-child(4){text-align:center;}
+
     .content-wrap{
-      width:min(760px,calc(100% - 20px));
+      width:min(760px,calc(100% - 12px));
       margin:0 auto;
-      padding-top:calc(var(--header-h) + 4px);
-      padding-bottom:26px;
+      padding:4px 0 26px;
     }
 
     .status{
       border-radius:14px;
       padding:10px 12px;
-      margin-bottom:8px;
+      margin:8px 0 10px;
       font-weight:850;
       border:1px solid var(--line);
       background:#fff;
@@ -234,22 +233,23 @@
     .status.warn{background:#fffaeb;color:#92400e;border-color:#fedf89;}
     .status.bad{background:#fef3f2;color:#b42318;border-color:#fecdca;}
 
-    .card{
+    .main-card{
       background:var(--card);
       border:1px solid var(--line);
-      border-radius:var(--radius);
+      border-radius:0 0 var(--radius) var(--radius);
       box-shadow:var(--shadow);
-      padding:10px 10px 14px;
+      padding:8px 12px 14px;
+      margin-top:0;
     }
 
     .person-list{
       display:flex;
       flex-direction:column;
       gap:7px;
-      max-height:min(38vh,380px);
+      max-height:min(40vh,390px);
       overflow-y:auto;
       overscroll-behavior:contain;
-      padding:0 3px 0 0;
+      padding:1px 4px 4px 0;
       border-radius:14px;
       margin-bottom:12px;
     }
@@ -266,10 +266,10 @@
       background:#fff;
       display:grid;
       grid-template-columns:var(--person-cols);
-      gap:5px;
+      gap:6px;
       align-items:center;
-      min-height:40px;
-      padding:7px 7px;
+      min-height:42px;
+      padding:8px 8px;
       text-align:left;
       cursor:pointer;
       color:var(--ink);
@@ -279,7 +279,6 @@
       background:var(--soft-red);
       border-left-color:#fca5a5;
     }
-
     .person-row.is-admin .cell{
       color:var(--admin-red);
       font-weight:950;
@@ -290,10 +289,20 @@
       color:var(--disabled-text);
       opacity:.94;
     }
-
     .person-row.is-disabled .cell{color:var(--disabled-text);}
     .person-row.is-admin.is-disabled{border-left-color:#fca5a5;}
     .person-row:active{transform:scale(.992);}
+
+    .person-row.is-touched{
+      animation:touchedPulse 1s ease-in-out 0s 5;
+      box-shadow:0 0 0 3px rgba(37,95,188,.22);
+    }
+
+    @keyframes touchedPulse{
+      0%{box-shadow:0 0 0 0 rgba(37,95,188,0);}
+      50%{box-shadow:0 0 0 4px rgba(37,95,188,.26);background-color:var(--flash);}
+      100%{box-shadow:0 0 0 0 rgba(37,95,188,0);}
+    }
 
     .cell{
       min-width:0;
@@ -301,19 +310,19 @@
       text-overflow:ellipsis;
       white-space:nowrap;
       font-weight:900;
-      font-size:12.5px;
+      font-size:13px;
       line-height:1.15;
     }
+    .cell:nth-child(1),.cell:nth-child(3),.cell:nth-child(4){text-align:center;}
 
     .cell.status-text{
       text-align:center;
       border-radius:999px;
-      padding:3px 4px;
+      padding:4px 5px;
       background:#ecfdf3;
       color:#067647;
-      font-size:11px;
+      font-size:12px;
     }
-
     .person-row.is-disabled .status-text{
       background:#cbd5e1;
       color:#64748b;
@@ -321,28 +330,46 @@
 
     .mode-row{
       display:grid;
-      grid-template-columns:minmax(0,1fr);
+      grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 74px;
+      gap:8px;
       align-items:stretch;
-      margin:10px 0 8px;
+      margin:13px 8px 9px;
+    }
+
+    .mode-badge,
+    .action-msg-inline,
+    #clearFormBtn{
+      min-height:42px;
+      display:flex;
+      align-items:center;
+      border-radius:14px;
+      font-size:13px;
+      font-weight:950;
     }
 
     .mode-badge{
-      min-height:40px;
-      display:flex;
-      align-items:center;
       justify-content:flex-start;
       border:1px solid #c8d8f2;
       background:#eef4ff;
       color:#174c99;
-      border-radius:14px;
       padding:8px 10px;
-      font-weight:950;
       min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
-      font-size:13px;
     }
+
+    .action-msg-inline{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      color:var(--muted);
+      padding:8px 4px;
+    }
+    .action-msg-inline.ok{color:#067647;}
+    .action-msg-inline.bad{color:#b42318;}
+    .action-msg-inline.warn{color:#92400e;}
 
     .btn{
       border:0;
@@ -354,7 +381,6 @@
       transition:transform .12s ease,opacity .12s ease,box-shadow .12s ease;
       white-space:nowrap;
     }
-
     .btn:active{transform:scale(.98);}
     .btn:disabled{opacity:.52;cursor:not-allowed;transform:none;}
 
@@ -379,30 +405,21 @@
       border:1px solid #abefc6;
     }
 
-    .msg{
-      min-height:22px;
-      margin:6px 0 10px;
-      font-size:14px;
-      font-weight:950;
-      color:var(--muted);
-      line-height:1.35;
+    .form-block{
+      padding:0 14px 0;
     }
-
-    .msg.ok{color:#067647;}
-    .msg.bad{color:#b42318;}
-    .msg.warn{color:#92400e;}
 
     .form-line{
       display:grid;
-      grid-template-columns:46px minmax(0,1fr);
+      grid-template-columns:52px minmax(0,1fr);
       align-items:center;
-      gap:7px;
-      margin-top:8px;
+      gap:8px;
+      margin-top:9px;
     }
 
     .form-line label{
       margin:0;
-      font-size:13px;
+      font-size:14px;
       font-weight:950;
       color:#344054;
       white-space:nowrap;
@@ -418,11 +435,11 @@
       min-height:44px;
       font-size:16px;
     }
-
     input:focus,select:focus{
       border-color:#6aa1ff;
       box-shadow:0 0 0 4px rgba(37,95,188,.10);
     }
+    input[readonly]{background:#f1f5f9;color:#64748b;}
 
     .actions{
       display:grid;
@@ -430,7 +447,6 @@
       gap:8px;
       margin-top:12px;
     }
-
     .actions.single{grid-template-columns:1fr;}
 
     .small-note{
@@ -443,95 +459,52 @@
     @media(max-width:420px){
       :root{--person-cols:1.05fr 1.25fr .48fr .62fr;}
 
-      .page-shell,
-      .header-inner,
-      .content-wrap{
-        width:min(100% - 12px,760px);
-      }
-
-      .top-line{
-        grid-template-columns:minmax(0,1fr) auto 38px 26px;
-        gap:6px;
-        min-height:36px;
-      }
-
+      .fixed-admin-header{padding-left:6px;padding-right:6px;gap:4px;}
+      .top-line{grid-template-columns:minmax(0,1fr) auto 38px 24px;gap:8px;}
       .page-title{font-size:17px;}
-      .time-text{font-size:11px;}
+      .time-text{font-size:11px;min-width:102px;}
+      .home-jump-btn{width:38px;height:34px;font-size:21px;}
+      .gas-lamp-wrap{width:24px;height:24px;}
+      .gas-lamp{width:19px;height:19px;}
 
-      .home-jump-btn,
-      .icon-btn{
-        width:38px;
-        height:36px;
-        font-size:20px;
-      }
+      .tool-line{grid-template-columns:38px minmax(0,1fr) auto;gap:8px;}
+      .icon-btn{width:38px;height:32px;font-size:19px;}
+      .filter-and-count{gap:8px;}
+      .filter-btn{min-width:38px;height:32px;padding:5px 6px;font-size:12px;}
+      .list-count-text{font-size:12px;min-width:52px;}
+      .person-head-fixed{gap:4px;padding-left:10px;padding-right:6px;font-size:11px;}
 
-      .gas-lamp{width:20px;height:20px;}
+      .content-wrap{width:min(100% - 8px,760px);padding-top:3px;}
+      .main-card{padding:6px 8px 12px;}
+      .person-row{min-height:40px;padding:7px 6px;gap:4px;}
+      .cell{font-size:12px;}
+      .cell.status-text{font-size:11px;padding:3px 4px;}
 
-      .tool-line{
-        grid-template-columns:38px minmax(0,1fr) auto 54px;
-        gap:5px;
-      }
-
-      .filter-group{gap:4px;}
-
-      .filter-btn{
-        min-width:34px;
-        height:32px;
-        padding:5px 6px;
-        font-size:12px;
-      }
-
-      .list-count-text{
-        font-size:11px;
-        min-width:48px;
-      }
-
-      .clear-btn{
-        min-width:54px;
-        height:32px;
-        min-height:32px;
-        font-size:12px;
-        padding:5px 6px;
-      }
-
-      .person-head-fixed{
-        font-size:11px;
-        gap:4px;
-        padding-left:10px;
-        padding-right:5px;
-      }
-
-      .card{padding:8px 8px 12px;}
-
-      .person-list{max-height:36vh;gap:6px;}
-
-      .person-row{
-        gap:4px;
-        min-height:39px;
-        padding:7px 5px;
-      }
-
-      .cell{font-size:11.5px;}
-      .cell.status-text{font-size:10.5px;padding:3px 3px;}
-      .mode-badge{font-size:12px;}
+      .mode-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 64px;gap:6px;margin-left:4px;margin-right:4px;}
+      .mode-badge,.action-msg-inline,#clearFormBtn{font-size:12px;min-height:40px;}
+      .mode-badge{padding:7px 8px;}
+      .form-block{padding:0 10px;}
+      .form-line{grid-template-columns:46px minmax(0,1fr);gap:7px;}
+      .form-line label{font-size:13px;}
+      .btn{padding:9px 9px;}
     }
   </style>
 </head>
 
 <body>
   <header id="fixedHeader" class="fixed-admin-header hide">
-    <div class="header-inner">
-      <div class="top-line">
-        <div class="page-title">人員管理</div>
-        <div class="time-text" id="localTimeText">-- --:--:--</div>
-        <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
-        <div class="gas-lamp-wrap" id="gasStatusWrap" title="GAS 伺服狀態" aria-label="GAS 伺服狀態">
-          <span class="gas-lamp checking" id="gasLamp"></span>
-        </div>
+    <div class="top-line">
+      <div class="page-title">人員管理</div>
+      <div class="time-text" id="localTimeText">-- --:--:--</div>
+      <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
+      <div class="gas-lamp-wrap" id="gasStatusWrap" title="GAS 伺服狀態" aria-label="GAS 伺服狀態">
+        <span class="gas-lamp checking" id="gasLamp"></span>
       </div>
+    </div>
 
-      <div class="tool-line">
-        <button type="button" class="icon-btn" id="loadListBtn" title="載入名單" aria-label="載入名單">↻</button>
+    <div class="tool-line">
+      <button type="button" class="icon-btn" id="loadListBtn" title="載入名單" aria-label="載入名單">↻</button>
+      <div class="filter-and-count">
         <div id="filterGroup" class="filter-group">
           <button type="button" class="filter-btn active" data-filter="ALL">ALL</button>
           <button type="button" class="filter-btn" data-filter="A">A</button>
@@ -539,31 +512,30 @@
           <button type="button" class="filter-btn" data-filter="C">C</button>
         </div>
         <div id="listCountText" class="list-count-text">尚未載入</div>
-        <button type="button" class="btn btn-soft clear-btn" id="clearFormBtn">清空</button>
       </div>
+    </div>
 
-      <div class="person-head-fixed" id="personHeadFixed">
-        <div>ID</div>
-        <div>NAME</div>
-        <div>班別</div>
-        <div>狀態</div>
-      </div>
+    <div class="person-head-fixed">
+      <div>ID</div>
+      <div>NAME</div>
+      <div>班別</div>
+      <div>狀態</div>
     </div>
   </header>
 
   <main class="content-wrap">
     <div id="gateStatus" class="status warn">管理權限：檢查中...</div>
 
-    <section id="mainPanel" class="card hide">
+    <section id="mainPanel" class="main-card hide">
       <div id="personList" class="person-list hide"></div>
 
       <div class="mode-row" id="formSection">
         <div class="mode-badge" id="modeBadge">目前狀態：手動輸入</div>
+        <div id="actionMsg" class="action-msg-inline"></div>
+        <button type="button" class="btn btn-soft" id="clearFormBtn">清空</button>
       </div>
 
-      <form id="saveForm" autocomplete="off">
-        <div id="actionMsg" class="msg"></div>
-
+      <form id="saveForm" class="form-block" autocomplete="off">
         <div class="form-line">
           <label for="idInput">ID</label>
           <input id="idInput" name="id" type="text" maxlength="5" inputmode="text" autocomplete="off" placeholder="5碼英數">
@@ -597,11 +569,11 @@
       </form>
     </section>
 
-    <footer class="small-note" style="text-align:center;padding:16px 0 4px;">admin5.html v0.1.0</footer>
+    <footer class="small-note" style="text-align:center;padding:16px 0 4px;">admin6.html v0.1.0</footer>
   </main>
 
 <script>
-  const VERSION = 'admin5.html v0.1.0';
+  const VERSION = 'admin6.html v0.1.0';
 
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -618,7 +590,7 @@
   let currentFilter = 'ALL';
   let selectedRow = null;
   let actionMsgTimer = null;
-  let clockTimer = null;
+  let lastTouchedId = '';
 
   const el = {
     fixedHeader: document.getElementById('fixedHeader'),
@@ -635,13 +607,13 @@
 
     formSection: document.getElementById('formSection'),
     modeBadge: document.getElementById('modeBadge'),
+    actionMsg: document.getElementById('actionMsg'),
     clearFormBtn: document.getElementById('clearFormBtn'),
     saveForm: document.getElementById('saveForm'),
     idInput: document.getElementById('idInput'),
     passInput: document.getElementById('passInput'),
     nameInput: document.getElementById('nameInput'),
     shiftInput: document.getElementById('shiftInput'),
-    actionMsg: document.getElementById('actionMsg'),
     actionButtons: document.getElementById('actionButtons'),
     saveBtn: document.getElementById('saveBtn'),
     disableBtn: document.getElementById('disableBtn'),
@@ -652,7 +624,8 @@
 
   async function init(){
     bindEvents();
-    startClock();
+    updateClock();
+    setInterval(updateClock, 1000);
     await ping();
 
     const ok = await prepareAdminGate();
@@ -674,12 +647,18 @@
     return Number(window.CFG_time || Date.now());
   }
 
-  function bindEvents(){
-    window.addEventListener('resize', syncHeaderHeight);
-    window.addEventListener('orientationchange', function(){
-      setTimeout(syncHeaderHeight, 250);
-    });
+  function updateClock(){
+    el.localTimeText.textContent = formatHeaderTime(window.CFG_now);
+  }
 
+  function formatHeaderTime(value){
+    const s = String(value || '').trim();
+    const m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+    if (m) return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+    return s || '-- --:--:--';
+  }
+
+  function bindEvents(){
     el.idInput.addEventListener('input', function(){
       el.idInput.value = normalizeId(el.idInput.value);
     });
@@ -693,7 +672,6 @@
     });
 
     el.clearFormBtn.addEventListener('click', clearFormForManual);
-
     el.saveForm.addEventListener('submit', function(evt){
       evt.preventDefault();
       savePersonnel('');
@@ -722,30 +700,6 @@
 
       renderPersonnelList();
     });
-  }
-
-  function startClock(){
-    updateClock();
-    if (clockTimer) clearInterval(clockTimer);
-    clockTimer = setInterval(updateClock, 1000);
-  }
-
-  function updateClock(){
-    el.localTimeText.textContent = formatCfgTime(window.CFG_now);
-  }
-
-  function formatCfgTime(value){
-    const s = String(value || '').trim();
-    const m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
-    if (m) return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
-    return s || '-- --:--:--';
-  }
-
-  function syncHeaderHeight(){
-    if (!el.fixedHeader || el.fixedHeader.classList.contains('hide')) return;
-
-    const h = Math.ceil(el.fixedHeader.getBoundingClientRect().height);
-    document.documentElement.style.setProperty('--header-h', h + 'px');
   }
 
   async function ping(){
@@ -809,7 +763,7 @@
     return false;
   }
 
-  function isShortAuthValid(shortAuth,draftId){
+  function isShortAuthValid(shortAuth, draftId){
     if (!shortAuth || !shortAuth.id) return false;
 
     const a = normalizeId(shortAuth.id);
@@ -821,11 +775,11 @@
     return Number.isFinite(expireTime) && nowValue() < expireTime;
   }
 
-  async function renewAuth(id,pass){
+  async function renewAuth(id, pass){
     const params = new URLSearchParams();
-    params.set('action','auth');
-    params.set('id',normalizeId(id));
-    params.set('pass',String(pass || '').trim());
+    params.set('action', 'auth');
+    params.set('id', normalizeId(id));
+    params.set('pass', String(pass || '').trim());
 
     try {
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
@@ -855,7 +809,6 @@
     el.mainPanel.classList.remove('hide');
     el.gateStatus.classList.add('hide');
     clearFormForManual();
-    syncHeaderHeight();
   }
 
   function clearFormForManual(){
@@ -865,6 +818,7 @@
     el.passInput.value = '';
     el.nameInput.value = '';
     el.shiftInput.value = '';
+    el.idInput.readOnly = false;
 
     setMode('目前狀態：手動輸入');
     setActionMsg('', '');
@@ -882,6 +836,7 @@
     el.passInput.value = row.pass || '';
     el.nameInput.value = row.name || '';
     el.shiftInput.value = row.shift || '';
+    el.idInput.readOnly = true;
 
     setMode(row.active ? '目前狀態：修改 ' + (row.id || '') : '目前狀態：修改 ' + (row.id || '') + '（停用）');
     setActionMsg('已帶入人員資料。', 'ok');
@@ -938,7 +893,7 @@
     }
 
     const params = new URLSearchParams();
-    params.set('action','personnel_save');
+    params.set('action', 'personnel_save');
     params.set('admin_id', normalizeId(loginDraft.id));
     params.set('admin_pass', String(loginDraft.pass || ''));
     params.set('id', id);
@@ -959,10 +914,12 @@
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
 
       if (data && data.status === 'ok') {
-        setActionMsg('操作完成。', 'ok');
+        lastTouchedId = id;
+        setActionMsg(listLoaded ? '操作完成，名單同步中...' : '操作完成。', 'ok');
 
         if (listLoaded) {
           await loadPersonnelList(false);
+          setActionMsg('操作完成，名單已同步。', 'ok');
         }
 
         if (activeValue === 'FALSE') {
@@ -973,6 +930,7 @@
       }
 
       setActionMsg('操作失敗：' + (data && data.msg ? data.msg : 'unknown_error'), 'bad');
+
     } catch (err) {
       setActionMsg('操作失敗：' + formatError(err), 'bad');
     }
@@ -985,7 +943,7 @@
     }
 
     const params = new URLSearchParams();
-    params.set('action','personnel_list');
+    params.set('action', 'personnel_list');
 
     try {
       const data = await postWithTimeout(params, POST_TIMEOUT_MS);
@@ -998,8 +956,10 @@
       personnelRows = normalizePersonnelRows(data);
       listLoaded = true;
       renderPersonnelList();
+
     } catch (err) {
       el.listCountText.textContent = '讀取失敗';
+
     } finally {
       el.loadListBtn.classList.remove('loading');
     }
@@ -1050,7 +1010,7 @@
     rows.forEach(function(row){
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'person-row' + (row.admin ? ' is-admin' : '') + (!row.active ? ' is-disabled' : '');
+      btn.className = 'person-row' + (row.admin ? ' is-admin' : '') + (!row.active ? ' is-disabled' : '') + (lastTouchedId && row.id === lastTouchedId ? ' is-touched' : '');
 
       btn.innerHTML = [
         '<div class="cell">' + escapeHtml(row.id) + '</div>',
@@ -1067,7 +1027,7 @@
     });
   }
 
-  async function postWithTimeout(params,timeoutMs){
+  async function postWithTimeout(params, timeoutMs){
     const controller = new AbortController();
     const timer = setTimeout(function(){
       controller.abort();
@@ -1087,6 +1047,7 @@
       } catch (err) {
         throw new Error('GAS 回傳不是 JSON');
       }
+
     } finally {
       clearTimeout(timer);
     }
@@ -1147,14 +1108,14 @@
     clearTimeout(actionMsgTimer);
 
     el.actionMsg.textContent = text || '';
-    el.actionMsg.className = 'msg ' + (type || '');
+    el.actionMsg.className = 'action-msg-inline ' + (type || '');
 
     if (!text) return;
 
     const ms = type === 'bad' ? MSG_BAD_MS : MSG_OK_MS;
     actionMsgTimer = setTimeout(function(){
       el.actionMsg.textContent = '';
-      el.actionMsg.className = 'msg';
+      el.actionMsg.className = 'action-msg-inline';
     }, ms);
   }
 
