@@ -48,9 +48,9 @@ function doPost(e) {
       return routePersonnelSave_(p, ss, SH_USER);
     }
 
-    if (action === 'personnel_delete') {
-      return routePersonnelDelete_(p, ss, SH_USER);
-    }
+	if (action === 'personnel_list') {
+	  return routePersonnelList_(p, ss, SH_USER);
+	}
 
     return json_({ status: 'error', action: action || '', msg: 'unknown_action' });
 
@@ -84,9 +84,58 @@ function routeAuth_(p, ss, sheetName) {
   });
 }
 
+
+function routePersonnelList_(p, ss, sheetName) {
+  const sh = getSheet_(ss, sheetName);
+  const lastRow = sh.getLastRow();
+
+  const fields = [
+    'id',
+    'pass',
+    'name',
+    'shift',
+    'active',
+    'admin' ];
+
+  if (lastRow < 2) {
+    return json_({
+      action: 'personnel_list',
+      fields: fields,
+      values: [],
+      status: 'ok'
+    });
+  }
+
+  const data = sh.getRange(2, 1, lastRow - 1, 6).getValues();
+  const values = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const id = normalizeId_(row[0]);
+
+    if (!id) continue;
+
+    values.push([ id,
+      String(row[1] || ''),
+      String(row[2] || ''),
+      String(row[3] || '').trim().toUpperCase(),
+	  parseBool_(row[4], true) ? 'TRUE' : 'FALSE',
+	  parseBool_(row[5], false) ? 'TRUE' : '' ]);
+    }
+
+    return json_({
+      action: 'personnel_list',
+      fields: fields,
+      values: values,
+      status: 'ok'
+    });
+}
+
+
 function routePersonnelSave_(p, ss, sheetName) {
   const adminId = normalizeId_(p.admin_id);
   const adminPass = String(p.admin_pass || '').trim();
+
   const id = normalizeId_(p.id);
   const pass = String(p.pass || '').trim();
   const name = String(p.name || '').trim();
@@ -94,80 +143,128 @@ function routePersonnelSave_(p, ss, sheetName) {
 
   const admin = findUserById_(adminId, ss, sheetName);
 
-  if (!admin) return json_({ status: 'error', action: 'personnel_save', msg: 'admin_auth_failed' });
-  if (String(admin.pass || '') !== adminPass) return json_({ status: 'error', action: 'personnel_save', msg: 'admin_auth_failed' });
-  if (admin.active !== true) return json_({ status: 'error', action: 'personnel_save', msg: 'admin_auth_failed' });
-  if (admin.admin !== true) return json_({ status: 'error', action: 'personnel_save', msg: 'no_admin_permission' });
+  if (!admin) return json_({ action: 'personnel_save', msg: 'admin_auth_failed', status: 'error' });
+  if (String(admin.pass || '') !== adminPass) return json_({ action: 'personnel_save', msg: 'admin_auth_failed', status: 'error' });
+  if (admin.active !== true) return json_({ action: 'personnel_save', msg: 'admin_auth_failed', status: 'error' });
+  if (admin.admin !== true) return json_({ action: 'personnel_save', msg: 'no_admin_permission', status: 'error' });
 
-  if (!isValidId_(id)) return json_({ status: 'error', action: 'personnel_save', msg: 'invalid_id' });
-  if (!isValidPass_(pass)) return json_({ status: 'error', action: 'personnel_save', msg: 'invalid_pass' });
-  if (name.length <= 1) return json_({ status: 'error', action: 'personnel_save', msg: 'invalid_name' });
-  if (!/^(A|B|C)$/.test(shift)) return json_({ status: 'error', action: 'personnel_save', msg: 'invalid_shift' });
+  if (!isValidId_(id)) return json_({ action: 'personnel_save', msg: 'invalid_id', status: 'error' });
+
+  let activeProvided = false;
+  let activeValue = null;
+
+  if (hasParam_(p, 'active') && String(p.active || '').trim() !== '') {
+    activeProvided = true;
+    activeValue = parseActiveInput_(p.active);
+
+    if (activeValue === null) {
+      return json_({ action: 'personnel_save', msg: 'invalid_active', status: 'error' });
+    }
+  }
 
   return withLock_(LOCK_USER_MS, 'personnel_save', function () {
     const sh = getSheet_(ss, sheetName);
     const lastRow = sh.getLastRow();
+
+    const systemTime = Utilities.formatDate(
+      new Date(),
+      'Asia/Taipei',
+      'yyyy/MM/dd HH:mm:ss'
+    );
+
     let foundRow = 0;
+    let targetAdmin = false;
 
     if (lastRow >= 2) {
-      const ids = sh.getRange(2, 1, lastRow - 1, 1).getValues();
-      for (let i = 0; i < ids.length; i++) {
-        if (normalizeId_(ids[i][0]) === id) {
+      const values = sh.getRange(2, 1, lastRow - 1, 6).getValues();
+
+      for (let i = 0; i < values.length; i++) {
+        if (normalizeId_(values[i][0]) === id) {
           foundRow = i + 2;
+          targetAdmin = parseBool_(values[i][5], false);
           break;
         }
       }
     }
 
-    let mode = '';
+    if (activeProvided && activeValue === false) {
+      if (foundRow <= 0) {
+        return json_({
+          action: 'personnel_save',
+          msg: 'target_not_found',
+          id: id,
+          status: 'error'
+        });
+      }
+
+      if (targetAdmin === true) {
+        return json_({
+          action: 'personnel_save',
+          msg: 'target_is_admin_forbidden',
+          id: id,
+          status: 'error'
+        });
+      }
+
+      sh.getRange(foundRow, 5).setValue('FALSE');
+      sh.getRange(foundRow, 7, 1, 2).setValues([[systemTime, adminId]]);
+
+      return json_({
+        action: 'personnel_save',
+        fields: ['mode', 'id', 'active', 'system_time', 'operator_id'],
+        values: ['disable', id, 'FALSE', systemTime, adminId],
+        status: 'ok'
+      });
+    }
+
+    if (!isValidPass_(pass)) return json_({ action: 'personnel_save', msg: 'invalid_pass', status: 'error' });
+    if (name.length <= 1) return json_({ action: 'personnel_save', msg: 'invalid_name', status: 'error' });
+    if (!/^(A|B|C)$/.test(shift)) return json_({ action: 'personnel_save', msg: 'invalid_shift', status: 'error' });
 
     if (foundRow > 0) {
       sh.getRange(foundRow, 2, 1, 3).setValues([[pass, name, shift]]);
-      mode = 'update';
-    } else {
-      sh.appendRow([id, pass, name, shift, 'TRUE']);
-      mode = 'insert';
+
+      if (activeProvided && activeValue === true) {
+        sh.getRange(foundRow, 5).setValue('TRUE');
+      }
+
+      sh.getRange(foundRow, 7, 1, 2).setValues([[systemTime, adminId]]);
+
+      return json_({
+        action: 'personnel_save',
+        fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'operator_id'],
+        values: [
+          activeProvided && activeValue === true ? 'enable_update' : 'update',
+          id,
+          name,
+          shift,
+          activeProvided && activeValue === true ? 'TRUE' : '',
+          systemTime,
+          adminId ],
+        status: 'ok'
+      });
     }
 
+    sh.appendRow([
+      id,
+      pass,
+      name,
+      shift,
+      'TRUE',
+      '',
+      systemTime,
+      adminId
+    ]);
+
     return json_({
-      status: 'ok',
       action: 'personnel_save',
-      fields: ['mode', 'id', 'name', 'shift'],
-      values: [mode, id, name, shift]
+      fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'operator_id'],
+      values: ['insert', id, name, shift, 'TRUE', systemTime, adminId],
+      status: 'ok'
     });
   });
 }
 
-function routePersonnelDelete_(p, ss, sheetName) {
-  const adminId = normalizeId_(p.admin_id);
-  const adminPass = String(p.admin_pass || '').trim();
-  const targetId = normalizeId_(p.target_id);
-
-  const admin = findUserById_(adminId, ss, sheetName);
-
-  if (!admin) return json_({ status: 'error', action: 'personnel_delete', msg: 'admin_auth_failed' });
-  if (String(admin.pass || '') !== adminPass) return json_({ status: 'error', action: 'personnel_delete', msg: 'admin_auth_failed' });
-  if (admin.active !== true) return json_({ status: 'error', action: 'personnel_delete', msg: 'admin_auth_failed' });
-  if (admin.admin !== true) return json_({ status: 'error', action: 'personnel_delete', msg: 'no_admin_permission' });
-  if (!isValidId_(targetId)) return json_({ status: 'error', action: 'personnel_delete', msg: 'invalid_target_id' });
-
-  return withLock_(LOCK_USER_MS, 'personnel_delete', function () {
-    const target = findUserById_(targetId, ss, sheetName);
-
-    if (!target) return json_({ status: 'error', action: 'personnel_delete', msg: 'target_not_found' });
-    if (target.admin === true) return json_({ status: 'error', action: 'personnel_delete', msg: 'target_is_admin_forbidden' });
-
-    const sh = getSheet_(ss, sheetName);
-    sh.getRange(target.row, 5).setValue('FALSE');
-
-    return json_({
-      action: 'personnel_delete',
-      fields: ['id', 'active'],
-      values: [target.id, 'FALSE'],
-	  status: 'ok'
-    });
-  });
-}
 
 function routeFormWrite_(p, ss, sheetName) {
   return withLock_(LOCK_WRITE_MS, 'form_write', function () {
@@ -358,11 +455,24 @@ function findUserById_(id, ss, sheetName) {
         pass: String(values[i][1] || ''),
         name: String(values[i][2] || ''),
         shift: String(values[i][3] || '').trim().toUpperCase(),
-        active: parseActive_(values[i][4]),
-        admin: parseBool_(values[i][5])
+        active: parseBool_(values[i][4], true),
+        admin: parseBool_(values[i][5], false)
       };
     }
   }
+
+  return null;
+}
+
+function hasParam_(obj, key) {
+  return !!obj && Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function parseActiveInput_(v) {
+  const s = String(v == null ? '' : v).trim().toUpperCase();
+
+  if (s === 'TRUE' || s === 'T' || s === '1') return true;
+  if (s === 'FALSE' || s === 'F' || s === '0') return false;
 
   return null;
 }
@@ -392,22 +502,18 @@ function isValidPass_(v) {
   return /^[A-Za-z0-9]+$/.test(String(v || ''));
 }
 
-function parseBool_(v) {
+function parseBool_(v, srt1) {
   if (v === true) return true;
-
-  const s = String(v || '').trim().toUpperCase();
-
-  return s === 'TRUE' || s === '1';
-}
-
-function parseActive_(v) {
   if (v === false) return false;
 
   const s = String(v || '').trim().toUpperCase();
 
-  if (s === 'TRUE' || s === '1') return true;
+  if (s === '') return srt1;
 
-  return false;
+  if (s === 'TRUE' || s === 'T' || s === '1') return true;
+  if (s === 'FALSE' || s === 'F' || s === '0') return false;
+
+  return srt1;
 }
 
 function json_(obj) {
