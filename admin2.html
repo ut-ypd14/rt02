@@ -22,20 +22,24 @@
       --admin-red:#b42318;
       --disabled-bg:#e5e7eb;
       --disabled-text:#8a94a6;
-      --flash:#dbeafe;
+      --select-blue:#dbeafe;
       --shadow:0 10px 28px rgba(15,23,42,.10);
       --radius:18px;
-      --person-cols:1.05fr 1.35fr .55fr .7fr;
+      --admin-header-h:0px;
+      --person-cols:1.05fr 1.35fr .55fr .70fr;
     }
 
     *{box-sizing:border-box;}
 
-    body{
+    html,body{
       margin:0;
+      min-height:100vh;
+    }
+
+    body{
       font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
       background:linear-gradient(180deg,#eef5ff 0%,var(--bg) 42%,#f9fbff 100%);
       color:var(--ink);
-      min-height:100vh;
       -webkit-text-size-adjust:100%;
     }
 
@@ -45,50 +49,56 @@
     .hide{display:none!important;}
 
     .fixed-admin-header{
-      position:sticky;
+      position:fixed;
       top:0;
-      z-index:30;
+      left:0;
+      right:0;
+      z-index:50;
       background:rgba(244,247,251,.97);
       backdrop-filter:blur(8px);
-      border-bottom:1px solid rgba(217,226,239,.95);
+      border-bottom:1px solid rgba(217,226,239,.96);
       box-shadow:0 8px 22px rgba(15,23,42,.08);
-      padding:6px max(8px,env(safe-area-inset-left)) 5px max(8px,env(safe-area-inset-left));
+      padding:8px 10px 5px;
+    }
+
+    .header-inner{
+      width:min(760px,100%);
+      margin:0 auto;
       display:grid;
       gap:5px;
     }
 
     .top-line{
       display:grid;
-      grid-template-columns:minmax(0,1fr) auto 40px 26px;
+      grid-template-columns:minmax(0,1fr) auto 40px 28px;
       align-items:center;
       gap:10px;
-      min-height:38px;
     }
 
     .page-title{
       min-width:0;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
       font-size:18px;
       font-weight:950;
-      color:#24344d;
-      line-height:1.1;
+      line-height:1.2;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .time-text{
-      font-size:12px;
+      color:#344054;
+      font-size:13px;
       font-weight:950;
-      color:#475467;
+      letter-spacing:.02em;
       white-space:nowrap;
       text-align:center;
-      min-width:112px;
+      min-width:118px;
     }
 
     .home-jump-btn{
       width:40px;
-      height:36px;
-      border-radius:13px;
+      height:38px;
+      border-radius:14px;
       border:1px solid #c8d8f2;
       background:#eef4ff;
       color:#1d4ed8;
@@ -96,19 +106,20 @@
       align-items:center;
       justify-content:center;
       text-decoration:none;
-      font-size:22px;
+      font-size:21px;
       font-weight:950;
       line-height:1;
-      box-shadow:0 5px 12px rgba(37,95,188,.12);
+      box-shadow:0 6px 14px rgba(37,95,188,.12);
     }
+
     .home-jump-btn:active{transform:scale(.96);}
 
     .gas-lamp-wrap{
       display:flex;
       align-items:center;
       justify-content:center;
-      width:26px;
-      height:26px;
+      width:28px;
+      height:28px;
     }
 
     .gas-lamp{
@@ -118,6 +129,7 @@
       background:#98a2b3;
       box-shadow:0 0 0 4px rgba(37,95,188,.08),0 0 14px rgba(37,95,188,.16);
     }
+
     .gas-lamp.checking{background:#98a2b3;}
     .gas-lamp.ok{background:var(--ok);}
     .gas-lamp.warn{background:var(--warn);}
@@ -125,16 +137,16 @@
 
     .tool-line{
       display:grid;
-      grid-template-columns:40px minmax(0,1fr) auto;
+      grid-template-columns:38px minmax(0,1fr) auto;
       align-items:center;
       gap:10px;
-      min-height:36px;
+      min-width:0;
     }
 
     .icon-btn{
-      width:40px;
-      height:34px;
-      border-radius:13px;
+      width:38px;
+      height:36px;
+      border-radius:14px;
       border:1px solid #c8d8f2;
       background:#eef4ff;
       color:#174c99;
@@ -147,28 +159,29 @@
       padding:0;
       line-height:1;
     }
-    .icon-btn.loading{animation:spin .9s linear infinite;}
-    @keyframes spin{to{transform:rotate(360deg);}}
 
-    .filter-and-count{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      align-items:center;
-      gap:10px;
-      min-width:0;
+    .icon-btn.loading{
+      animation:spin .9s linear infinite;
     }
+
+    .icon-btn:disabled{
+      opacity:.56;
+      cursor:not-allowed;
+    }
+
+    @keyframes spin{to{transform:rotate(360deg);}}
 
     .filter-group{
       display:flex;
+      justify-content:space-evenly;
+      align-items:center;
       gap:6px;
-      flex-wrap:nowrap;
       min-width:0;
       overflow:hidden;
-      justify-content:space-between;
     }
 
     .filter-btn{
-      min-width:44px;
+      min-width:42px;
       height:34px;
       border-radius:999px;
       padding:6px 8px;
@@ -194,7 +207,7 @@
       font-weight:950;
       white-space:nowrap;
       text-align:right;
-      min-width:58px;
+      min-width:56px;
     }
 
     .person-head-fixed{
@@ -206,105 +219,90 @@
       font-size:12px;
       font-weight:950;
       white-space:nowrap;
-      padding:4px 8px 2px 12px;
-      border-top:1px solid rgba(217,226,239,.72);
+      padding:4px 8px 1px 12px;
+      border-top:1px solid rgba(217,226,239,.74);
     }
 
     .person-head-fixed div:nth-child(1),
     .person-head-fixed div:nth-child(3),
-    .person-head-fixed div:nth-child(4){text-align:center;}
+    .person-head-fixed div:nth-child(4){
+      text-align:center;
+    }
+
+    .person-head-fixed div:nth-child(2){
+      text-align:left;
+    }
 
     .content-wrap{
       width:min(760px,calc(100% - 12px));
       margin:0 auto;
-      padding:4px 0 26px;
+      padding-top:calc(var(--admin-header-h) + 4px);
+      padding-bottom:24px;
     }
 
     .status{
       border-radius:14px;
       padding:10px 12px;
-      margin:8px 0 10px;
+      margin-bottom:8px;
       font-weight:850;
       border:1px solid var(--line);
       background:#fff;
       box-shadow:0 4px 14px rgba(15,23,42,.05);
     }
+
     .status.ok{background:#ecfdf3;color:#067647;border-color:#abefc6;}
     .status.warn{background:#fffaeb;color:#92400e;border-color:#fedf89;}
     .status.bad{background:#fef3f2;color:#b42318;border-color:#fecdca;}
 
-    .main-card{
+    .card{
       background:var(--card);
       border:1px solid var(--line);
-      border-radius:0 0 var(--radius) var(--radius);
+      border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:8px 12px 14px;
+      padding:10px 12px 14px;
       margin-top:0;
+    }
+
+    .list-loading{
+      min-height:112px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:1px dashed #b7cae8;
+      border-radius:16px;
+      background:linear-gradient(135deg,#f8fbff,#eef4ff);
+      margin-bottom:12px;
+      color:#174c99;
+      font-weight:950;
+      gap:10px;
+    }
+
+    .loading-dot{
+      width:26px;
+      height:26px;
+      border-radius:50%;
+      border:4px solid #c8d8f2;
+      border-top-color:#174c99;
+      animation:spin .8s linear infinite;
+      flex:0 0 auto;
     }
 
     .person-list{
       display:flex;
       flex-direction:column;
       gap:7px;
-      max-height:min(40vh,390px);
+      max-height:calc(100dvh - var(--admin-header-h) - 330px);
+      min-height:86px;
       overflow-y:auto;
       overscroll-behavior:contain;
-      padding:1px 4px 4px 0;
+      padding:0 4px 4px 0;
       border-radius:14px;
-      margin-bottom:12px;
+      margin-bottom:10px;
     }
 
     .person-list::-webkit-scrollbar{width:6px;}
     .person-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px;}
     .person-list::-webkit-scrollbar-track{background:transparent;}
-
-    .list-loading{
-      margin:2px 0 12px;
-      border:1px solid #c8d8f2;
-      background:linear-gradient(135deg,#f8fbff,#eef4ff);
-      border-radius:16px;
-      padding:13px 14px;
-      display:grid;
-      grid-template-columns:42px minmax(0,1fr);
-      align-items:center;
-      gap:10px;
-      box-shadow:0 8px 18px rgba(37,95,188,.10);
-    }
-
-    .list-loading-spinner{
-      width:34px;
-      height:34px;
-      border-radius:50%;
-      border:4px solid #dbeafe;
-      border-top-color:var(--brand);
-      animation:spin .85s linear infinite;
-    }
-
-    .list-loading-title{
-      font-size:15px;
-      font-weight:950;
-      color:#174c99;
-      line-height:1.25;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .list-loading-sub{
-      margin-top:3px;
-      font-size:12px;
-      font-weight:850;
-      color:var(--muted);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .icon-btn:disabled{
-      opacity:.65;
-      cursor:wait;
-      transform:none;
-    }
 
     .person-row{
       width:100%;
@@ -316,8 +314,8 @@
       grid-template-columns:var(--person-cols);
       gap:6px;
       align-items:center;
-      min-height:42px;
-      padding:8px 8px;
+      min-height:40px;
+      padding:7px 8px 7px 8px;
       text-align:left;
       cursor:pointer;
       color:var(--ink);
@@ -327,6 +325,7 @@
       background:var(--soft-red);
       border-left-color:#fca5a5;
     }
+
     .person-row.is-admin .cell{
       color:var(--admin-red);
       font-weight:950;
@@ -337,20 +336,33 @@
       color:var(--disabled-text);
       opacity:.94;
     }
-    .person-row.is-disabled .cell{color:var(--disabled-text);}
-    .person-row.is-admin.is-disabled{border-left-color:#fca5a5;}
-    .person-row:active{transform:scale(.992);}
+
+    .person-row.is-disabled .cell{
+      color:var(--disabled-text);
+    }
+
+    .person-row.is-selected{
+      background:#eff6ff;
+      border-color:#93c5fd;
+      box-shadow:0 0 0 3px rgba(37,95,188,.14);
+    }
+
+    .person-row.is-selected.is-admin{
+      background:#fff1f2;
+      box-shadow:0 0 0 3px rgba(220,38,38,.12);
+    }
 
     .person-row.is-touched{
-      animation:touchedPulse 1s ease-in-out 0s 5;
-      box-shadow:0 0 0 3px rgba(37,95,188,.22);
+      animation:touchedPulse .9s ease-in-out 0s 5;
     }
 
     @keyframes touchedPulse{
       0%{box-shadow:0 0 0 0 rgba(37,95,188,0);}
-      50%{box-shadow:0 0 0 4px rgba(37,95,188,.26);background-color:var(--flash);}
+      50%{box-shadow:0 0 0 4px rgba(37,95,188,.24);}
       100%{box-shadow:0 0 0 0 rgba(37,95,188,0);}
     }
+
+    .person-row:active{transform:scale(.992);}
 
     .cell{
       min-width:0;
@@ -361,38 +373,46 @@
       font-size:13px;
       line-height:1.15;
     }
-    .cell:nth-child(1),.cell:nth-child(3),.cell:nth-child(4){text-align:center;}
 
-    .cell.status-text{
+    .person-row .cell:nth-child(1),
+    .person-row .cell:nth-child(3),
+    .person-row .cell:nth-child(4){
       text-align:center;
-      border-radius:999px;
-      padding:4px 5px;
-      background:#ecfdf3;
-      color:#067647;
-      font-size:12px;
     }
+
+    .person-row .cell:nth-child(2){
+      text-align:left;
+    }
+
+    .status-text{
+      text-align:center;
+      font-size:12px;
+      color:#067647;
+      font-weight:950;
+    }
+
     .person-row.is-disabled .status-text{
-      background:#cbd5e1;
       color:#64748b;
+    }
+
+    .form-wrap{
+      padding:0 14px;
     }
 
     .mode-row{
       display:grid;
-      grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 74px;
+      grid-template-columns:minmax(0,.95fr) minmax(0,1.2fr) 72px;
       gap:8px;
       align-items:stretch;
-      margin:13px 8px 9px;
+      margin:8px 0 8px;
     }
 
     .mode-badge,
     .action-msg-inline,
     #clearFormBtn{
-      min-height:42px;
+      min-height:40px;
       display:flex;
       align-items:center;
-      border-radius:14px;
-      font-size:13px;
-      font-weight:950;
     }
 
     .mode-badge{
@@ -400,69 +420,38 @@
       border:1px solid #c8d8f2;
       background:#eef4ff;
       color:#174c99;
+      border-radius:14px;
       padding:8px 10px;
+      font-weight:950;
       min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
+      font-size:13px;
     }
 
     .action-msg-inline{
+      justify-content:flex-start;
       min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
+      font-size:13px;
+      font-weight:950;
       color:var(--muted);
-      padding:8px 4px;
+      padding:0 2px;
     }
+
     .action-msg-inline.ok{color:#067647;}
     .action-msg-inline.bad{color:#b42318;}
     .action-msg-inline.warn{color:#92400e;}
-
-    .btn{
-      border:0;
-      border-radius:14px;
-      padding:10px 12px;
-      min-height:42px;
-      font-weight:950;
-      cursor:pointer;
-      transition:transform .12s ease,opacity .12s ease,box-shadow .12s ease;
-      white-space:nowrap;
-    }
-    .btn:active{transform:scale(.98);}
-    .btn:disabled{opacity:.52;cursor:not-allowed;transform:none;}
-
-    .btn-primary{
-      background:linear-gradient(135deg,var(--brand),var(--brand2));
-      color:#fff;
-      box-shadow:0 8px 18px rgba(37,95,188,.24);
-    }
-    .btn-soft{
-      background:#eef4ff;
-      color:var(--brand2);
-      border:1px solid #c8d8f2;
-    }
-    .btn-danger{
-      background:#fff1f2;
-      color:#be123c;
-      border:1px solid #fecdd3;
-    }
-    .btn-ok{
-      background:#ecfdf3;
-      color:#067647;
-      border:1px solid #abefc6;
-    }
-
-    .form-block{
-      padding:0 14px 0;
-    }
 
     .form-line{
       display:grid;
       grid-template-columns:52px minmax(0,1fr);
       align-items:center;
       gap:8px;
-      margin-top:9px;
+      margin-top:8px;
     }
 
     .form-line label{
@@ -483,11 +472,17 @@
       min-height:44px;
       font-size:16px;
     }
-    input:focus,select:focus{
+
+    input:focus,
+    select:focus{
       border-color:#6aa1ff;
       box-shadow:0 0 0 4px rgba(37,95,188,.10);
     }
-    input[readonly]{background:#f1f5f9;color:#64748b;}
+
+    input[readonly]{
+      background:#f1f5f9;
+      color:#64748b;
+    }
 
     .actions{
       display:grid;
@@ -495,7 +490,48 @@
       gap:8px;
       margin-top:12px;
     }
-    .actions.single{grid-template-columns:1fr;}
+
+    .actions.single{
+      grid-template-columns:1fr;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:10px 12px;
+      min-height:42px;
+      font-weight:950;
+      cursor:pointer;
+      transition:transform .12s ease,opacity .12s ease,box-shadow .12s ease;
+      white-space:nowrap;
+    }
+
+    .btn:active{transform:scale(.98);}
+    .btn:disabled{opacity:.52;cursor:not-allowed;transform:none;}
+
+    .btn-primary{
+      background:linear-gradient(135deg,var(--brand),var(--brand2));
+      color:#fff;
+      box-shadow:0 8px 18px rgba(37,95,188,.24);
+    }
+
+    .btn-soft{
+      background:#eef4ff;
+      color:var(--brand2);
+      border:1px solid #c8d8f2;
+    }
+
+    .btn-danger{
+      background:#fff1f2;
+      color:#be123c;
+      border:1px solid #fecdd3;
+    }
+
+    .btn-ok{
+      background:#ecfdf3;
+      color:#067647;
+      border:1px solid #abefc6;
+    }
 
     .small-note{
       color:var(--muted);
@@ -505,131 +541,259 @@
     }
 
     @media(max-width:420px){
-      :root{--person-cols:1.05fr 1.25fr .48fr .62fr;}
+      :root{
+        --person-cols:1.05fr 1.25fr .48fr .62fr;
+      }
 
-      .fixed-admin-header{padding-left:6px;padding-right:6px;gap:4px;}
-      .top-line{grid-template-columns:minmax(0,1fr) auto 38px 24px;gap:8px;}
-      .page-title{font-size:17px;}
-      .time-text{font-size:11px;min-width:102px;}
-      .home-jump-btn{width:38px;height:34px;font-size:21px;}
-      .gas-lamp-wrap{width:24px;height:24px;}
-      .gas-lamp{width:19px;height:19px;}
+      .fixed-admin-header{
+        padding:7px 6px 4px;
+      }
 
-      .tool-line{grid-template-columns:38px minmax(0,1fr) auto;gap:8px;}
-      .icon-btn{width:38px;height:32px;font-size:19px;}
-      .filter-and-count{gap:8px;}
-      .filter-btn{min-width:38px;height:32px;padding:5px 6px;font-size:12px;}
-      .list-count-text{font-size:12px;min-width:52px;}
-      .person-head-fixed{gap:4px;padding-left:10px;padding-right:6px;font-size:11px;}
+      .header-inner{
+        width:100%;
+      }
 
-      .content-wrap{width:min(100% - 8px,760px);padding-top:3px;}
-      .main-card{padding:6px 8px 12px;}
-      .person-row{min-height:40px;padding:7px 6px;gap:4px;}
-      .cell{font-size:12px;}
-      .cell.status-text{font-size:11px;padding:3px 4px;}
+      .top-line{
+        grid-template-columns:minmax(0,1fr) auto 38px 26px;
+        gap:7px;
+      }
 
-      .mode-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 64px;gap:6px;margin-left:4px;margin-right:4px;}
-      .mode-badge,.action-msg-inline,#clearFormBtn{font-size:12px;min-height:40px;}
-      .mode-badge{padding:7px 8px;}
-      .form-block{padding:0 10px;}
-      .form-line{grid-template-columns:46px minmax(0,1fr);gap:7px;}
-      .form-line label{font-size:13px;}
-      .btn{padding:9px 9px;}
+      .page-title{
+        font-size:16px;
+      }
+
+      .time-text{
+        font-size:11px;
+        min-width:100px;
+      }
+
+      .home-jump-btn{
+        width:38px;
+        height:36px;
+        font-size:20px;
+      }
+
+      .gas-lamp-wrap{
+        width:26px;
+        height:26px;
+      }
+
+      .gas-lamp{
+        width:19px;
+        height:19px;
+      }
+
+      .tool-line{
+        grid-template-columns:36px minmax(0,1fr) auto;
+        gap:7px;
+      }
+
+      .icon-btn{
+        width:36px;
+        height:34px;
+        font-size:19px;
+      }
+
+      .filter-group{
+        gap:4px;
+      }
+
+      .filter-btn{
+        min-width:37px;
+        height:32px;
+        padding:5px 6px;
+        font-size:12px;
+      }
+
+      .list-count-text{
+        font-size:12px;
+        min-width:50px;
+      }
+
+      .person-head-fixed{
+        padding:3px 6px 1px 10px;
+        font-size:11px;
+        gap:4px;
+      }
+
+      .content-wrap{
+        width:calc(100% - 8px);
+        padding-top:calc(var(--admin-header-h) + 3px);
+      }
+
+      .card{
+        padding:8px 8px 12px;
+      }
+
+      .person-list{
+        max-height:calc(100dvh - var(--admin-header-h) - 345px);
+        gap:6px;
+      }
+
+      .person-row{
+        gap:4px;
+        min-height:38px;
+        padding:6px 6px;
+      }
+
+      .cell{
+        font-size:12px;
+      }
+
+      .status-text{
+        font-size:11px;
+      }
+
+      .form-wrap{
+        padding:0 10px;
+      }
+
+      .mode-row{
+        grid-template-columns:minmax(0,.85fr) minmax(0,1fr) 64px;
+        gap:6px;
+      }
+
+      .mode-badge,
+      .action-msg-inline,
+      #clearFormBtn{
+        min-height:38px;
+      }
+
+      .mode-badge,
+      .action-msg-inline{
+        font-size:12px;
+      }
+
+      .form-line{
+        grid-template-columns:46px minmax(0,1fr);
+        gap:7px;
+      }
+
+      .form-line label{
+        font-size:13px;
+      }
+
+      .btn{
+        min-height:40px;
+        padding:9px 10px;
+      }
+    }
+
+    @media(max-width:350px){
+      .time-text{
+        display:none;
+      }
+
+      .top-line{
+        grid-template-columns:minmax(0,1fr) 38px 26px;
+      }
+
+      .mode-row{
+        grid-template-columns:minmax(0,1fr) 60px;
+        grid-template-areas:
+          "mode clear"
+          "msg msg";
+      }
+
+      .mode-badge{grid-area:mode;}
+      .action-msg-inline{grid-area:msg;min-height:24px;}
+      #clearFormBtn{grid-area:clear;}
     }
   </style>
 </head>
 
 <body>
-  <header id="fixedHeader" class="fixed-admin-header hide">
-    <div class="top-line">
-      <div class="page-title">人員管理</div>
-      <div class="time-text" id="localTimeText">-- --:--:--</div>
-      <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
-      <div class="gas-lamp-wrap" id="gasStatusWrap" title="GAS 伺服狀態" aria-label="GAS 伺服狀態">
-        <span class="gas-lamp checking" id="gasLamp"></span>
+  <header id="fixedAdminHeader" class="fixed-admin-header hide">
+    <div class="header-inner">
+      <div class="top-line">
+        <div class="page-title">人員管理</div>
+        <div class="time-text" id="localTimeText">-- --:--:--</div>
+        <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
+        <div class="gas-lamp-wrap" id="gasStatusWrap" title="GAS 伺服狀態" aria-label="GAS 伺服狀態">
+          <span class="gas-lamp checking" id="gasLamp"></span>
+        </div>
       </div>
-    </div>
 
-    <div class="tool-line">
-      <button type="button" class="icon-btn" id="loadListBtn" title="載入名單" aria-label="載入名單">↻</button>
-      <div class="filter-and-count">
+      <div class="tool-line">
+        <button type="button" class="icon-btn" id="loadListBtn" title="同步名單" aria-label="同步名單">↻</button>
+
         <div id="filterGroup" class="filter-group">
           <button type="button" class="filter-btn active" data-filter="ALL">ALL</button>
           <button type="button" class="filter-btn" data-filter="A">A</button>
           <button type="button" class="filter-btn" data-filter="B">B</button>
           <button type="button" class="filter-btn" data-filter="C">C</button>
         </div>
-        <div id="listCountText" class="list-count-text">尚未載入</div>
-      </div>
-    </div>
 
-    <div class="person-head-fixed">
-      <div>ID</div>
-      <div>NAME</div>
-      <div>班別</div>
-      <div>狀態</div>
+        <div id="listCountText" class="list-count-text">讀取中</div>
+      </div>
+
+      <div class="person-head-fixed">
+        <div>ID</div>
+        <div>NAME</div>
+        <div>班別</div>
+        <div>狀態</div>
+      </div>
     </div>
   </header>
 
   <main class="content-wrap">
     <div id="gateStatus" class="status warn">管理權限：檢查中...</div>
 
-    <section id="mainPanel" class="main-card hide">
-      <div id="listLoading" class="list-loading hide" aria-live="polite">
-        <div class="list-loading-spinner" aria-hidden="true"></div>
-        <div>
-          <div class="list-loading-title">名單載入中...</div>
-          <div class="list-loading-sub">正在同步人員資料，請稍候</div>
-        </div>
+    <section id="mainPanel" class="card hide">
+      <div id="listLoading" class="list-loading">
+        <div class="loading-dot"></div>
+        <div>名單載入中...</div>
       </div>
 
       <div id="personList" class="person-list hide"></div>
 
-      <div class="mode-row" id="formSection">
-        <div class="mode-badge" id="modeBadge">目前狀態：手動輸入</div>
-        <div id="actionMsg" class="action-msg-inline"></div>
-        <button type="button" class="btn btn-soft" id="clearFormBtn">清空</button>
+      <div class="form-wrap" id="formSection">
+        <div class="mode-row">
+          <div class="mode-badge" id="modeBadge">手動輸入</div>
+          <div id="actionMsg" class="action-msg-inline"></div>
+          <button type="button" class="btn btn-soft" id="clearFormBtn">清空</button>
+        </div>
+
+        <form id="saveForm" autocomplete="off">
+          <div class="form-line">
+            <label for="idInput">ID</label>
+            <input id="idInput" name="id" type="text" maxlength="5" inputmode="text" autocomplete="off" placeholder="5碼英數">
+          </div>
+
+          <div class="form-line">
+            <label for="passInput">密碼</label>
+            <input id="passInput" name="pass" type="password" autocomplete="new-password" placeholder="英數密碼">
+          </div>
+
+          <div class="form-line">
+            <label for="nameInput">姓名</label>
+            <input id="nameInput" name="name" type="text" autocomplete="off" placeholder="姓名">
+          </div>
+
+          <div class="form-line">
+            <label for="shiftInput">班別</label>
+            <select id="shiftInput" name="shift">
+              <option value="">請選擇</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+
+          <div class="actions single" id="actionButtons">
+            <button type="submit" class="btn btn-primary" id="saveBtn">儲存</button>
+            <button type="button" class="btn btn-danger hide" id="disableBtn">停用</button>
+            <button type="button" class="btn btn-ok hide" id="enableBtn">啟用</button>
+          </div>
+        </form>
       </div>
-
-      <form id="saveForm" class="form-block" autocomplete="off">
-        <div class="form-line">
-          <label for="idInput">ID</label>
-          <input id="idInput" name="id" type="text" maxlength="5" inputmode="text" autocomplete="off" placeholder="5碼英數">
-        </div>
-
-        <div class="form-line">
-          <label for="passInput">密碼</label>
-          <input id="passInput" name="pass" type="password" autocomplete="new-password" placeholder="英數密碼">
-        </div>
-
-        <div class="form-line">
-          <label for="nameInput">姓名</label>
-          <input id="nameInput" name="name" type="text" autocomplete="off" placeholder="姓名">
-        </div>
-
-        <div class="form-line">
-          <label for="shiftInput">班別</label>
-          <select id="shiftInput" name="shift">
-            <option value="">請選擇</option>
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-          </select>
-        </div>
-
-        <div class="actions single" id="actionButtons">
-          <button type="submit" class="btn btn-primary" id="saveBtn">儲存</button>
-          <button type="button" class="btn btn-danger hide" id="disableBtn">停用</button>
-          <button type="button" class="btn btn-ok hide" id="enableBtn">啟用</button>
-        </div>
-      </form>
     </section>
 
-    <footer class="small-note" style="text-align:center;padding:16px 0 4px;">admin7.html v0.1.0</footer>
+    <footer class="small-note" style="text-align:center;padding:14px 0 4px;">admin8.html v0.1.0</footer>
   </main>
 
 <script>
-  const VERSION = 'admin7.html v0.1.0';
+  const VERSION = 'admin8.html v0.1.0';
 
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -649,7 +813,7 @@
   let lastTouchedId = '';
 
   const el = {
-    fixedHeader: document.getElementById('fixedHeader'),
+    fixedAdminHeader: document.getElementById('fixedAdminHeader'),
     localTimeText: document.getElementById('localTimeText'),
     gasLamp: document.getElementById('gasLamp'),
     gasStatusWrap: document.getElementById('gasStatusWrap'),
@@ -681,8 +845,9 @@
 
   async function init(){
     bindEvents();
-    updateClock();
-    setInterval(updateClock, 1000);
+    bindHeaderResize();
+    startClock();
+
     await ping();
 
     const ok = await prepareAdminGate();
@@ -694,6 +859,7 @@
     }
 
     showAdmin();
+    await loadPersonnelList(true);
   }
 
   function getApiUrl(){
@@ -704,6 +870,11 @@
     return Number(window.CFG_time || Date.now());
   }
 
+  function startClock(){
+    updateClock();
+    setInterval(updateClock, 1000);
+  }
+
   function updateClock(){
     el.localTimeText.textContent = formatHeaderTime(window.CFG_now);
   }
@@ -711,8 +882,36 @@
   function formatHeaderTime(value){
     const s = String(value || '').trim();
     const m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
-    if (m) return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+
+    if (m) {
+      return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+    }
+
     return s || '-- --:--:--';
+  }
+
+  function bindHeaderResize(){
+    syncHeaderHeight();
+
+    if (window.ResizeObserver && el.fixedAdminHeader) {
+      const ro = new ResizeObserver(syncHeaderHeight);
+      ro.observe(el.fixedAdminHeader);
+    }
+
+    window.addEventListener('resize', syncHeaderHeight);
+    window.addEventListener('orientationchange', function(){
+      setTimeout(syncHeaderHeight, 250);
+    });
+  }
+
+  function syncHeaderHeight(){
+    if (!el.fixedAdminHeader) return;
+
+    const h = el.fixedAdminHeader.classList.contains('hide')
+      ? 0
+      : Math.ceil(el.fixedAdminHeader.getBoundingClientRect().height);
+
+    document.documentElement.style.setProperty('--admin-header-h', h + 'px');
   }
 
   function bindEvents(){
@@ -862,11 +1061,12 @@
   }
 
   function showAdmin(){
-    el.fixedHeader.classList.remove('hide');
+    el.fixedAdminHeader.classList.remove('hide');
     el.mainPanel.classList.remove('hide');
     el.gateStatus.classList.add('hide');
+
+    syncHeaderHeight();
     clearFormForManual();
-    void loadPersonnelList(true);
   }
 
   function clearFormForManual(){
@@ -878,9 +1078,10 @@
     el.shiftInput.value = '';
     el.idInput.readOnly = false;
 
-    setMode('目前狀態：手動輸入');
+    setMode('手動輸入');
     setActionMsg('', '');
     updateModeButtons();
+    renderPersonnelList();
   }
 
   function setMode(text){
@@ -896,9 +1097,10 @@
     el.shiftInput.value = row.shift || '';
     el.idInput.readOnly = true;
 
-    setMode(row.active ? '目前狀態：修改 ' + (row.id || '') : '目前狀態：修改 ' + (row.id || '') + '（停用）');
-    setActionMsg('已帶入人員資料。', 'ok');
+    setMode('修改 ' + (row.id || ''));
+    setActionMsg('已帶入。', 'ok');
     updateModeButtons();
+    renderPersonnelList();
     scrollToFormAfterFill();
   }
 
@@ -929,23 +1131,23 @@
     const shift = normalizeShift(el.shiftInput.value);
 
     if (!/^[A-Z0-9]{5}$/.test(id)) {
-      setActionMsg('ID 必須為 5 碼英數。', 'bad');
+      setActionMsg('ID需5碼。', 'bad');
       return;
     }
 
     if (activeValue === '') {
       if (!/^[A-Za-z0-9]+$/.test(pass)) {
-        setActionMsg('密碼只能使用英數，且不可空白。', 'bad');
+        setActionMsg('密碼限英數。', 'bad');
         return;
       }
 
       if (name.length <= 1) {
-        setActionMsg('姓名長度不足。', 'bad');
+        setActionMsg('姓名不足。', 'bad');
         return;
       }
 
       if (!/^[ABC]$/.test(shift)) {
-        setActionMsg('請選擇班別 A/B/C。', 'bad');
+        setActionMsg('請選班別。', 'bad');
         return;
       }
     }
@@ -973,11 +1175,13 @@
 
       if (data && data.status === 'ok') {
         lastTouchedId = id;
-        setActionMsg(listLoaded ? '操作完成，名單同步中...' : '操作完成。', 'ok');
+        setActionMsg('完成，同步中...', 'ok');
 
         if (listLoaded) {
           await loadPersonnelList(false);
-          setActionMsg('操作完成，名單已同步。', 'ok');
+          setActionMsg('完成，已同步。', 'ok');
+        } else {
+          setActionMsg('操作完成。', 'ok');
         }
 
         if (activeValue === 'FALSE') {
@@ -987,30 +1191,20 @@
         return;
       }
 
-      setActionMsg('操作失敗：' + (data && data.msg ? data.msg : 'unknown_error'), 'bad');
+      setActionMsg('失敗：' + (data && data.msg ? data.msg : 'unknown'), 'bad');
 
     } catch (err) {
-      setActionMsg('操作失敗：' + formatError(err), 'bad');
-    }
-  }
-
-  function setListLoading(isLoading){
-    el.loadListBtn.classList.toggle('loading', isLoading);
-    el.loadListBtn.disabled = isLoading;
-
-    if (el.listLoading) {
-      el.listLoading.classList.toggle('hide', !isLoading);
-    }
-
-    if (isLoading) {
-      el.personList.classList.add('hide');
+      setActionMsg('失敗：' + formatError(err), 'bad');
     }
   }
 
   async function loadPersonnelList(showLoading){
     if (showLoading) {
-      setListLoading(true);
-      el.listCountText.textContent = '載入中';
+      el.loadListBtn.classList.add('loading');
+      el.loadListBtn.disabled = true;
+      el.listLoading.classList.remove('hide');
+      el.personList.classList.add('hide');
+      el.listCountText.textContent = '讀取中';
     }
 
     const params = new URLSearchParams();
@@ -1032,9 +1226,9 @@
       el.listCountText.textContent = '讀取失敗';
 
     } finally {
-      if (showLoading) {
-        setListLoading(false);
-      }
+      el.listLoading.classList.add('hide');
+      el.loadListBtn.classList.remove('loading');
+      el.loadListBtn.disabled = false;
     }
   }
 
@@ -1066,14 +1260,20 @@
   }
 
   function renderPersonnelList(){
+    if (!listLoaded) {
+      el.listCountText.textContent = '尚未載入';
+      el.personList.classList.add('hide');
+      return;
+    }
+
     const rows = personnelRows.filter(function(row){
       return currentFilter === 'ALL' || row.shift === currentFilter;
     });
 
     el.personList.innerHTML = '';
-    el.listCountText.textContent = listLoaded ? '共 ' + rows.length + ' 筆' : '尚未載入';
+    el.listCountText.textContent = '共 ' + rows.length + ' 筆';
 
-    if (!listLoaded || !rows.length) {
+    if (!rows.length) {
       el.personList.classList.add('hide');
       return;
     }
@@ -1083,7 +1283,15 @@
     rows.forEach(function(row){
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'person-row' + (row.admin ? ' is-admin' : '') + (!row.active ? ' is-disabled' : '') + (lastTouchedId && row.id === lastTouchedId ? ' is-touched' : '');
+
+      const selected = !!(selectedRow && selectedRow.id === row.id);
+      const touched = !!(lastTouchedId && lastTouchedId === row.id);
+
+      btn.className = 'person-row' +
+        (row.admin ? ' is-admin' : '') +
+        (!row.active ? ' is-disabled' : '') +
+        (selected ? ' is-selected' : '') +
+        (touched ? ' is-touched' : '');
 
       btn.innerHTML = [
         '<div class="cell">' + escapeHtml(row.id) + '</div>',
