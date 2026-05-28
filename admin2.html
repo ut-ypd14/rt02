@@ -258,6 +258,54 @@
     .person-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px;}
     .person-list::-webkit-scrollbar-track{background:transparent;}
 
+    .list-loading{
+      margin:2px 0 12px;
+      border:1px solid #c8d8f2;
+      background:linear-gradient(135deg,#f8fbff,#eef4ff);
+      border-radius:16px;
+      padding:13px 14px;
+      display:grid;
+      grid-template-columns:42px minmax(0,1fr);
+      align-items:center;
+      gap:10px;
+      box-shadow:0 8px 18px rgba(37,95,188,.10);
+    }
+
+    .list-loading-spinner{
+      width:34px;
+      height:34px;
+      border-radius:50%;
+      border:4px solid #dbeafe;
+      border-top-color:var(--brand);
+      animation:spin .85s linear infinite;
+    }
+
+    .list-loading-title{
+      font-size:15px;
+      font-weight:950;
+      color:#174c99;
+      line-height:1.25;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .list-loading-sub{
+      margin-top:3px;
+      font-size:12px;
+      font-weight:850;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .icon-btn:disabled{
+      opacity:.65;
+      cursor:wait;
+      transform:none;
+    }
+
     .person-row{
       width:100%;
       border:1px solid var(--line);
@@ -527,6 +575,14 @@
     <div id="gateStatus" class="status warn">管理權限：檢查中...</div>
 
     <section id="mainPanel" class="main-card hide">
+      <div id="listLoading" class="list-loading hide" aria-live="polite">
+        <div class="list-loading-spinner" aria-hidden="true"></div>
+        <div>
+          <div class="list-loading-title">名單載入中...</div>
+          <div class="list-loading-sub">正在同步人員資料，請稍候</div>
+        </div>
+      </div>
+
       <div id="personList" class="person-list hide"></div>
 
       <div class="mode-row" id="formSection">
@@ -569,11 +625,11 @@
       </form>
     </section>
 
-    <footer class="small-note" style="text-align:center;padding:16px 0 4px;">admin6.html v0.1.0</footer>
+    <footer class="small-note" style="text-align:center;padding:16px 0 4px;">admin7.html v0.1.0</footer>
   </main>
 
 <script>
-  const VERSION = 'admin6.html v0.1.0';
+  const VERSION = 'admin7.html v0.1.0';
 
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
@@ -603,6 +659,7 @@
     loadListBtn: document.getElementById('loadListBtn'),
     filterGroup: document.getElementById('filterGroup'),
     listCountText: document.getElementById('listCountText'),
+    listLoading: document.getElementById('listLoading'),
     personList: document.getElementById('personList'),
 
     formSection: document.getElementById('formSection'),
@@ -809,6 +866,7 @@
     el.mainPanel.classList.remove('hide');
     el.gateStatus.classList.add('hide');
     clearFormForManual();
+    void loadPersonnelList(true);
   }
 
   function clearFormForManual(){
@@ -936,10 +994,23 @@
     }
   }
 
+  function setListLoading(isLoading){
+    el.loadListBtn.classList.toggle('loading', isLoading);
+    el.loadListBtn.disabled = isLoading;
+
+    if (el.listLoading) {
+      el.listLoading.classList.toggle('hide', !isLoading);
+    }
+
+    if (isLoading) {
+      el.personList.classList.add('hide');
+    }
+  }
+
   async function loadPersonnelList(showLoading){
     if (showLoading) {
-      el.loadListBtn.classList.add('loading');
-      el.listCountText.textContent = '讀取中...';
+      setListLoading(true);
+      el.listCountText.textContent = '載入中';
     }
 
     const params = new URLSearchParams();
@@ -961,7 +1032,9 @@
       el.listCountText.textContent = '讀取失敗';
 
     } finally {
-      el.loadListBtn.classList.remove('loading');
+      if (showLoading) {
+        setListLoading(false);
+      }
     }
   }
 
