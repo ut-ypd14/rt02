@@ -1,317 +1,1479 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779889932589&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F9e22d7cf-e231-430e-b67f-22de40d6e2cb.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779889932589&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
+  <script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="format-detection" content="telephone=no">
   <title>人員管理</title>
   <style>
-    :root{--bg:#f6f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d8dee9;--ok:#087443;--bad:#b42318;--warn:#a15c07;--main:#1f5eff;--danger:#d92d20;}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;font-size:16px;line-height:1.45}
-    .wrap{width:100%;max-width:620px;margin:0 auto;padding:14px 12px 28px}
-    .status{padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:12px;font-size:14px;color:var(--muted)}
-    .status.ok{border-color:#abefc6;color:var(--ok);background:#ecfdf3}.status.bad{border-color:#fecdca;color:var(--bad);background:#fef3f2}.status.warn{border-color:#fedf89;color:var(--warn);background:#fffaeb}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:12px;box-shadow:0 8px 20px rgba(16,24,40,.06)}
-    h1{font-size:22px;margin:0 0 6px}h2{font-size:18px;margin:0 0 10px}.sub{margin:0 0 16px;color:var(--muted);font-size:14px}
-    label{display:block;margin-top:14px;font-weight:700}.hint{font-size:13px;color:var(--muted);margin-top:4px}
-    input,select{width:100%;min-height:48px;margin-top:7px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:18px;background:#fff;outline:none}
-    input:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(31,94,255,.12)}
-    button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:14px;background:var(--main);color:white;font-size:17px;font-weight:800;letter-spacing:.04em}
-    button.danger{background:var(--danger)}button:disabled{opacity:.55}.msg{min-height:22px;margin-top:14px;font-weight:700}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.msg.warn{color:var(--warn)}
-    .hide{display:none!important}.user{padding:10px 12px;background:#eef4ff;border:1px solid #c7d7fe;border-radius:14px;margin-top:12px;color:#1849a9;font-weight:700}.ver{margin-top:12px;text-align:center;color:#98a2b3;font-size:12px}
-    .split{height:1px;background:var(--line);margin:18px 0}
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #152033;
+      --muted: #667085;
+      --line: #d9e2ef;
+      --brand: #255fbc;
+      --brand2: #174c99;
+      --ok: #19a15f;
+      --warn: #f59e0b;
+      --bad: #e5484d;
+      --soft: #eef4ff;
+      --soft-red: #fff5f5;
+      --admin-red: #b42318;
+      --disabled-bg: #e5e7eb;
+      --disabled-text: #8a94a6;
+      --selected: #eff6ff;
+      --shadow: 0 10px 28px rgba(15,23,42,.10);
+      --radius: 18px;
+      --admin-header-h: 0px;
+      --admin-form-h: 0px;
+      --person-cols: 1.05fr 1.35fr .55fr .70fr;
+    }
 
-	.admin-head{ display: flex; align-items: center; justify-content: space-between; gap: 10px;margin-bottom: 6px;	}
-	.admin-head h1{ margin: 0; min-width: 0; overflow: hidden;	text-overflow: ellipsis; white-space: nowrap; }
-	.home-jump-btn{ flex: 0 0 auto; width: 42px; height: 40px; border-radius: 14px; border: 1px solid #c8d8f2; background: #eef4ff; color: #1d4ed8; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 23px; font-weight: 950; line-height: 1; box-shadow: 0 6px 14px rgba(37,95,188,.12); }
-	.home-jump-btn:active{ transform: scale(.96); }
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: linear-gradient(180deg, #eef5ff 0%, var(--bg) 42%, #f9fbff 100%);
+      color: var(--ink);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    input, select, button { font: inherit; }
+    input, select, textarea { font-size: 16px; }
+
+    .hide { display: none !important; }
+
+    .fixed-admin-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(244,247,251,.97);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(217,226,239,.96);
+      box-shadow: 0 8px 22px rgba(15,23,42,.08);
+      padding: 8px 10px 6px;
+    }
+
+    .header-inner {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 6px;
+    }
+
+    .top-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto 40px 28px;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-title {
+      min-width: 0;
+      font-size: 18px;
+      font-weight: 950;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .time-text {
+      color: #344054;
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: .02em;
+      white-space: nowrap;
+      text-align: center;
+      min-width: 118px;
+    }
+
+    .home-jump-btn {
+      width: 40px;
+      height: 38px;
+      border-radius: 14px;
+      border: 1px solid #c8d8f2;
+      background: #eef4ff;
+      color: #1d4ed8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 21px;
+      font-weight: 950;
+      line-height: 1;
+      box-shadow: 0 6px 14px rgba(37,95,188,.12);
+    }
+
+    .home-jump-btn:active { transform: scale(.96); }
+
+    .gas-lamp-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+    }
+
+    .gas-lamp {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #98a2b3;
+      box-shadow: 0 0 0 4px rgba(37,95,188,.08), 0 0 14px rgba(37,95,188,.16);
+    }
+
+    .gas-lamp.checking { background: #98a2b3; }
+    .gas-lamp.ok { background: var(--ok); }
+    .gas-lamp.warn { background: var(--warn); }
+    .gas-lamp.bad { background: var(--bad); }
+
+    .tool-line {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 36px;
+      border-radius: 14px;
+      border: 1px solid #c8d8f2;
+      background: #eef4ff;
+      color: #174c99;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 950;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .icon-btn.loading { animation: spin .9s linear infinite; }
+    .icon-btn:disabled { opacity: .56; cursor: not-allowed; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .filter-group {
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .filter-btn {
+      min-width: 42px;
+      height: 34px;
+      border-radius: 999px;
+      padding: 6px 8px;
+      border: 1px solid #c8d8f2;
+      background: #fff;
+      color: #174c99;
+      font-size: 13px;
+      font-weight: 950;
+      cursor: pointer;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .filter-btn.active {
+      background: #174c99;
+      color: #fff;
+      border-color: #174c99;
+    }
+
+    .list-count-text {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 950;
+      white-space: nowrap;
+      text-align: right;
+      min-width: 56px;
+    }
+
+    .gate-wrap {
+      width: min(760px, calc(100% - 16px));
+      margin: 12px auto;
+      padding-top: 0;
+    }
+
+    .status {
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-weight: 850;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(15,23,42,.05);
+    }
+
+    .status.ok { background: #ecfdf3; color: #067647; border-color: #abefc6; }
+    .status.warn { background: #fffaeb; color: #92400e; border-color: #fedf89; }
+    .status.bad { background: #fef3f2; color: #b42318; border-color: #fecdca; }
+
+    .list-area {
+      position: fixed;
+      top: calc(var(--admin-header-h) + 4px);
+      bottom: calc(var(--admin-form-h) + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(760px, calc(100% - 8px));
+      z-index: 10;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0 8px 8px;
+    }
+
+    .person-head-sticky {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: var(--person-cols);
+      gap: 6px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      white-space: nowrap;
+      background: rgba(255,255,255,.98);
+      padding: 7px 8px 5px;
+      border-bottom: 1px solid rgba(217,226,239,.95);
+      margin: 0 0 7px;
+    }
+
+    .person-head-sticky div:nth-child(1),
+    .person-head-sticky div:nth-child(3),
+    .person-head-sticky div:nth-child(4) {
+      text-align: center;
+    }
+
+    .person-head-sticky div:nth-child(2) {
+      text-align: left;
+    }
+
+    .list-loading {
+      min-height: 118px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #b7cae8;
+      border-radius: 16px;
+      background: linear-gradient(135deg,#f8fbff,#eef4ff);
+      color: #174c99;
+      font-weight: 950;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .loading-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 4px solid #c8d8f2;
+      border-top-color: #174c99;
+      animation: spin .8s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    .person-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding-bottom: 6px;
+    }
+
+    .person-row {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fff;
+      display: grid;
+      grid-template-columns: var(--person-cols);
+      gap: 6px;
+      align-items: center;
+      min-height: 40px;
+      padding: 7px 8px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .person-row.is-admin {
+      background: var(--soft-red);
+      box-shadow: inset 4px 0 0 #fca5a5;
+    }
+
+
+    .person-row.is-admin .cell {
+      color: var(--admin-red);
+      font-weight: 950;
+    }
+
+    .person-row.is-disabled {
+      background: var(--disabled-bg);
+      color: var(--disabled-text);
+      opacity: .94;
+    }
+
+    .person-row.is-disabled .cell {
+      color: var(--disabled-text);
+    }
+
+    .person-row.is-selected {
+      background: var(--selected);
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(37,95,188,.14);
+    }
+
+    .person-row.is-selected.is-admin {
+      background: #fff1f2;
+      box-shadow: inset 4px 0 0 #fca5a5, 0 0 0 3px rgba(220,38,38,.12);
+    }
+
+    .person-row.is-touched {
+      animation: touchedPulse .9s ease-in-out 0s 5;
+    }
+
+    @keyframes touchedPulse {
+      0% { box-shadow: 0 0 0 0 rgba(37,95,188,0); }
+      50% { box-shadow: 0 0 0 4px rgba(37,95,188,.24); }
+      100% { box-shadow: 0 0 0 0 rgba(37,95,188,0); }
+    }
+
+    .person-row:active { transform: scale(.992); }
+
+    .cell {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 900;
+      font-size: 13px;
+      line-height: 1.15;
+    }
+
+    .person-row .cell:nth-child(1),
+    .person-row .cell:nth-child(3),
+    .person-row .cell:nth-child(4) {
+      text-align: center;
+    }
+
+    .person-row .cell:nth-child(2) {
+      text-align: left;
+    }
+
+    .status-text {
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      color: #067647;
+      font-weight: 950;
+    }
+
+    .person-row.is-disabled .status-text {
+      color: #64748b;
+    }
+
+    .form-panel {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: min(760px, 100%);
+      z-index: 40;
+      background: rgba(255,255,255,.98);
+      border-top: 1px solid rgba(217,226,239,.96);
+      box-shadow: 0 -10px 26px rgba(15,23,42,.10);
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+      border-radius: 18px 18px 0 0;
+    }
+
+    .mode-row {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr) 68px;
+      gap: 8px;
+      align-items: stretch;
+      margin-bottom: 7px;
+    }
+
+    .mode-badge,
+    .action-msg-inline,
+    #clearFormBtn {
+      height: 40px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+    }
+
+    .mode-badge {
+      justify-content: flex-start;
+      border: 1px solid #c8d8f2;
+      background: #eef4ff;
+      color: #174c99;
+      border-radius: 14px;
+      padding: 7px 10px;
+      font-weight: 950;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .action-msg-inline {
+      justify-content: flex-start;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 950;
+      color: var(--muted);
+      padding: 0 2px;
+    }
+
+    .action-msg-inline.ok { color: #067647; }
+    .action-msg-inline.bad { color: #b42318; }
+    .action-msg-inline.warn { color: #92400e; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 10px;
+    }
+
+    .form-line {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .form-line label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 950;
+      color: #344054;
+      white-space: nowrap;
+    }
+
+    input, select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 9px 10px;
+      outline: none;
+      background: #fff;
+      min-height: 42px;
+      font-size: 16px;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #6aa1ff;
+      box-shadow: 0 0 0 4px rgba(37,95,188,.10);
+    }
+
+    input[readonly] {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .actions.single {
+      grid-template-columns: 1fr;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 9px 10px;
+      min-height: 40px;
+      font-weight: 950;
+      cursor: pointer;
+      transition: transform .12s ease, opacity .12s ease, box-shadow .12s ease;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .52; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: linear-gradient(135deg,var(--brand),var(--brand2));
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(37,95,188,.24);
+    }
+
+    .btn-soft {
+      background: #eef4ff;
+      color: var(--brand2);
+      border: 1px solid #c8d8f2;
+    }
+
+    .btn-danger {
+      background: #fff1f2;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+    }
+
+    .btn-ok {
+      background: #ecfdf3;
+      color: #067647;
+      border: 1px solid #abefc6;
+    }
+
+    @media (max-width: 420px) {
+      :root {
+        --person-cols: 1.05fr 1.25fr .48fr .62fr;
+      }
+
+      .fixed-admin-header {
+        padding: 7px 6px 5px;
+      }
+
+      .header-inner {
+        width: 100%;
+        gap: 5px;
+      }
+
+      .top-line {
+        grid-template-columns: minmax(0,1fr) auto 38px 26px;
+        gap: 8px;
+      }
+
+      .page-title {
+        font-size: 16px;
+      }
+
+      .time-text {
+        font-size: 11px;
+        min-width: 100px;
+      }
+
+      .home-jump-btn {
+        width: 38px;
+        height: 36px;
+        font-size: 20px;
+      }
+
+      .gas-lamp-wrap {
+        width: 26px;
+        height: 26px;
+      }
+
+      .gas-lamp {
+        width: 19px;
+        height: 19px;
+      }
+
+      .tool-line {
+        grid-template-columns: 36px minmax(0,1fr) auto;
+        gap: 8px;
+      }
+
+      .icon-btn {
+        width: 36px;
+        height: 34px;
+        font-size: 19px;
+      }
+
+      .filter-group {
+        gap: 4px;
+      }
+
+      .filter-btn {
+        min-width: 37px;
+        height: 32px;
+        padding: 5px 6px;
+        font-size: 12px;
+      }
+
+      .list-count-text {
+        font-size: 12px;
+        min-width: 50px;
+      }
+
+      .list-area {
+        width: calc(100% - 6px);
+        top: calc(var(--admin-header-h) + 3px);
+        bottom: calc(var(--admin-form-h) + 3px);
+        padding: 0 6px 6px;
+      }
+
+      .person-head-sticky {
+        font-size: 11px;
+        gap: 4px;
+        padding: 6px 6px 4px;
+        margin: 0 0 6px;
+      }
+
+      .person-list {
+        gap: 6px;
+      }
+
+      .person-row {
+        gap: 4px;
+        min-height: 38px;
+        padding: 6px 6px;
+      }
+
+      .cell {
+        font-size: 12px;
+      }
+
+      .status-text {
+        font-size: 11px;
+      }
+
+      .form-panel {
+        padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+      }
+
+      .mode-row {
+        grid-template-columns: minmax(0,.9fr) minmax(0,1fr) 62px;
+        gap: 6px;
+      }
+
+      .mode-badge,
+      .action-msg-inline,
+      #clearFormBtn {
+        height: 38px;
+        min-height: 38px;
+      }
+
+      .mode-badge,
+      .action-msg-inline {
+        font-size: 12px;
+      }
+
+      .form-grid {
+        gap: 7px 8px;
+      }
+
+      .form-line {
+        grid-template-columns: 34px minmax(0,1fr);
+        gap: 5px;
+      }
+
+      .form-line label {
+        font-size: 12px;
+      }
+
+      input, select {
+        min-height: 40px;
+        padding: 8px 9px;
+      }
+
+      .btn {
+        min-height: 38px;
+        padding: 8px 10px;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <main class="wrap">
-    <div id="gasStatus" class="status warn">GAS 伺服狀態：檢查中...</div>
+  <header id="fixedAdminHeader" class="fixed-admin-header hide">
+    <div class="header-inner">
+      <div class="top-line">
+        <div class="page-title">人員管理</div>
+        <div class="time-text" id="localTimeText">-- --:--:--</div>
+        <a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
+        <div class="gas-lamp-wrap" id="gasStatusWrap" title="GAS 伺服狀態" aria-label="GAS 伺服狀態">
+          <span class="gas-lamp checking" id="gasLamp"></span>
+        </div>
+      </div>
+
+      <div class="tool-line">
+        <button type="button" class="icon-btn" id="loadListBtn" title="同步名單" aria-label="同步名單">↻</button>
+
+        <div id="filterGroup" class="filter-group">
+          <button type="button" class="filter-btn active" data-filter="ALL">ALL</button>
+          <button type="button" class="filter-btn" data-filter="A">A</button>
+          <button type="button" class="filter-btn" data-filter="B">B</button>
+          <button type="button" class="filter-btn" data-filter="C">C</button>
+        </div>
+
+        <div id="listCountText" class="list-count-text">讀取中</div>
+      </div>
+    </div>
+  </header>
+
+  <main id="gateWrap" class="gate-wrap">
     <div id="gateStatus" class="status warn">管理權限：檢查中...</div>
-    <div id="userBox" class="user hide"></div>
-
-	<section id="adminPanel" class="card hide">
-	  <div class="admin-head">
-		<h1>人員管理</h1>
-		<a class="home-jump-btn" href="./index.html" title="返回首頁" aria-label="返回首頁">⌂</a>
-	  </div>
-	  <p class="sub">前端只檢查格式；帳密、管理權、帳號狀態、新增或修改由 GAS 判斷。</p>
-
-      <form id="saveForm" autocomplete="off">
-        <h2>新增 / 修改人員</h2>
-        <label for="targetId">工號</label>
-        <input id="targetId" maxlength="5" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="5碼英數">
-        <label for="targetPass">密碼</label>
-        <input id="targetPass" type="password" inputmode="text" autocomplete="off" placeholder="英數密碼">
-        <label for="targetName">中文名字</label>
-        <input id="targetName" inputmode="text" autocomplete="off" placeholder="不得空白，字元需大於1">
-        <label for="targetShift">人員班別</label>
-        <select id="targetShift">
-          <option value="">請選擇</option>
-          <option value="A">A</option>
-          <option value="B">B</option>
-          <option value="C">C</option>
-        </select>
-        <div class="hint">admin 欄不透過 GAS 寫入；請手動在試算表 F 欄設定。</div>
-        <button id="saveBtn" type="submit">儲存人員</button>
-      </form>
-      <div id="saveMsg" class="msg"></div>
-
-      <div class="split"></div>
-
-      <form id="deleteForm" autocomplete="off">
-        <h2>停用帳號</h2>
-        <p class="sub">採軟刪除：只將人員主檔 E 欄 active 改為 FALSE，不刪除整列。GAS 會禁止停用 admin=true 的帳號。</p>
-        <label for="deleteId">欲停用工號</label>
-        <input id="deleteId" maxlength="5" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="5碼英數">
-        <button id="deleteBtn" class="danger" type="submit">停用帳號</button>
-      </form>
-      <div id="deleteMsg" class="msg"></div>
-    </section>
-    <div class="ver">admin.html v0.1.8</div>
   </main>
+
+  <section id="listArea" class="list-area hide">
+    <div class="person-head-sticky">
+      <div>ID</div>
+      <div>NAME</div>
+      <div>班別</div>
+      <div>狀態</div>
+    </div>
+
+    <div id="listLoading" class="list-loading">
+      <div class="loading-dot"></div>
+      <div>名單載入中...</div>
+    </div>
+
+    <div id="personList" class="person-list hide"></div>
+  </section>
+
+  <section id="formPanel" class="form-panel hide">
+    <div class="mode-row">
+      <div class="mode-badge" id="modeBadge">目前狀態：手動輸入</div>
+      <div id="actionMsg" class="action-msg-inline"></div>
+      <button type="button" class="btn btn-soft" id="clearFormBtn">清空</button>
+    </div>
+
+    <form id="saveForm" autocomplete="off">
+      <div class="form-grid">
+        <div class="form-line">
+          <label for="idInput">ID</label>
+          <input id="idInput" name="id" type="text" maxlength="5" inputmode="text" autocomplete="off" placeholder="5碼">
+        </div>
+
+        <div class="form-line">
+          <label for="shiftInput">班別</label>
+          <select id="shiftInput" name="shift">
+            <option value="">請選</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </select>
+        </div>
+
+        <div class="form-line">
+          <label for="passInput">密碼</label>
+          <input id="passInput" name="pass" type="password" autocomplete="new-password" placeholder="英數">
+        </div>
+
+        <div class="form-line">
+          <label for="nameInput">姓名</label>
+          <input id="nameInput" name="name" type="text" autocomplete="off" placeholder="姓名">
+        </div>
+      </div>
+
+      <div class="actions single" id="actionButtons">
+        <button type="button" class="btn btn-danger hide" id="disableBtn">停用</button>
+        <button type="button" class="btn btn-ok hide" id="enableBtn">啟用</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">儲存</button>
+      </div>
+    </form>
+  </section>
+
 <script>
-(function(){
-  'use strict';
-  var VERSION = 'admin.html v0.1.8';
-  var LOGIN_KEY = 'PI_LOGIN_DRAFT_V001';
-  var SHORT_KEY = 'PI_SHORT_AUTH_V001';
-  var SHORT_AUTH_MS = 2 * 60 * 60 * 1000;
+  const VERSION = 'admin10.html v0.1.0';
 
-  var gasStatus = document.getElementById('gasStatus');
-  var gateStatus = document.getElementById('gateStatus');
-  var userBox = document.getElementById('userBox');
-  var adminPanel = document.getElementById('adminPanel');
-  var saveForm = document.getElementById('saveForm');
-  var saveBtn = document.getElementById('saveBtn');
-  var saveMsg = document.getElementById('saveMsg');
-  var targetId = document.getElementById('targetId');
-  var targetPass = document.getElementById('targetPass');
-  var targetName = document.getElementById('targetName');
-  var targetShift = document.getElementById('targetShift');
-  var deleteForm = document.getElementById('deleteForm');
-  var deleteBtn = document.getElementById('deleteBtn');
-  var deleteMsg = document.getElementById('deleteMsg');
-  var deleteId = document.getElementById('deleteId');
-  var loginDraft = null;
+  const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
+  const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
+  const AUTH_EXPIRE_MS = 2 * 60 * 60 * 1000;
+  const POST_TIMEOUT_MS = 15000;
+  const PING_TIMEOUT_MS = 6000;
+  const MSG_OK_MS = 8000;
+  const MSG_BAD_MS = 10000;
 
-  function setGasStatus(text, type){
-    gasStatus.textContent = 'GAS 伺服狀態：' + text;
-    gasStatus.className = 'status ' + (type || 'warn');
+  let authState = null;
+  let loginDraft = null;
+  let personnelRows = [];
+  let listLoaded = false;
+  let currentFilter = 'ALL';
+  let selectedRow = null;
+  let actionMsgTimer = null;
+  let flashId = '';
+  let flashTimer = null;
+
+  const el = {
+    fixedAdminHeader: document.getElementById('fixedAdminHeader'),
+    localTimeText: document.getElementById('localTimeText'),
+    gasLamp: document.getElementById('gasLamp'),
+    gasStatusWrap: document.getElementById('gasStatusWrap'),
+    gateWrap: document.getElementById('gateWrap'),
+    gateStatus: document.getElementById('gateStatus'),
+
+    loadListBtn: document.getElementById('loadListBtn'),
+    filterGroup: document.getElementById('filterGroup'),
+    listCountText: document.getElementById('listCountText'),
+
+    listArea: document.getElementById('listArea'),
+    listLoading: document.getElementById('listLoading'),
+    personList: document.getElementById('personList'),
+
+    formPanel: document.getElementById('formPanel'),
+    modeBadge: document.getElementById('modeBadge'),
+    actionMsg: document.getElementById('actionMsg'),
+    clearFormBtn: document.getElementById('clearFormBtn'),
+    saveForm: document.getElementById('saveForm'),
+    idInput: document.getElementById('idInput'),
+    passInput: document.getElementById('passInput'),
+    nameInput: document.getElementById('nameInput'),
+    shiftInput: document.getElementById('shiftInput'),
+    actionButtons: document.getElementById('actionButtons'),
+    saveBtn: document.getElementById('saveBtn'),
+    disableBtn: document.getElementById('disableBtn'),
+    enableBtn: document.getElementById('enableBtn')
+  };
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  async function init() {
+    bindEvents();
+    bindPanelResize();
+    startClock();
+
+    await ping();
+
+    const ok = await prepareAdminGate();
+
+    if (!ok) {
+      setGate('管理權限：驗證失敗，1 秒後返回首頁。', 'bad');
+      setTimeout(function(){ location.href = './index.html'; }, 1000);
+      return;
+    }
+
+    showAdmin();
+    await loadPersonnelList(true);
   }
 
-  function setGate(text, type){
-    gateStatus.textContent = '管理權限：' + text;
-    gateStatus.className = 'status ' + (type || 'warn');
+  function getApiUrl() {
+    return typeof window.api_url === 'string' && window.api_url.trim() ? window.api_url.trim() : '';
   }
 
-  function setMsg(el, text, type){
-    el.textContent = text || '';
-    el.className = 'msg' + (type ? ' ' + type : '');
+  function nowValue() {
+    return Number(window.CFG_time || Date.now());
   }
 
-  function getApiUrl(){
-    if (typeof api_url !== 'string' || !api_url) return '';
-    return api_url;
+  function startClock() {
+    updateClock();
+    setInterval(updateClock, 1000);
   }
 
-  function normalizeId(v){ return String(v || '').trim().toUpperCase(); }
-  function validId(v){ return /^[A-Z0-9]{5}$/.test(v); }
-  function validPass(v){ return /^[A-Za-z0-9]+$/.test(String(v || '')); }
-  function validName(v){ return String(v || '').trim().length > 1; }
-  function validShift(v){ return /^(A|B|C)$/.test(String(v || '').trim().toUpperCase()); }
+  function updateClock() {
+    el.localTimeText.textContent = formatHeaderTime(window.CFG_now);
+  }
 
-  function toMap(data){
-    var out = {};
-    if (!data || !data.fields || !data.values) return out;
-    for (var i = 0; i < data.fields.length; i++) out[data.fields[i]] = data.values[i];
+  function formatHeaderTime(value) {
+    const s = String(value || '').trim();
+    const m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+
+    if (m) {
+      return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+    }
+
+    return s || '-- --:--:--';
+  }
+
+  function bindPanelResize() {
+    syncPanelHeights();
+
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(syncPanelHeights);
+      if (el.fixedAdminHeader) ro.observe(el.fixedAdminHeader);
+      if (el.formPanel) ro.observe(el.formPanel);
+    }
+
+    window.addEventListener('resize', syncPanelHeights);
+    window.addEventListener('orientationchange', function(){
+      setTimeout(syncPanelHeights, 250);
+    });
+  }
+
+  function syncPanelHeights() {
+    const headerH = el.fixedAdminHeader && !el.fixedAdminHeader.classList.contains('hide')
+      ? Math.ceil(el.fixedAdminHeader.getBoundingClientRect().height)
+      : 0;
+
+    const formH = el.formPanel && !el.formPanel.classList.contains('hide')
+      ? Math.ceil(el.formPanel.getBoundingClientRect().height)
+      : 0;
+
+    document.documentElement.style.setProperty('--admin-header-h', headerH + 'px');
+    document.documentElement.style.setProperty('--admin-form-h', formH + 'px');
+  }
+
+  function bindEvents() {
+    el.idInput.addEventListener('input', function(){
+      el.idInput.value = normalizeId(el.idInput.value);
+    });
+
+    el.passInput.addEventListener('input', function(){
+      el.passInput.value = String(el.passInput.value || '').replace(/[^A-Za-z0-9]/g, '');
+    });
+
+    el.nameInput.addEventListener('input', function(){
+      el.nameInput.value = String(el.nameInput.value || '').trimStart();
+    });
+
+    el.clearFormBtn.addEventListener('click', clearFormForManual);
+
+    el.saveForm.addEventListener('submit', function(evt){
+      evt.preventDefault();
+      savePersonnel('');
+    });
+
+    el.disableBtn.addEventListener('click', function(){
+      savePersonnel('FALSE');
+    });
+
+    el.enableBtn.addEventListener('click', function(){
+      savePersonnel('TRUE');
+    });
+
+    el.loadListBtn.addEventListener('click', function(){
+      loadPersonnelList(true);
+    });
+
+    el.filterGroup.addEventListener('click', function(evt){
+      const btn = evt.target.closest('[data-filter]');
+      if (!btn) return;
+
+      currentFilter = btn.dataset.filter || 'ALL';
+
+      Array.from(el.filterGroup.querySelectorAll('.filter-btn')).forEach(function(node){
+        node.classList.toggle('active', node === btn);
+      });
+
+      renderPersonnelList();
+    });
+  }
+
+  async function ping() {
+    if (!getApiUrl()) {
+      setGas('GAS 伺服狀態：找不到 api_url', 'bad');
+      return;
+    }
+
+    setGas('GAS 伺服狀態：檢查中', 'checking');
+
+    const controller = new AbortController();
+    const timer = setTimeout(function(){
+      controller.abort();
+    }, PING_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(getApiUrl() + '?t=' + nowValue(), {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+
+      clearTimeout(timer);
+
+      if (res && res.status === 200) {
+        setGas('GAS 伺服狀態：ok', 'ok');
+      } else {
+        setGas('GAS 伺服狀態：回應異常', 'bad');
+      }
+    } catch (err) {
+      clearTimeout(timer);
+      setGas('GAS 伺服狀態：伺服器沒有回應', 'bad');
+    }
+  }
+
+  async function prepareAdminGate() {
+    loginDraft = readJson(LOGIN_DRAFT_KEY);
+    const shortAuth = readJson(SHORT_AUTH_KEY);
+
+    if (!loginDraft || !loginDraft.id || !loginDraft.pass) {
+      setGate('管理權限：找不到帳密草稿。', 'bad');
+      return false;
+    }
+
+    if (isShortAuthValid(shortAuth, loginDraft.id) && isAdminValue(shortAuth.admin)) {
+      authState = shortAuth;
+      setGate('管理權限：ok', 'ok');
+      return true;
+    }
+
+    setGate('管理權限：通行證失效，原地驗證中...', 'warn');
+
+    const renewed = await renewAuth(loginDraft.id, loginDraft.pass);
+
+    if (renewed && isAdminValue(renewed.admin)) {
+      authState = renewed;
+      setGate('管理權限：ok', 'ok');
+      return true;
+    }
+
+    return false;
+  }
+
+  function isShortAuthValid(shortAuth, draftId) {
+    if (!shortAuth || !shortAuth.id) return false;
+
+    const a = normalizeId(shortAuth.id);
+    const b = normalizeId(draftId);
+
+    if (!a || !b || a !== b) return false;
+
+    const expireTime = Number(shortAuth.expire_time || 0);
+    return Number.isFinite(expireTime) && nowValue() < expireTime;
+  }
+
+  async function renewAuth(id, pass) {
+    const params = new URLSearchParams();
+    params.set('action', 'auth');
+    params.set('id', normalizeId(id));
+    params.set('pass', String(pass || '').trim());
+
+    try {
+      const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+      if (!data || data.status !== 'ok') return null;
+
+      const user = fieldsValuesToObject(data);
+      const now = nowValue();
+
+      const renewed = {
+        id: normalizeId(user.id || id),
+        name: String(user.name || ''),
+        shift: normalizeShift(user.shift || ''),
+        admin: isAdminValue(user.admin),
+        auth_time: now,
+        expire_time: now + AUTH_EXPIRE_MS
+      };
+
+      writeJson(SHORT_AUTH_KEY, renewed);
+      return renewed;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function showAdmin() {
+    el.fixedAdminHeader.classList.remove('hide');
+    el.listArea.classList.remove('hide');
+    el.formPanel.classList.remove('hide');
+    el.gateWrap.classList.add('hide');
+
+    clearFormForManual();
+    syncPanelHeights();
+  }
+
+  function clearFormForManual(shouldClearFlash) {
+    if (shouldClearFlash !== false) {
+      clearFlashRow();
+    }
+
+    selectedRow = null;
+
+    el.idInput.value = '';
+    el.passInput.value = '';
+    el.nameInput.value = '';
+    el.shiftInput.value = '';
+    el.idInput.readOnly = false;
+
+    setMode('目前狀態：手動輸入');
+    setActionMsg('', '');
+    updateModeButtons();
+    renderPersonnelList();
+  }
+
+  function setMode(text) {
+    el.modeBadge.textContent = text;
+  }
+
+  function fillFormFromRow(row) {
+    clearFlashRow();
+
+    selectedRow = row || null;
+
+    el.idInput.value = row.id || '';
+    el.passInput.value = row.pass || '';
+    el.nameInput.value = row.name || '';
+    el.shiftInput.value = row.shift || '';
+    el.idInput.readOnly = true;
+
+    setMode('目前狀態：修改 ' + (row.id || ''));
+    setActionMsg('已帶入。', 'ok');
+    updateModeButtons();
+    renderPersonnelList();
+  }
+
+  function updateModeButtons() {
+    const selected = !!selectedRow;
+    const active = selectedRow && selectedRow.active === true;
+
+    el.disableBtn.classList.toggle('hide', !selected || !active);
+    el.enableBtn.classList.toggle('hide', !selected || active);
+    el.actionButtons.classList.toggle('single', !selected);
+
+    syncPanelHeights();
+  }
+
+  function startFlashRow(id) {
+    if (flashTimer) {
+      clearTimeout(flashTimer);
+      flashTimer = null;
+    }
+
+    flashId = normalizeId(id);
+
+    flashTimer = setTimeout(function(){
+      flashId = '';
+      flashTimer = null;
+      renderPersonnelList();
+    }, 4500);
+  }
+
+  function clearFlashRow() {
+    if (flashTimer) {
+      clearTimeout(flashTimer);
+      flashTimer = null;
+    }
+
+    flashId = '';
+  }
+
+  async function savePersonnel(activeValue) {
+    setActionMsg('', '');
+
+    const id = normalizeId(el.idInput.value);
+    const pass = String(el.passInput.value || '').trim();
+    const name = String(el.nameInput.value || '').trim();
+    const shift = normalizeShift(el.shiftInput.value);
+
+    if (!/^[A-Z0-9]{5}$/.test(id)) {
+      setActionMsg('ID需5碼。', 'bad');
+      return;
+    }
+
+    if (activeValue === '') {
+      if (!/^[A-Za-z0-9]+$/.test(pass)) {
+        setActionMsg('密碼限英數。', 'bad');
+        return;
+      }
+
+      if (name.length <= 1) {
+        setActionMsg('姓名不足。', 'bad');
+        return;
+      }
+
+      if (!/^[ABC]$/.test(shift)) {
+        setActionMsg('請選班別。', 'bad');
+        return;
+      }
+    }
+
+    const params = new URLSearchParams();
+    params.set('action', 'personnel_save');
+    params.set('admin_id', normalizeId(loginDraft.id));
+    params.set('admin_pass', String(loginDraft.pass || ''));
+    params.set('id', id);
+
+    if (activeValue !== 'FALSE') {
+      params.set('pass', pass);
+      params.set('name', name);
+      params.set('shift', shift);
+    }
+
+    if (activeValue) {
+      params.set('active', activeValue);
+    }
+
+    setActionMsg(activeValue === 'FALSE' ? '停用中...' : activeValue === 'TRUE' ? '啟用中...' : '儲存中...', 'warn');
+
+    try {
+      const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+
+      if (data && data.status === 'ok') {
+        startFlashRow(id);
+        setActionMsg('完成，同步中...', 'ok');
+
+        if (listLoaded) {
+          await loadPersonnelList(false);
+          setActionMsg('完成，已同步。', 'ok');
+        } else {
+          setActionMsg('操作完成。', 'ok');
+        }
+
+        if (activeValue === 'FALSE') {
+          clearFormForManual(false);
+        }
+
+        return;
+      }
+
+      setActionMsg('失敗：' + (data && data.msg ? data.msg : 'unknown'), 'bad');
+
+    } catch (err) {
+      setActionMsg('失敗：' + formatError(err), 'bad');
+    }
+  }
+
+  async function loadPersonnelList(showLoading) {
+    if (showLoading) {
+      el.loadListBtn.classList.add('loading');
+      el.loadListBtn.disabled = true;
+      el.listLoading.classList.remove('hide');
+      el.personList.classList.add('hide');
+      el.listCountText.textContent = '讀取中';
+    }
+
+    const params = new URLSearchParams();
+    params.set('action', 'personnel_list');
+
+    try {
+      const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+
+      if (!data || data.status !== 'ok') {
+        el.listCountText.textContent = '讀取失敗';
+        return;
+      }
+
+      personnelRows = normalizePersonnelRows(data);
+      listLoaded = true;
+      syncSelectedRow();
+      renderPersonnelList();
+      updateModeButtons();
+
+    } catch (err) {
+      el.listCountText.textContent = '讀取失敗';
+
+    } finally {
+      el.listLoading.classList.add('hide');
+      el.loadListBtn.classList.remove('loading');
+      el.loadListBtn.disabled = false;
+    }
+  }
+
+  function syncSelectedRow() {
+    if (!selectedRow || !selectedRow.id) return;
+
+    const found = personnelRows.find(function(row){
+      return row.id === selectedRow.id;
+    });
+
+    if (found) {
+      selectedRow = found;
+      el.passInput.value = found.pass || '';
+      el.nameInput.value = found.name || '';
+      el.shiftInput.value = found.shift || '';
+      setMode('目前狀態：修改 ' + found.id);
+    }
+  }
+
+  function normalizePersonnelRows(data) {
+    if (!data || !Array.isArray(data.fields) || !Array.isArray(data.values)) {
+      return [];
+    }
+
+    return data.values.map(function(row){
+      const obj = {};
+      data.fields.forEach(function(field, index){
+        obj[field] = row[index];
+      });
+
+      return {
+        id: normalizeId(obj.id || ''),
+        pass: String(obj.pass || ''),
+        name: String(obj.name || ''),
+        shift: normalizeShift(obj.shift || ''),
+        active: parseActiveValue(obj.active),
+        admin: isAdminValue(obj.admin)
+      };
+    }).filter(function(row){
+      return row.id;
+    }).sort(function(a, b){
+      return String(a.shift || '').localeCompare(String(b.shift || '')) ||
+        String(a.id || '').localeCompare(String(b.id || ''));
+    });
+  }
+
+  function renderPersonnelList() {
+    if (!listLoaded) {
+      el.listCountText.textContent = '尚未載入';
+      el.personList.classList.add('hide');
+      return;
+    }
+
+    const rows = personnelRows.filter(function(row){
+      return currentFilter === 'ALL' || row.shift === currentFilter;
+    });
+
+    el.personList.innerHTML = '';
+    el.listCountText.textContent = '共 ' + rows.length + ' 筆';
+
+    if (!rows.length) {
+      el.personList.classList.add('hide');
+      return;
+    }
+
+    el.personList.classList.remove('hide');
+
+    rows.forEach(function(row){
+      const btn = document.createElement('button');
+      btn.type = 'button';
+
+      const selected = !!(selectedRow && selectedRow.id === row.id);
+      const touched = !!(flashId && flashId === row.id);
+
+      btn.className = 'person-row' +
+        (row.admin ? ' is-admin' : '') +
+        (!row.active ? ' is-disabled' : '') +
+        (selected ? ' is-selected' : '') +
+        (touched ? ' is-touched' : '');
+
+      btn.innerHTML = [
+        '<div class="cell">' + escapeHtml(row.id) + '</div>',
+        '<div class="cell">' + escapeHtml(row.name) + '</div>',
+        '<div class="cell">' + escapeHtml(row.shift || '-') + '</div>',
+        '<div class="cell status-text">' + (row.active ? '啟用' : '停用') + '</div>'
+      ].join('');
+
+      btn.addEventListener('click', function(){
+        fillFormFromRow(row);
+      });
+
+      el.personList.appendChild(btn);
+    });
+  }
+
+  async function postWithTimeout(params, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(function(){
+      controller.abort();
+    }, timeoutMs);
+
+    try {
+      const res = await fetch(getApiUrl(), {
+        method: 'POST',
+        body: params,
+        signal: controller.signal
+      });
+
+      const text = await res.text();
+
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        throw new Error('GAS 回傳不是 JSON');
+      }
+
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function fieldsValuesToObject(data) {
+    const out = {};
+
+    if (!data || !Array.isArray(data.fields) || !Array.isArray(data.values)) {
+      return out;
+    }
+
+    data.fields.forEach(function(key, index){
+      out[key] = data.values[index];
+    });
+
     return out;
   }
 
-  function postAction(action, payload){
-    var url = getApiUrl();
-    if (!url) return Promise.reject(new Error('api_url_not_set'));
-    var params = new URLSearchParams();
-    params.append('action', action);
-    params.append('_t', String(window.CFG_now));
-    if (payload) {
-      Object.keys(payload).forEach(function(k){ params.append(k, payload[k] == null ? '' : String(payload[k])); });
+  function parseActiveValue(value) {
+    if (value === false) return false;
+
+    const v = String(value == null ? '' : value).trim().toUpperCase();
+
+    if (v === 'FALSE' || v === 'F' || v === '0') return false;
+    return true;
+  }
+
+  function isAdminValue(value) {
+    if (value === true) return true;
+
+    const v = String(value == null ? '' : value).trim().toUpperCase();
+
+    return v === 'TRUE' || v === 'T' || v === '1';
+  }
+
+  function normalizeId(value) {
+    return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+  }
+
+  function normalizeShift(value) {
+    const v = String(value || '').trim().toUpperCase();
+    return /^[ABC]$/.test(v) ? v : '';
+  }
+
+  function setGas(text, type) {
+    el.gasLamp.className = 'gas-lamp ' + (type || 'checking');
+    el.gasStatusWrap.title = text;
+    el.gasStatusWrap.setAttribute('aria-label', text);
+  }
+
+  function setGate(text, type) {
+    el.gateStatus.textContent = text;
+    el.gateStatus.className = 'status ' + (type || 'warn');
+  }
+
+  function setActionMsg(text, type) {
+    clearTimeout(actionMsgTimer);
+
+    el.actionMsg.textContent = text || '';
+    el.actionMsg.className = 'action-msg-inline ' + (type || '');
+
+    if (!text) return;
+
+    const ms = type === 'bad' ? MSG_BAD_MS : MSG_OK_MS;
+    actionMsgTimer = setTimeout(function(){
+      el.actionMsg.textContent = '';
+      el.actionMsg.className = 'action-msg-inline';
+    }, ms);
+  }
+
+  function readJson(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
     }
-    return fetch(url, { method:'POST', body:params, credentials:'omit', cache:'no-store' })
-      .then(function(res){ return res.text(); })
-      .then(function(text){
-        try { return JSON.parse(text); }
-        catch (err) { throw new Error('json_parse_failed'); }
-      });
   }
 
-  function readJson(key){
-    try { return JSON.parse(localStorage.getItem(key) || '{}'); }
-    catch (err) { return {}; }
+  function writeJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function redirectLogin(reason){
-    setGate(reason + '，2 秒後跳轉登入頁。', 'warn');
-    sessionStorage.setItem('PI_RETURN_TO', 'admin.html');
-    setTimeout(function(){ location.replace('login.html?from=admin.html&r=' + window.CFG_now); }, 200);
-  }
-
-  function writeLoginDraft(user){
-    var id = normalizeId((user && user.id) || loginDraft.id);
-    var pass = String(loginDraft.pass || '');
-    loginDraft = { id:id, pass:pass };
-    localStorage.setItem(LOGIN_KEY, JSON.stringify(loginDraft));
-  }
-
-  function writeShortAuth(user){
-    var now = window.CFG_time;
-    var data = {
-      id: normalizeId(user.id || loginDraft.id),
-      name: String(user.name || ''),
-      shift: String(user.shift || ''),
-      admin: user.admin === true || user.admin === 'TRUE' || user.admin === 'true',
-      auth_time: now,
-      expire_time: now + SHORT_AUTH_MS
-    };
-    localStorage.setItem(SHORT_KEY, JSON.stringify(data));
-    writeLoginDraft(data);
-    return data;
-  }
-
-  function loadLoginDraft(){
-    var ld = readJson(LOGIN_KEY);
-    if (!ld.id || !ld.pass) return false;
-    loginDraft = { id:normalizeId(ld.id), pass:String(ld.pass || '') };
-    return true;
-  }
-
-  function shortDraftValid(){
-    var sd = readJson(SHORT_KEY);
-    var now = window.CFG_time;
-    if (!sd.id || !sd.expire_time) return false;
-    if (now > Number(sd.expire_time)) return false;
-    if (normalizeId(sd.id) !== normalizeId(loginDraft.id)) return false;
-    return true;
-  }
-
-  function ping(){
-    setGasStatus('檢查中...', 'warn');
-
-    fetch(api_url + '?t=' + window.CFG_time, {
-      method: 'GET',
-      cache: 'no-store'
-    })
-    .then(function(res){
-      if (!res || res.status !== 200) {
-        throw new Error('http_not_200');
-      }
-      return res.json();
-    })
-    .then(function(data){
-      if (data && String(data.status || '').toLowerCase() === 'ok') {
-        setGasStatus('ok', 'ok');
-      } else {
-        setGasStatus('回應異常', 'bad');
-      }
-    })
-    .catch(function(){
-      setGasStatus('伺服器沒有回應', 'bad');
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"]/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];
     });
-   }
-
-  function startGate(){
-    if (!loadLoginDraft()) { redirectLogin('無帳密資料'); return; }
-    if (shortDraftValid()) {
-      authAdmin('驗證管理權限中...');
-      return;
-    }
-    authAdmin('臨時通行證失效，使用預設帳密認證中...');
   }
 
-  function authAdmin(message){
-    setGate(message || '驗證管理權限中...', 'warn');
-    postAction('auth', { id:loginDraft.id, pass:loginDraft.pass })
-      .then(function(data){
-        if (!data || data.status !== 'ok' || data.action !== 'auth') throw new Error((data && data.msg) || 'auth_failed');
-        var user = toMap(data);
-        var shortAuth = writeShortAuth(user);
-        userBox.classList.remove('hide');
-        userBox.textContent = '目前登入：' + (shortAuth.id || loginDraft.id) + '｜' + (shortAuth.name || '') + '｜班別 ' + (shortAuth.shift || '');
-        if (shortAuth.admin !== true) {
-          adminPanel.classList.add('hide');
-          setGate('帳密驗證通過，但無後台管理權限。', 'bad');
-          return;
-        }
-        setGate('管理權限通過，臨時通行證已更新。', 'ok');
-        adminPanel.classList.remove('hide');
-      })
-      .catch(function(){
-        adminPanel.classList.add('hide');
-        localStorage.removeItem(SHORT_KEY);
-        redirectLogin('帳密驗證失效');
-      });
+  function formatError(err) {
+    if (!err) return 'unknown_error';
+    if (err.name === 'AbortError') return 'timeout';
+    return String(err.message || err);
   }
-
-  targetId.addEventListener('input', function(){ targetId.value = normalizeId(targetId.value).replace(/[^A-Z0-9]/g, '').slice(0,5); });
-  targetPass.addEventListener('input', function(){ targetPass.value = String(targetPass.value || '').replace(/[^A-Za-z0-9]/g, ''); });
-  deleteId.addEventListener('input', function(){ deleteId.value = normalizeId(deleteId.value).replace(/[^A-Z0-9]/g, '').slice(0,5); });
-
-  saveForm.addEventListener('submit', function(ev){
-    ev.preventDefault();
-    var id = normalizeId(targetId.value);
-    var pass = String(targetPass.value || '').trim();
-    var name = String(targetName.value || '').trim();
-    var shift = String(targetShift.value || '').trim().toUpperCase();
-    if (!validId(id)) { setMsg(saveMsg, '工號格式錯誤：需 5 碼英數。', 'bad'); return; }
-    if (!validPass(pass)) { setMsg(saveMsg, '密碼格式錯誤：僅接受英數且不得空白。', 'bad'); return; }
-    if (!validName(name)) { setMsg(saveMsg, '中文名字不得為空，且字元數需大於 1。', 'bad'); return; }
-    if (!validShift(shift)) { setMsg(saveMsg, '請選擇人員班別。', 'bad'); return; }
-    saveBtn.disabled = true;
-    setMsg(saveMsg, '送出中...', 'warn');
-    postAction('personnel_save', {
-      admin_id: loginDraft.id,
-      admin_pass: loginDraft.pass,
-      id: id,
-      pass: pass,
-      name: name,
-      shift: shift
-    }).then(function(data){
-      if (!data || data.status !== 'ok' || data.action !== 'personnel_save') throw new Error((data && data.msg) || 'save_failed');
-      var row = toMap(data);
-      setMsg(saveMsg, '完成：' + (row.mode || '') + '｜' + (row.id || id) + '｜' + (row.name || name), 'ok');
-    }).catch(function(err){
-      setMsg(saveMsg, '失敗：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
-    }).finally(function(){ saveBtn.disabled = false; });
-  });
-
-  deleteForm.addEventListener('submit', function(ev){
-    ev.preventDefault();
-    var id = normalizeId(deleteId.value);
-    if (!validId(id)) { setMsg(deleteMsg, '工號格式錯誤：需 5 碼英數。', 'bad'); return; }
-    if (!confirm('確定停用帳號 ' + id + '？')) return;
-    deleteBtn.disabled = true;
-    setMsg(deleteMsg, '送出中...', 'warn');
-    postAction('personnel_delete', {
-      admin_id: loginDraft.id,
-      admin_pass: loginDraft.pass,
-      target_id: id
-    }).then(function(data){
-      if (!data || data.status !== 'ok' || data.action !== 'personnel_delete') throw new Error((data && data.msg) || 'delete_failed');
-      var row = toMap(data);
-      setMsg(deleteMsg, '已停用：' + (row.id || id), 'ok');
-    }).catch(function(err){
-      setMsg(deleteMsg, '失敗：' + (err && err.message ? err.message : 'unknown_error'), 'bad');
-    }).finally(function(){ deleteBtn.disabled = false; });
-  });
-
-  ping();
-  startGate();
-})();
 </script>
 </body>
 </html>
