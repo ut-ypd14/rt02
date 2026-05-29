@@ -578,6 +578,50 @@
     .loading-title { font-size: 19px; font-weight: 950; }
     .loading-sub { color: var(--muted); margin-top: 6px; font-size: 13px; }
 
+
+    .resume-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .58);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 75;
+      backdrop-filter: blur(5px);
+      padding: 18px;
+    }
+    .resume-mask.active { display: flex; }
+    .resume-card {
+      width: min(90vw, 390px);
+      background: #fff;
+      border-radius: 24px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 18px 54px rgba(0,0,0,.28);
+      border: 1px solid var(--line);
+    }
+    .resume-title {
+      font-size: 19px;
+      font-weight: 950;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .resume-sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      font-weight: 850;
+    }
+    .resume-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .resume-actions .btn {
+      width: 100%;
+    }
+
     .footer-version {
       color: #7a8798;
       text-align: center;
@@ -906,7 +950,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.3.2</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.3.4</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -921,6 +965,17 @@
       <div class="spinner"></div>
       <div class="loading-title">資料傳送中...</div>
       <div class="loading-sub">請勿關閉畫面或重複點擊</div>
+    </div>
+  </div>
+
+  <div class="resume-mask" id="resumeMask" aria-live="polite">
+    <div class="resume-card">
+      <div class="resume-title">頁面已閒置過久</div>
+      <div class="resume-sub">目前尚未超過強制重新整理時間。可保留目前輸入繼續作業，或重新整理頁面。</div>
+      <div class="resume-actions">
+        <button type="button" class="btn btn-soft" id="resumeKeepBtn">保留輸入</button>
+        <button type="button" class="btn btn-primary" id="resumeReloadBtn">重新整理</button>
+      </div>
     </div>
   </div>
 
@@ -944,7 +999,7 @@
   const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
   const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
   const SHIFT_PICK_KEY = 'PI_SHIFT_PICK_V001';
-  const EDIT_RECORD_KEY = 'PI_EDIT_RECORD_V001';
+  const FORM_RESTORE_KEY = 'PI_FORM_RESTORE_DRAFT_V001';
 
   const AUTH_EXPIRE_MS = 2 * 60 * 60 * 1000;
   const GAS_OK_MS = 800;
@@ -953,7 +1008,9 @@
   const POST_TIMEOUT_MS = 15000;
   const GAS_STATUS_INTERVAL_MS = 60000;
   const FREEZE_HEARTBEAT_MS = 30 * 1000;
-  const FREEZE_RELOAD_MS = 10 * 60 * 1000;
+  const FREEZE_WARN_MS = 10 * 60 * 1000;
+  const FREEZE_FORCE_RELOAD_MS = 30 * 60 * 1000;
+  const EDIT_FREEZE_DROP_MS = 10 * 60 * 1000;
   const SHIFT_SELECT_GRACE_MIN = 40;
 
   const ITEMS = [
@@ -1061,7 +1118,7 @@
   let freezeTimer = null;
   let editMode = false;
   let editRow = null;
-  let freezeLastAliveAt = window.CFG_now;
+  let freezeLastAliveAt = window.CFG_time;
 
   let proxyInputState = {
     target: null,
@@ -1119,6 +1176,9 @@
     checkForm: document.getElementById('checkForm'),
     submitBtn: document.getElementById('submitBtn'),
     loadingMask: document.getElementById('loadingMask'),
+    resumeMask: document.getElementById('resumeMask'),
+    resumeKeepBtn: document.getElementById('resumeKeepBtn'),
+    resumeReloadBtn: document.getElementById('resumeReloadBtn'),
     toast: document.getElementById('toast'),
 	proxyInputMask: document.getElementById('proxyInputMask'),
 	proxyInputTitle: document.getElementById('proxyInputTitle'),
@@ -1304,7 +1364,7 @@
     updateSelectedShiftText();
 
     el.shiftSelect.addEventListener('change', () => {
-      writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: CFG_now });
+      writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: window.CFG_time });
       updateSelectedShiftText();
     });
   }
@@ -1531,25 +1591,13 @@ function setTime(date, hour, minute) {
 	    }).join('')}
 	  </select>`;
 	}
-    //if (item.type === 'text') {
-    //  return `<input type="text" name="${name}" data-item-no="${item.no}" inputmode="text" autocomplete="off">`;
-    //}
     if (item.type === 'text') {
       const proxyRule = item.allow === 'alphaNumDotParen' ? 'item2Text' : 'plain';
       return `<input type="text" name="${name}" data-item-no="${item.no}" data-proxy-rule="${proxyRule}" inputmode="text" autocomplete="off">`;
     }
-    //if (item.type === 'pinDate') {
-    //  return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
-    //}
     if (item.type === 'pinDate') {
       return `<input type="text" name="${name}" data-item-no="${item.no}" data-pin-date="true" data-proxy-rule="pinDate" inputmode="text" autocomplete="off" placeholder="例：5/21 A、0521B、N/A">`;
     }
-    //if (item.type === 'number') {
-    //  const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
-    //  const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
-    //  const clearInvalid = item.clearInvalidOnBlur ? ' data-clear-invalid-on-blur="true"' : '';
-    //  return `<input type="text" name="${name}" data-item-no="${item.no}" data-number-item="${item.no}" data-min="${item.min}" data-max="${item.max}" data-step="${item.step}"${decimals}${autoZero}${clearInvalid} inputmode="decimal" autocomplete="off">`;
-    //}
     if (item.type === 'number') {
       const decimals = Number.isFinite(Number(item.decimals)) ? ` data-decimals="${Number(item.decimals)}"` : '';
       const autoZero = item.autoZero ? ' data-auto-zero="true"' : '';
@@ -1599,6 +1647,8 @@ function setTime(date, hour, minute) {
       showToast(`已取得機台 ID：${parsed}`, 'ok');
     });
     el.checkForm.addEventListener('submit', submitForm);
+    el.resumeKeepBtn.addEventListener('click', keepAfterFreeze);
+    el.resumeReloadBtn.addEventListener('click', () => location.reload());
 	bindProxyInputEvents();
 	bindProxyTargets();
   }
@@ -1703,11 +1753,42 @@ function setTime(date, hour, minute) {
     const now = window.CFG_time;
     const gap = now - freezeLastAliveAt;
 
-    if (gap > FREEZE_RELOAD_MS) {
+    if (editMode && gap > EDIT_FREEZE_DROP_MS) {
+      sessionStorage.removeItem(FORM_RESTORE_KEY);
+      editMode = false;
+      editRow = null;
       location.reload();
       return;
     }
+
+    if (!editMode && gap > FREEZE_FORCE_RELOAD_MS) {
+      location.reload();
+      return;
+    }
+
+    if (!editMode && gap > FREEZE_WARN_MS) {
+      showResumeMask();
+      return;
+    }
+
     freezeLastAliveAt = now;
+  }
+
+  function showResumeMask() {
+    if (el.resumeMask) {
+      el.resumeMask.classList.add('active');
+    }
+  }
+
+  function hideResumeMask() {
+    if (el.resumeMask) {
+      el.resumeMask.classList.remove('active');
+    }
+  }
+
+  function keepAfterFreeze() {
+    hideResumeMask();
+    freezeLastAliveAt = window.CFG_time;
   }
 
   async function toggleQr() {
@@ -2079,7 +2160,7 @@ function setTime(date, hour, minute) {
       if (data && data.status === 'ok') {
 		saveWorkLogDraft(data, submitParams);
 	    if (editMode) {
-	      localStorage.removeItem(EDIT_RECORD_KEY);
+	      sessionStorage.removeItem(FORM_RESTORE_KEY);
 	      editMode = false;
 	      editRow = null;
 	    }
@@ -2104,7 +2185,7 @@ function setTime(date, hour, minute) {
     const params = new URLSearchParams();
 
 	if (editMode) {
-      params.set('action', 'form_update');
+      params.set('action', 'form_upData');
       params.set('record_id', getEditRecordId());
     } else {
       params.set('action', 'form_write');
@@ -2171,24 +2252,6 @@ function setTime(date, hour, minute) {
       row
     });
     writeJson(WORK_LOG_KEY, alive);
-  } 
-  
-  function saveWorkLogDraft2(data, submitParams) {
-	const now = Date.now();
-	const cutoff = now - WORK_LOG_KEEP_MS;
-
-	const old = readJson(WORK_LOG_KEY);
-	const list = Array.isArray(old) ? old : [];
-
-	const row = buildWorkLogRow(data, submitParams);
-
-	const next = list
-	.filter(item => Number(item && item.saved_at || 0) >= cutoff)
-	.concat([{
-	saved_at: now,
-	row
-	}]);
-	writeJson(WORK_LOG_KEY, next);
   }
 
   function buildWorkLogRow(data, submitParams) {
@@ -2485,8 +2548,16 @@ async function updateGasStatus() {
   }
 
   function readJson(key) {
+    return readStorageJson_(localStorage, key);
+  }
+
+  function readSessionJson(key) {
+    return readStorageJson_(sessionStorage, key);
+  }
+
+  function readStorageJson_(store, key) {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = store.getItem(key);
       return raw ? JSON.parse(raw) : null;
     } catch (err) {
       return null;
@@ -2494,7 +2565,7 @@ async function updateGasStatus() {
   }
 
   function getEditRecordDraft() {
-    const row = readJson(EDIT_RECORD_KEY);
+    const row = readSessionJson(FORM_RESTORE_KEY);
 
     if (!Array.isArray(row)) {
       return null;
@@ -2502,15 +2573,19 @@ async function updateGasStatus() {
     return row;
   }
 
+  function hasEditRecordDraft() {
+    return !!getEditRecordDraft();
+  }
+
   function isEditModeRequest() {
-    const q = new URLSearchParams(location.search);
-    return q.get('mode') === 'edit';
+    return hasEditRecordDraft();
   }
 
   function prepareEditMode() {
     if (!isEditModeRequest()) {
 	  return;
     }
+
     const row = getEditRecordDraft();
     if (!row) {
       editMode = false;
@@ -2518,11 +2593,11 @@ async function updateGasStatus() {
       showToast('找不到可編輯資料。', 'bad');
       return;
     }
+
     editMode = true;
     editRow = row;
     applyEditBasicInfo(editRow);
 	applyEditItems(editRow);
-    console.log('EDIT_MODE_ROW', editRow);
     showToast('已讀取編輯資料。', 'ok');
   }
 

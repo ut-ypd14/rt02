@@ -495,7 +495,7 @@
   <main class="page">
     <section class="hero">
       <h1 class="title">巡檢人員點檢首頁</h1>
-      <a class="top-link" href="./form.html">進入點檢表</a>
+      <a class="top-link" id="newFormLink" href="./form.html">進入點檢表</a>
     </section>
 
     <section class="status-line" aria-label="目前狀態">
@@ -549,6 +549,7 @@
     const MAIL_RESEND_PASS = '30678';
 
     const el = {
+      newFormLink:document.getElementById('newFormLink'),
       currentIdText:document.getElementById('currentIdText'),
       localTimeText:document.getElementById('localTimeText'),
       gasDot:document.getElementById('gasDot'),
@@ -580,6 +581,7 @@
     }
 
     function bindEvents(){
+      el.newFormLink.addEventListener('click', clearFormRestoreDraft);
       el.clearLoginDraftBtn.addEventListener('click', handleAuthButton);
       el.adminToolBtn.addEventListener('click', handleAdminToolButton);
       el.mailToolBtn.addEventListener('click', handleMailToolClick);
@@ -601,6 +603,10 @@
       window.addEventListener('storage', function(evt){
         if (evt && evt.key === WORK_LOG_KEY) loadAndRenderHistory();
       });
+    }
+
+    function clearFormRestoreDraft(){
+      sessionStorage.removeItem(FORM_RESTORE_KEY);
     }
 
     function handleAuthButton(){
