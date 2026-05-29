@@ -307,6 +307,10 @@
       border-radius:0;
       color:#1d4ed8;
       background:transparent;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
       font-size:22px;
       font-weight:950;
       line-height:1;
@@ -356,6 +360,8 @@
     .msg.ok{ color:var(--ok); }
     .msg.bad{ color:var(--bad); }
     .msg.warn{ color:#b45309; }
+
+    .hide{ display:none!important; }
 
 
     .modal-mask{
@@ -512,6 +518,7 @@
     <div class="clear-area" aria-label="快捷操作">
       <div class="tool-group">
         <button type="button" class="tool-btn hidden" id="adminToolBtn" title="管理工具" aria-label="管理工具">🛠</button>
+        <a class="tool-btn hidden" id="mailToolLink" href="./mail.html" title="郵件匯出" aria-label="郵件匯出">✉</a>
         <button type="button" class="tool-btn" id="mailResendBtn" title="補寄資料" aria-label="補寄資料">✉</button>
       </div>
       <button type="button" class="clear-btn" id="clearLoginDraftBtn">登錄</button>
@@ -551,6 +558,7 @@
       historyArea:document.getElementById('historyArea'),
       historyMsg:document.getElementById('historyMsg'),
       adminToolBtn:document.getElementById('adminToolBtn'),
+      mailToolLink:document.getElementById('mailToolLink'),
       mailResendBtn:document.getElementById('mailResendBtn'),
       clearLoginDraftBtn:document.getElementById('clearLoginDraftBtn'),
       actionMsg:document.getElementById('actionMsg'),
@@ -620,6 +628,7 @@
     }
 
     function openMailModal(){
+      clearMsg(el.actionMsg);
       clearMsg(el.mailModalMsg);
       el.mailPassInput.value = '';
       el.mailSendBtn.disabled = false;
@@ -736,10 +745,14 @@
 
     function renderCurrentId(){
       const id = getCurrentId();
+      const isAdmin = hasAdminAccess();
+
       el.currentIdText.textContent = id || '訪客';
       el.clearLoginDraftBtn.textContent = id ? '登出' : '登錄';
       el.clearLoginDraftBtn.classList.toggle('logout', !!id);
-      el.adminToolBtn.classList.toggle('hidden', !hasAdminAccess());
+      el.adminToolBtn.classList.toggle('hidden', !isAdmin);
+      el.mailToolLink.classList.toggle('hidden', !isAdmin);
+      el.mailResendBtn.classList.toggle('hidden', isAdmin);
     }
 
     function startClock(){

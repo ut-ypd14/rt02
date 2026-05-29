@@ -1,0 +1,1051 @@
+/**
+ * 巡檢人員點檢確認表{記錄} - GAS
+ * Version: v0.3.5
+ * 人員主檔：A id、B pass、C name、D shift、E active、F admin
+ * 表單記錄：sh
+ */
+const SPREADSHEET_ID = '1TCEeGdAQvRTuxdknDeGKRXAbYS8iTYdda2XybPqDzNY';
+
+const SH_USER = 'id';
+const SH_FORM = 'sh';
+const FORM_ITEM_COUNT = 24;
+const LOCK_USER_MS = 10000;
+const LOCK_WRITE_MS = 60000;
+const LOCK_MAINT_MS = 180000;
+
+const MAIL_TO = 'ut.ypd14@gmail.com,weihao-hsu@pcbut.com.tw';
+const APP_TZ = 'Asia/Taipei';
+const MAIL_SCAN = 500;
+const MAIL_COLS = 38; // A:AL
+const MAIL_MAX_SPAN_DAYS = 186;
+const MAIL_TMP_PREFIX = 'PI_MAIL_';
+let RUN_NOW = null;
+let DATA_SS = null;
+
+function doGet(e) {
+  return json_({
+    //version: 'v0.3.5',
+    //ts: new Date().toISOString(),
+    action: 'gas_alive',
+	status: 'ok'
+  });
+}
+
+function doPost(e) {
+  try {
+    const p = (e && e.parameter) ? e.parameter : {};
+    const action = String(p.action || '').trim();
+    if (action === 'auth') {
+      return rAuth_(p, getSS_(), SH_USER);
+    }
+
+    if (action === 'form_write') {
+      return rFormW_(p, getSS_(), SH_FORM);
+    }
+
+    if (action === 'form_upData') {
+	  return rFormU_(p, getSS_(), SH_FORM);
+    }
+
+    if (action === 'mail_send') {
+      return rMail_(p, getSS_(), SH_FORM);
+    }
+
+    if (action === 'personnel_save') {
+      return rUserSave_(p, getSS_(), SH_USER);
+    }
+
+	if (action === 'personnel_list') {
+	  return rUserList_(p, getSS_(), SH_USER);
+	}
+
+    return json_({ status: 'error', action: action || '', msg: 'unknown_action' });
+
+  } catch (err) {
+    return json_({
+      status: 'error',
+      action: 'system',
+      msg: String(err && err.message ? err.message : err)
+    });
+  }
+}
+
+function rAuth_(p, ss, sheetName) {
+  const id = normalizeId_(p.id);
+  const pass = String(p.pass || '').trim();
+
+  if (!isValidId_(id)) return json_({ status: 'error', action: 'auth', msg: 'invalid_id' });
+  if (!isValidPass_(pass)) return json_({ status: 'error', action: 'auth', msg: 'invalid_pass' });
+
+  const user = findUserById_(id, ss, sheetName);
+
+  if (!user) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
+  if (String(user.pass || '') !== pass) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
+  if (user.active !== true) return json_({ status: 'error', action: 'auth', msg: 'account_disabled' });
+
+  return json_({
+    action: 'auth',
+    fields: ['id', 'name', 'shift', 'admin'],
+    values: [user.id, user.name, user.shift, user.admin],
+	status: 'ok'
+  });
+}
+
+
+function rUserList_(p, ss, sheetName) {
+  const sh = getSheet_(ss, sheetName);
+  const lastRow = sh.getLastRow();
+
+  const fields = [
+    'id',
+    'pass',
+    'name',
+    'shift',
+    'active',
+    'admin' ];
+
+  if (lastRow < 2) {
+    return json_({
+      action: 'personnel_list',
+      fields: fields,
+      values: [],
+      status: 'ok'
+    });
+  }
+
+  const data = sh.getRange(2, 1, lastRow - 1, 6).getValues();
+  const values = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const id = normalizeId_(row[0]);
+
+    if (!id) continue;
+
+    values.push([ id,
+      String(row[1] || ''),
+      String(row[2] || ''),
+      String(row[3] || '').trim().toUpperCase(),
+	  parseBool_(row[4], true) ? 'TRUE' : 'FALSE',
+	  parseBool_(row[5], false) ? 'TRUE' : '' ]);
+    }
+
+    return json_({
+      action: 'personnel_list',
+      fields: fields,
+      values: values,
+      status: 'ok'
+    });
+}
+
+
+function rUserSave_(p, ss, sheetName) {
+  const adminId = normalizeId_(p.admin_id);
+  const adminPass = String(p.admin_pass || '').trim();
+
+  const id = normalizeId_(p.id);
+  const pass = String(p.pass || '').trim();
+  const name = String(p.name || '').trim();
+  const shift = String(p.shift || '').trim().toUpperCase();
+
+  const admin = findUserById_(adminId, ss, sheetName);
+
+  if (!admin) return json_({ action: 'personnel_save', msg: 'admin_auth_failed', status: 'error' });
+  if (String(admin.pass || '') !== adminPass) return json_({ action: 'personnel_save', msg: 'admin_auth_failed', status: 'error' });
+  if (admin.active !== true) return json_({ action: 'personnel_save', msg: 'admin_auth_failed', status: 'error' });
+  if (admin.admin !== true) return json_({ action: 'personnel_save', msg: 'no_admin_permission', status: 'error' });
+
+  if (!isValidId_(id)) return json_({ action: 'personnel_save', msg: 'invalid_id', status: 'error' });
+
+  let activeProvided = false;
+  let activeValue = null;
+
+  if (hasParam_(p, 'active') && String(p.active || '').trim() !== '') {
+    activeProvided = true;
+    activeValue = parseActiveInput_(p.active);
+
+    if (activeValue === null) {
+      return json_({ action: 'personnel_save', msg: 'invalid_active', status: 'error' });
+    }
+  }
+
+  return withLock_(LOCK_USER_MS, 'personnel_save', function () {
+    const sh = getSheet_(ss, sheetName);
+    const lastRow = sh.getLastRow();
+
+    const systemTime = Utilities.formatDate(
+      new Date(),
+      APP_TZ,
+      'yyyy/MM/dd HH:mm:ss'
+    );
+
+    let foundRow = 0;
+    let targetAdmin = false;
+
+    if (lastRow >= 2) {
+      const values = sh.getRange(2, 1, lastRow - 1, 6).getValues();
+
+      for (let i = 0; i < values.length; i++) {
+        if (normalizeId_(values[i][0]) === id) {
+          foundRow = i + 2;
+          targetAdmin = parseBool_(values[i][5], false);
+          break;
+        }
+      }
+    }
+
+    if (activeProvided && activeValue === false) {
+      if (foundRow <= 0) {
+        return json_({
+          action: 'personnel_save',
+          msg: 'target_not_found',
+          id: id,
+          status: 'error'
+        });
+      }
+
+      if (targetAdmin === true) {
+        return json_({
+          action: 'personnel_save',
+          msg: 'target_is_admin_forbidden',
+          id: id,
+          status: 'error'
+        });
+      }
+
+      sh.getRange(foundRow, 5).setValue('FALSE');
+      sh.getRange(foundRow, 7, 1, 2).setValues([[systemTime, adminId]]);
+
+      return json_({
+        action: 'personnel_save',
+        fields: ['mode', 'id', 'active', 'system_time', 'operator_id'],
+        values: ['disable', id, 'FALSE', systemTime, adminId],
+        status: 'ok'
+      });
+    }
+
+    if (!isValidPass_(pass)) return json_({ action: 'personnel_save', msg: 'invalid_pass', status: 'error' });
+    if (name.length <= 1) return json_({ action: 'personnel_save', msg: 'invalid_name', status: 'error' });
+    if (!/^(A|B|C)$/.test(shift)) return json_({ action: 'personnel_save', msg: 'invalid_shift', status: 'error' });
+
+    if (foundRow > 0) {
+      sh.getRange(foundRow, 2, 1, 3).setValues([[pass, name, shift]]);
+
+      if (activeProvided && activeValue === true) {
+        sh.getRange(foundRow, 5).setValue('TRUE');
+      }
+
+      sh.getRange(foundRow, 7, 1, 2).setValues([[systemTime, adminId]]);
+
+      return json_({
+        action: 'personnel_save',
+        fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'operator_id'],
+        values: [
+          activeProvided && activeValue === true ? 'enable_update' : 'update',
+          id,
+          name,
+          shift,
+          activeProvided && activeValue === true ? 'TRUE' : '',
+          systemTime,
+          adminId ],
+        status: 'ok'
+      });
+    }
+
+    sh.appendRow([
+      id,
+      pass,
+      name,
+      shift,
+      'TRUE',
+      '',
+      systemTime,
+      adminId
+    ]);
+
+    return json_({
+      action: 'personnel_save',
+      fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'operator_id'],
+      values: ['insert', id, name, shift, 'TRUE', systemTime, adminId],
+      status: 'ok'
+    });
+  });
+}
+
+
+function rFormW_(p, ss, sheetName) {
+  return withLock_(LOCK_WRITE_MS, 'form_write', function () {
+    const sh = getSheet_(ss, sheetName);
+
+	const record_id = Utilities.getUuid();
+    const gasTimeText = Utilities.formatDate(
+      new Date(),
+      APP_TZ,
+      'yyyy/MM/dd HH:mm:ss'
+    );
+
+    const row = [
+	  record_id,		// uuid | Google GAS 隨機生成
+      gasTimeText,		// GAS 時間(UTC +8:00)
+      param_(p, 'date'),
+      param_(p, 'shift'),
+      param_(p, 'machine_id'),
+      param_(p, 'id'),
+      param_(p, 'name'),
+      param_(p, 'routine_check')
+    ];
+
+    for (let i = 1; i <= FORM_ITEM_COUNT; i++) {
+      row.push(param_(p, 'item_' + pad2_(i)));
+    }
+
+    sh.appendRow(row);
+
+    return json_({
+	  record_id: record_id,
+      action: 'form_write',
+      status: 'ok'
+    });
+  });
+}
+
+function rFormU_(p, ss, sheetName) {
+  return withLock_(LOCK_WRITE_MS, 'form_update', function () {
+    const sh = getSheet_(ss, sheetName);
+    const record_id = String(param_(p, 'record_id') || '').trim();
+
+    if (!record_id) {
+      return json_({
+        action: 'form_update',
+        msg: 'missing_record',
+		status: 'error'
+      });
+    }
+
+    const targetRow = findFormRecordRow_(sh, record_id);
+
+    if (targetRow <= 0) {
+      return json_({
+        action: 'form_update',
+        msg: 'record_not_found',
+        record_id: record_id,
+		status: 'error'
+      });
+    }
+
+    const gasTimeText = Utilities.formatDate(
+      new Date(),
+      APP_TZ,
+      'yyyy/MM/dd HH:mm:ss'
+    );
+
+    const values = [gasTimeText].concat(buildFormDataValues_(p));
+
+    sh.getRange(targetRow, 2, 1, values.length).setValues([values]);
+
+    return json_({
+      action: 'form_update',
+      record_id: record_id,
+      row_index: targetRow,
+      server_time: gasTimeText,
+	  status: 'ok',
+    });
+  });
+}
+
+function findFormRecordRow_(sh, record_id) {
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const values = sh.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
+
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (String(values[i][0] || '').trim() === record_id) {
+      return i + 2;
+    }
+  }
+
+  return 0;
+}
+
+function buildFormDataValues_(p) {
+  const row = [
+    param_(p, 'date'),
+    param_(p, 'shift'),
+    param_(p, 'machine_id'),
+    param_(p, 'name'),
+    param_(p, 'routine_check')
+  ];
+
+  for (let i = 1; i <= FORM_ITEM_COUNT; i++) {
+    row.push(param_(p, 'item_' + pad2_(i)));
+  }
+
+  return row;
+}
+
+
+function initRun_() {
+  RUN_NOW = new Date();
+  return RUN_NOW;
+}
+
+function runNow_() {
+  return RUN_NOW;
+}
+
+/**
+ * 共用工作簿 getter（全路由共用）。
+ * - doPost 已經 openById 時，傳入 ss，可避免重複開啟。
+ * - 排程函式無 ss 時，才 lazy open。
+ */
+function getSS_(ss) {
+  if (ss) {
+    DATA_SS = ss;
+    return DATA_SS;
+  }
+
+  if (!DATA_SS) {
+    DATA_SS = SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+
+  return DATA_SS;
+}
+
+/**
+ * 前端補寄 / 區間匯出入口。
+ *
+ * 呼叫：
+ * rMail_(p, ss, SH_FORM)
+ *
+ * mode:
+ * - now / resend / 空白：依目前台灣時間產生兩班 keys
+ * - span：依 start_serial/end_serial 或 start_date/end_date 產生區間
+ * - month：上個月 1 號 ~ 上個月最後一天
+ */
+function rMail_(p, ss, sheetName) {
+  try {
+    initRun_();
+
+    const mode = String(mVal_(p, 'mode') || 'resend').trim().toLowerCase();
+
+    const opt = {
+      mode: mode,
+      ss: getSS_(ss),
+      sheetName: sheetName || SH_FORM,
+      scan: MAIL_SCAN
+    };
+
+    if (mode === 'span') {
+      opt.q = mkSpan_(p);
+    } else if (mode === 'month') {
+      opt.q = mkMonth_();
+    } else {
+      opt.q = {
+        kind: 'keys',
+        keys: mkKeys_()
+      };
+    }
+
+    return json_(mailRun_(opt));
+
+  } catch (err) {
+    return json_({
+      action: 'mail_send',
+      status: 'error',
+      msg: String(err && err.message ? err.message : err)
+    });
+  }
+}
+
+/**
+ * 每班自動寄送。
+ * 建議排程：每日 07:50 / 15:50 / 23:50。
+ */
+function mailAuto_() {
+  initRun_();
+
+  return mailRun_({
+    mode: 'auto',
+    ss: getSS_(),
+    sheetName: SH_FORM,
+    scan: MAIL_SCAN,
+    q: {
+      kind: 'keys',
+      keys: mkKeys_()
+    }
+  });
+}
+
+/**
+ * 每月 2 號定期寄上個月資料。
+ */
+function mailMonth_() {
+  initRun_();
+
+  return mailRun_({
+    mode: 'month',
+    ss: getSS_(),
+    sheetName: SH_FORM,
+    scan: MAIL_SCAN,
+    q: mkMonth_()
+  });
+}
+
+/**
+ * Mail 主流程：
+ * q -> rows -> xlsx -> mail
+ */
+function mailRun_(opt) {
+  if (!RUN_NOW) initRun_();
+
+  const q = opt.q;
+  const pack = getRows_(opt.ss, opt.sheetName, q, opt.scan || MAIL_SCAN);
+  const blob = mkXlsx_(pack, q, opt);
+  const subject = mkSubj_(opt, q, pack.rows.length);
+  const body = mkBody_(opt, q, pack);
+
+  sendMail_(subject, body, blob);
+
+  return {
+    action: 'mail_send',
+    status: 'ok',
+    mode: opt.mode || '',
+    kind: q.kind,
+    row_count: pack.rows.length,
+    scan_count: pack.scanCount,
+    subject: subject
+  };
+}
+
+/**
+ * 依目前台灣時間產生兩班資料 key。
+ *
+ * 檢視規則：
+ * 正常上班 2H 內：上一班 + 上兩班
+ * 超過 2H：本班 + 上一班
+ *
+ * 資料 key：
+ * 00:00~01:59 -> S-1|B + S-1|A
+ * 02:00~09:59 -> S-1|C + S-1|B
+ * 10:00~17:59 -> S|A   + S-1|C
+ * 18:00~23:59 -> S|B   + S|A
+ */
+function mkKeys_() {
+  const now = runNow_();
+  const ymd = Utilities.formatDate(now, APP_TZ, 'yyyy/MM/dd');
+  const hm = Number(Utilities.formatDate(now, APP_TZ, 'HHmm'));
+  const s = dateSer_(ymd);
+
+  if (hm < 200) {
+    return [
+      { d: s - 1, s: 'B' },
+      { d: s - 1, s: 'A' }
+    ];
+  }
+
+  if (hm < 1000) {
+    return [
+      { d: s - 1, s: 'C' },
+      { d: s - 1, s: 'B' }
+    ];
+  }
+
+  if (hm < 1800) {
+    return [
+      { d: s,     s: 'A' },
+      { d: s - 1, s: 'C' }
+    ];
+  }
+
+  return [
+    { d: s, s: 'B' },
+    { d: s, s: 'A' }
+  ];
+}
+
+/**
+ * 前端指定區間。
+ * 支援：
+ * - start_serial/end_serial
+ * - start_date/end_date = yyyy/MM/dd 或 yyyy-MM-dd
+ */
+function mkSpan_(p) {
+  let start = Number(mVal_(p, 'start_serial'));
+  let end = Number(mVal_(p, 'end_serial'));
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start <= 0 || end <= 0) {
+    const sd = String(mVal_(p, 'start_date') || '').trim();
+    const ed = String(mVal_(p, 'end_date') || '').trim();
+
+    if (!sd || !ed) {
+      throw new Error('missing_span_date');
+    }
+
+    start = dateSer_(sd);
+    end = dateSer_(ed);
+  }
+
+  start = Math.floor(start);
+  end = Math.floor(end);
+
+  if (end < start) {
+    throw new Error('invalid_span_range');
+  }
+
+  if ((end - start) > MAIL_MAX_SPAN_DAYS) {
+    throw new Error('span_over_6_months');
+  }
+
+  return {
+    kind: 'span',
+    start: start,
+    end: end
+  };
+}
+
+/**
+ * 上個月 1 號 ~ 上個月最後一天。
+ */
+function mkMonth_() {
+  const now = runNow_();
+  const y = Number(Utilities.formatDate(now, APP_TZ, 'yyyy'));
+  const m = Number(Utilities.formatDate(now, APP_TZ, 'MM'));
+
+  let yy = y;
+  let mm = m - 1;
+
+  if (mm <= 0) {
+    yy -= 1;
+    mm = 12;
+  }
+
+  const startText = yy + '/' + mPad2_(mm) + '/01';
+  const lastDay = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
+  const endText = yy + '/' + mPad2_(mm) + '/' + mPad2_(lastDay);
+
+  return {
+    kind: 'span',
+    start: dateSer_(startText),
+    end: dateSer_(endText)
+  };
+}
+
+/**
+ * 取資料。
+ * keys：只讀最後 scan 筆 A:AL，依 C+D 篩。
+ * span：先讀 C 欄找 row 範圍，再讀該範圍 A:AL，依 C 篩。
+ */
+function getRows_(ss, sheetName, q, scan) {
+  const sh = ss.getSheetByName(sheetName);
+  if (!sh) throw new Error('sheet_not_found:' + sheetName);
+
+  const lastRow = sh.getLastRow();
+  const head = sh.getRange(1, 1, 1, MAIL_COLS).getValues()[0];
+
+  if (lastRow < 2) {
+    return {
+      head: head,
+      rows: [],
+      scanCount: 0
+    };
+  }
+
+  if (q.kind === 'keys') {
+    return getRowsByKeys_(sh, head, q.keys, scan);
+  }
+
+  if (q.kind === 'span') {
+    return getRowsBySpan_(sh, head, q.start, q.end);
+  }
+
+  throw new Error('unknown_mail_query_kind');
+}
+
+function getRowsByKeys_(sh, head, keys, scan) {
+  const lastRow = sh.getLastRow();
+  const cnt = Math.min(Number(scan || MAIL_SCAN), lastRow - 1);
+  const startRow = lastRow - cnt + 1;
+
+  const data = sh.getRange(startRow, 1, cnt, MAIL_COLS).getValues();
+  const keySet = {};
+
+  keys.forEach(function(k) {
+    keySet[String(Math.floor(Number(k.d))) + '|' + String(k.s || '').trim().toUpperCase()] = true;
+  });
+
+  const rows = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const d = normSer_(row[2]); // C
+    const s = String(row[3] || '').trim().toUpperCase(); // D
+
+    if (keySet[String(d) + '|' + s]) {
+      rows.push(row);
+    }
+  }
+
+  return {
+    head: head,
+    rows: rows,
+    scanCount: cnt
+  };
+}
+
+function getRowsBySpan_(sh, head, start, end) {
+  const lastRow = sh.getLastRow();
+  const cVals = sh.getRange(2, 3, lastRow - 1, 1).getValues();
+
+  let minRow = 0;
+  let maxRow = 0;
+
+  for (let i = 0; i < cVals.length; i++) {
+    const d = normSer_(cVals[i][0]);
+
+    if (d >= start && d <= end) {
+      const rowNo = i + 2;
+
+      if (!minRow || rowNo < minRow) minRow = rowNo;
+      if (!maxRow || rowNo > maxRow) maxRow = rowNo;
+    }
+  }
+
+  if (!minRow || !maxRow) {
+    return {
+      head: head,
+      rows: [],
+      scanCount: cVals.length
+    };
+  }
+
+  const cnt = maxRow - minRow + 1;
+  const data = sh.getRange(minRow, 1, cnt, MAIL_COLS).getValues();
+  const rows = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const d = normSer_(data[i][2]);
+
+    if (d >= start && d <= end) {
+      rows.push(data[i]);
+    }
+  }
+
+  return {
+    head: head,
+    rows: rows,
+    scanCount: cnt
+  };
+}
+
+/**
+ * 建 xlsx 附件。
+ * 用暫存 Google Sheet 寫入後 export xlsx，再丟到垃圾桶。
+ */
+function mkXlsx_(pack, q, opt) {
+  const name = MAIL_TMP_PREFIX + Utilities.formatDate(runNow_(), APP_TZ, 'yyyyMMdd_HHmmss');
+  const tmp = SpreadsheetApp.create(name);
+  const tmpId = tmp.getId();
+
+  try {
+    const sh = tmp.getSheets()[0];
+    sh.setName('明細');
+
+    const out = [pack.head].concat(pack.rows);
+
+    if (out.length > 0) {
+      sh.getRange(1, 1, out.length, MAIL_COLS).setValues(out);
+      sh.setFrozenRows(1);
+    }
+
+    const sum = tmp.insertSheet('摘要');
+    const meta = [
+      ['mode', opt.mode || ''],
+      ['kind', q.kind],
+      ['target', qText_(q)],
+      ['row_count', pack.rows.length],
+      ['scan_count', pack.scanCount],
+      ['created_at', Utilities.formatDate(runNow_(), APP_TZ, 'yyyy/MM/dd HH:mm:ss')]
+    ];
+    sum.getRange(1, 1, meta.length, 2).setValues(meta);
+
+    SpreadsheetApp.flush();
+
+    const url = 'https://docs.google.com/spreadsheets/d/' + tmpId + '/export?format=xlsx';
+    const res = UrlFetchApp.fetch(url, {
+      headers: {
+        Authorization: 'Bearer ' + ScriptApp.getOAuthToken()
+      },
+      muteHttpExceptions: true
+    });
+
+    if (res.getResponseCode() !== 200) {
+      throw new Error('xlsx_export_failed:' + res.getResponseCode());
+    }
+
+    return res
+      .getBlob()
+      .setName(fileName_(opt, q) + '.xlsx');
+
+  } finally {
+    try {
+      DriveApp.getFileById(tmpId).setTrashed(true);
+    } catch (err) {}
+  }
+}
+
+function sendMail_(subject, body, blob) {
+  MailApp.sendEmail({
+    to: MAIL_TO,
+    subject: subject,
+    body: body,
+    attachments: [blob]
+  });
+}
+
+function mkSubj_(opt, q, n) {
+  const mode = String(opt.mode || '').toLowerCase();
+  let tag = '巡檢';
+
+  if (mode === 'auto') tag = '班別自動';
+  else if (mode === 'month') tag = '月報';
+  else if (mode === 'span') tag = '區間匯出';
+  else if (mode === 'resend' || mode === 'now') tag = '補寄';
+
+  return '[' + tag + '] 巡檢資料 ' + qText_(q) + ' 共 ' + n + ' 筆';
+}
+
+function mkBody_(opt, q, pack) {
+  return [
+    '巡檢資料附件已產生。',
+    '',
+    '類型：' + String(opt.mode || ''),
+    '範圍：' + qText_(q),
+    '筆數：' + pack.rows.length,
+    '掃描筆數：' + pack.scanCount,
+    '產生時間：' + Utilities.formatDate(runNow_(), APP_TZ, 'yyyy/MM/dd HH:mm:ss')
+  ].join('\n');
+}
+
+function fileName_(opt, q) {
+  const mode = String(opt.mode || 'mail').toUpperCase();
+  const ts = Utilities.formatDate(runNow_(), APP_TZ, 'yyyyMMdd_HHmmss');
+
+  return '巡檢資料_' + mode + '_' + safeName_(qText_(q)) + '_' + ts;
+}
+
+function qText_(q) {
+  if (q.kind === 'keys') {
+    return q.keys.map(function(k) {
+      return serText_(k.d) + String(k.s || '').trim().toUpperCase();
+    }).join('+');
+  }
+
+  if (q.kind === 'span') {
+    return serText_(q.start) + '~' + serText_(q.end);
+  }
+
+  return '';
+}
+
+function dateSer_(yyyyMmDd) {
+  const s = String(yyyyMmDd || '').trim().replace(/-/g, '/');
+  const p = s.split('/');
+
+  if (p.length !== 3) {
+    throw new Error('invalid_date:' + yyyyMmDd);
+  }
+
+  const y = Number(p[0]);
+  const m = Number(p[1]);
+  const d = Number(p[2]);
+
+  if (!y || !m || !d) {
+    throw new Error('invalid_date:' + yyyyMmDd);
+  }
+
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000) + 25569;
+}
+
+function serText_(serial) {
+  const n = Math.floor(Number(serial));
+  const ms = (n - 25569) * 86400000;
+  const dt = new Date(ms);
+
+  return Utilities.formatDate(dt, 'UTC', 'yyyy/MM/dd');
+}
+
+function normSer_(v) {
+  if (v instanceof Date) {
+    return dateSer_(Utilities.formatDate(v, APP_TZ, 'yyyy/MM/dd'));
+  }
+
+  const n = Number(v);
+
+  if (Number.isFinite(n)) {
+    return Math.floor(n);
+  }
+
+  const s = String(v || '').trim();
+
+  if (/^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/.test(s)) {
+    return dateSer_(s);
+  }
+
+  return 0;
+}
+
+function safeName_(s) {
+  return String(s || '')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 80);
+}
+
+function mVal_(obj, key) {
+  if (!obj || !Object.prototype.hasOwnProperty.call(obj, key)) return '';
+  const v = obj[key];
+  return v === null || v === undefined ? '' : String(v);
+}
+
+function mPad2_(n) {
+  return String(n).padStart(2, '0');
+}
+
+
+function rFormD_(p, ss, sheetName) {
+  return withLock_(LOCK_MAINT_MS, 'form_delete', function () {
+    const sh = getSheet_(ss, sheetName);
+
+    return json_({
+      action: 'form_delete',
+      sheet: sh.getName(),
+      msg: 'route_ready',
+	  status: 'error'
+    });
+  });
+}
+
+function withLock_(waitMs, actionName, callback) {
+  const lock = LockService.getScriptLock();
+  let locked = false;
+  let stage = 'lock_wait';
+
+  try {
+    lock.waitLock(waitMs);
+    locked = true;
+
+    stage = 'callback';
+    return callback();
+
+  } catch (err) {
+    return json_({
+      action: actionName || '',
+      msg: 'lock_or_task_failed',
+      stage: stage,
+      detail: String(err && err.message ? err.message : err),
+	  status: 'error'
+    });
+
+  } finally {
+    if (locked) {
+      try {
+        lock.releaseLock();
+      } catch (releaseErr) {}
+    }
+  }
+}
+
+function getSheet_(ss, sheetName) {
+  const sh = ss.getSheetByName(sheetName);
+  if (!sh) throw new Error('sheet_not_found:' + sheetName);
+  return sh;
+}
+
+function findUserById_(id, ss, sheetName) {
+  id = normalizeId_(id);
+  if (!isValidId_(id)) return null;
+
+  const sh = getSheet_(ss, sheetName);
+  const lastRow = sh.getLastRow();
+
+  if (lastRow < 2) return null;
+
+  const values = sh.getRange(2, 1, lastRow - 1, 6).getValues();
+
+  for (let i = 0; i < values.length; i++) {
+    const rowId = normalizeId_(values[i][0]);
+
+    if (rowId === id) {
+      return {
+        row: i + 2,
+        id: rowId,
+        pass: String(values[i][1] || ''),
+        name: String(values[i][2] || ''),
+        shift: String(values[i][3] || '').trim().toUpperCase(),
+        active: parseBool_(values[i][4], true),
+        admin: parseBool_(values[i][5], false)
+      };
+    }
+  }
+
+  return null;
+}
+
+function hasParam_(obj, key) {
+  return !!obj && Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function parseActiveInput_(v) {
+  const s = String(v == null ? '' : v).trim().toUpperCase();
+
+  if (s === 'TRUE' || s === 'T' || s === '1') return true;
+  if (s === 'FALSE' || s === 'F' || s === '0') return false;
+
+  return null;
+}
+
+function param_(obj, key) {
+  if (!obj || !Object.prototype.hasOwnProperty.call(obj, key)) {
+    return '';
+  }
+
+  const value = obj[key];
+  return value === null || value === undefined ? '' : String(value);
+}
+
+function pad2_(n) {
+  return String(n).padStart(2, '0');
+}
+
+function normalizeId_(v) {
+  return String(v || '').trim().toUpperCase();
+}
+
+function isValidId_(v) {
+  return /^[A-Z0-9]{5}$/.test(String(v || ''));
+}
+
+function isValidPass_(v) {
+  return /^[A-Za-z0-9]+$/.test(String(v || ''));
+}
+
+function parseBool_(v, srt1) {
+  if (v === true) return true;
+  if (v === false) return false;
+
+  const s = String(v || '').trim().toUpperCase();
+
+  if (s === '') return srt1;
+
+  if (s === 'TRUE' || s === 'T' || s === '1') return true;
+  if (s === 'FALSE' || s === 'F' || s === '0') return false;
+
+  return srt1;
+}
+
+function json_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
