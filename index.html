@@ -1158,12 +1158,20 @@
     }
 
 	function formatMmDdHhMmSs(v){
-	  const s = String(v || '').trim();
-	  if (m) {
-	    return `${m[2]}-${m[3]} ${m[4]}:${m[5]}:${m[6]}`;
-	  }
-	  return formatMmDdHhMmSs(new Date());
-	}
+      const s = String(v || '').trim();
+
+      let m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+      if (m) {
+        return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+      }
+
+      m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2}):(\d{2})/);
+      if (m) {
+        return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+      }
+
+      return '-- --:--:--';
+    }
 
     function setMsg(target, type, text){
       target.className = 'msg ' + (type || '');
