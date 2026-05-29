@@ -518,8 +518,7 @@
     <div class="clear-area" aria-label="快捷操作">
       <div class="tool-group">
         <button type="button" class="tool-btn hidden" id="adminToolBtn" title="管理工具" aria-label="管理工具">🛠</button>
-        <a class="tool-btn hidden" id="mailToolLink" href="./mail.html" title="郵件匯出" aria-label="郵件匯出">✉</a>
-        <button type="button" class="tool-btn" id="mailResendBtn" title="補寄資料" aria-label="補寄資料">✉</button>
+        <a class="tool-btn" id="mailToolBtn" href="./mail.html" title="補寄資料" aria-label="補寄資料">✉</a>
       </div>
       <button type="button" class="clear-btn" id="clearLoginDraftBtn">登錄</button>
       <span class="clear-spacer" aria-hidden="true"></span>
@@ -558,8 +557,7 @@
       historyArea:document.getElementById('historyArea'),
       historyMsg:document.getElementById('historyMsg'),
       adminToolBtn:document.getElementById('adminToolBtn'),
-      mailToolLink:document.getElementById('mailToolLink'),
-      mailResendBtn:document.getElementById('mailResendBtn'),
+      mailToolBtn:document.getElementById('mailToolBtn'),
       clearLoginDraftBtn:document.getElementById('clearLoginDraftBtn'),
       actionMsg:document.getElementById('actionMsg'),
       mailModal:document.getElementById('mailModal'),
@@ -584,7 +582,7 @@
     function bindEvents(){
       el.clearLoginDraftBtn.addEventListener('click', handleAuthButton);
       el.adminToolBtn.addEventListener('click', handleAdminToolButton);
-      el.mailResendBtn.addEventListener('click', openMailModal);
+      el.mailToolBtn.addEventListener('click', handleMailToolClick);
       el.mailCancelBtn.addEventListener('click', closeMailModal);
       el.mailSendBtn.addEventListener('click', handleMailResendSubmit);
       el.mailPassInput.addEventListener('keydown', function(evt){
@@ -625,6 +623,13 @@
     function handleAdminToolButton(){
       if (!hasAdminAccess()) return;
       window.location.href = './admin.html';
+    }
+
+    function handleMailToolClick(evt){
+      if (hasAdminAccess()) return;
+
+      evt.preventDefault();
+      openMailModal();
     }
 
     function openMailModal(){
@@ -751,8 +756,8 @@
       el.clearLoginDraftBtn.textContent = id ? '登出' : '登錄';
       el.clearLoginDraftBtn.classList.toggle('logout', !!id);
       el.adminToolBtn.classList.toggle('hidden', !isAdmin);
-      el.mailToolLink.classList.toggle('hidden', !isAdmin);
-      el.mailResendBtn.classList.toggle('hidden', isAdmin);
+      el.mailToolBtn.title = isAdmin ? '郵件匯出' : '補寄資料';
+      el.mailToolBtn.setAttribute('aria-label', isAdmin ? '郵件匯出' : '補寄資料');
     }
 
     function startClock(){
