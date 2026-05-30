@@ -114,7 +114,7 @@
       <section class="card" aria-label="例行補寄">
         <div class="card-head"><h2 class="card-title">例行補寄</h2><span class="badge">目前應檢視兩班</span></div>
         <div class="card-body">
-          <p class="hint">依 GAS 台灣時間判定目前應檢視的兩班資料，並寄出 .xlsx 附件。</p>
+          <p class="hint">補寄目前應檢視的兩班巡檢資料。</p>
           <div class="actions"><button type="button" class="btn soft" id="sendRoutineBtn">補寄目前兩班</button></div>
           <div class="msg" id="routineMsg"></div>
         </div>
@@ -127,7 +127,7 @@
             <div><label for="startDate">起始日期</label><input id="startDate" type="date"></div>
             <div><label for="endDate">結束日期</label><input id="endDate" type="date"></div>
           </div>
-          <p class="hint">先選迄日，系統會開放迄日前 6 個月內的起始日期；依資料表 C 欄日期序號篩選，不限定班別。</p>
+          <p class="hint">先選迄日，可匯出迄日前 6 個月內的資料；起日預設為迄日前 1 個月。</p>
           <div class="actions"><button type="button" class="btn" id="sendSpanBtn">寄出區間資料</button></div>
           <div class="msg" id="spanMsg"></div>
         </div>
@@ -136,7 +136,7 @@
       <section class="card" aria-label="上月月報補寄">
         <div class="card-head"><h2 class="card-title">上月月報補寄</h2><span class="badge">上月 1 日至月底</span></div>
         <div class="card-body">
-          <p class="hint">依 GAS 台灣時間判定上個月完整日期區間，並寄出 .xlsx 附件。</p>
+          <p class="hint">補寄上個月完整巡檢資料。</p>
           <div class="actions"><button type="button" class="btn soft" id="sendMonthBtn">寄出上月月報</button></div>
           <div class="msg" id="monthMsg"></div>
         </div>
@@ -145,7 +145,7 @@
       <div class="msg" id="actionMsg"></div>
     </section>
 
-    <footer class="footer">巡檢郵件匯出 mail.html v0.1.3</footer>
+    <footer class="footer">巡檢郵件匯出 mail.html v0.1.4</footer>
   </main>
 
   <script>
@@ -289,7 +289,7 @@
     function setDefaultDates(){
       const today = new Date(Number(window.CFG_time || Date.now()));
       const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const start = new Date(end.getTime() - MAX_SPAN_DAYS * MS_DAY);
+      const start = addMonthsSafe(end, -1);
 
       el.endDate.value = toDateInputValue(end);
       el.startDate.value = toDateInputValue(start);
@@ -464,6 +464,15 @@
       const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (!m) return '';
       return m[1] + '/' + m[2] + '/' + m[3];
+    }
+
+    function addMonthsSafe(date, months){
+      const day = date.getDate();
+      const out = new Date(date.getFullYear(), date.getMonth() + months, 1);
+      const lastDay = new Date(out.getFullYear(), out.getMonth() + 1, 0).getDate();
+
+      out.setDate(Math.min(day, lastDay));
+      return out;
     }
 
     function toDateInputValue(date){
