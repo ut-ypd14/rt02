@@ -67,6 +67,7 @@
       color:var(--text); background:#fff; font-size:16px; font-weight:850; outline:none;
     }
     input:focus{ border-color:#93c5fd; box-shadow:0 0 0 4px rgba(37,99,235,.12); }
+    input:invalid{ border-color:var(--bad); background:#fff5f5; }
     .hint{ margin:10px 0 0; color:var(--muted); font-size:13px; line-height:1.5; font-weight:850; }
     .actions{ display:grid; grid-template-columns:1fr; gap:9px; margin-top:13px; }
     .btn{
@@ -110,6 +111,15 @@
     <section class="gate" id="gateBox">正在確認管理權限...</section>
 
     <section id="mainPanel" class="hidden">
+      <section class="card" aria-label="例行補寄">
+        <div class="card-head"><h2 class="card-title">例行補寄</h2><span class="badge">目前應檢視兩班</span></div>
+        <div class="card-body">
+          <p class="hint">依 GAS 台灣時間判定目前應檢視的兩班資料，並寄出 .xlsx 附件。</p>
+          <div class="actions"><button type="button" class="btn soft" id="sendRoutineBtn">補寄目前兩班</button></div>
+          <div class="msg" id="routineMsg"></div>
+        </div>
+      </section>
+
       <section class="card" aria-label="區間匯出">
         <div class="card-head"><h2 class="card-title">區間匯出</h2><span class="badge">最長 6 個月</span></div>
         <div class="card-body">
@@ -117,7 +127,7 @@
             <div><label for="startDate">起始日期</label><input id="startDate" type="date"></div>
             <div><label for="endDate">結束日期</label><input id="endDate" type="date"></div>
           </div>
-          <p class="hint">依資料表 C 欄日期序號篩選，不限定班別。送出後會寄出 .xlsx 附件。</p>
+          <p class="hint">先選迄日，系統會開放迄日前 6 個月內的起始日期；依資料表 C 欄日期序號篩選，不限定班別。</p>
           <div class="actions"><button type="button" class="btn" id="sendSpanBtn">寄出區間資料</button></div>
           <div class="msg" id="spanMsg"></div>
         </div>
@@ -135,7 +145,7 @@
       <div class="msg" id="actionMsg"></div>
     </section>
 
-    <footer class="footer">巡檢郵件匯出 mail.html v0.1.0</footer>
+    <footer class="footer">巡檢郵件匯出 mail.html v0.1.3</footer>
   </main>
 
   <script>
@@ -144,6 +154,7 @@
     const LOGIN_DRAFT_KEY = 'PI_LOGIN_DRAFT_V001';
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
     const MAX_SPAN_DAYS = 186;
+    const MS_DAY = 86400000;
 
     const el = {
       localTime:document.getElementById('localTime'),
@@ -152,8 +163,10 @@
       mainPanel:document.getElementById('mainPanel'),
       startDate:document.getElementById('startDate'),
       endDate:document.getElementById('endDate'),
+      sendRoutineBtn:document.getElementById('sendRoutineBtn'),
       sendSpanBtn:document.getElementById('sendSpanBtn'),
       sendMonthBtn:document.getElementById('sendMonthBtn'),
+      routineMsg:document.getElementById('routineMsg'),
       spanMsg:document.getElementById('spanMsg'),
       monthMsg:document.getElementById('monthMsg'),
       actionMsg:document.getElementById('actionMsg')
@@ -183,6 +196,9 @@
     }
 
     function bindEvents(){
+      el.startDate.addEventListener('change', handleDateChange);
+      el.endDate.addEventListener('change', handleDateChange);
+      el.sendRoutineBtn.addEventListener('click', sendRoutineMail);
       el.sendSpanBtn.addEventListener('click', sendSpanMail);
       el.sendMonthBtn.addEventListener('click', sendMonthMail);
     }
@@ -271,43 +287,114 @@
     }
 
     function setDefaultDates(){
-      const now = new Date(Number(window.CFG_time || Date.now()));
-      const first = new Date(now.getFullYear(), now.getMonth(), 1);
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      el.startDate.value = toDateInputValue(first);
-      el.endDate.value = toDateInputValue(today);
+      const today = new Date(Number(window.CFG_time || Date.now()));
+      const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const start = new Date(end.getTime() - MAX_SPAN_DAYS * MS_DAY);
+
+      el.endDate.value = toDateInputValue(end);
+      el.startDate.value = toDateInputValue(start);
+      setSpanDateLimits();
     }
 
-    function sendSpanMail(){
-      clearMsg(el.actionMsg);
-      clearMsg(el.monthMsg);
+    function handleDateChange(){
+      setSpanDateLimits();
+      validateSpanDate(false);
+    }
 
+    function setSpanDateLimits(){
+      const today = toDateInputValue(new Date(Number(window.CFG_time || Date.now())));
+      el.endDate.max = today;
+
+      const end = el.endDate.value || today;
+      const endMs = parseDateInputMs(end);
+
+      if (!Number.isFinite(endMs)) {
+        el.startDate.removeAttribute('min');
+        el.startDate.removeAttribute('max');
+        return;
+      }
+
+      const minStart = toDateInputValue(new Date(endMs - MAX_SPAN_DAYS * MS_DAY));
+
+      el.startDate.min = minStart;
+      el.startDate.max = end;
+
+      if (el.startDate.value && el.startDate.value < minStart) {
+        el.startDate.value = minStart;
+      }
+
+      if (el.startDate.value && el.startDate.value > end) {
+        el.startDate.value = end;
+      }
+
+      if (el.endDate.value && el.endDate.value > today) {
+        el.endDate.value = today;
+      }
+    }
+
+    function validateSpanDate(showMsg){
       const start = el.startDate.value;
       const end = el.endDate.value;
 
       if (!start || !end){
-        setMsg(el.spanMsg, 'bad', '請選擇起始與結束日期。');
-        return;
+        if (showMsg) setMsg(el.spanMsg, 'bad', '請選擇起始與結束日期。');
+        return false;
       }
 
       const startMs = parseDateInputMs(start);
       const endMs = parseDateInputMs(end);
 
       if (!Number.isFinite(startMs) || !Number.isFinite(endMs)){
-        setMsg(el.spanMsg, 'bad', '日期格式異常。');
-        return;
+        if (showMsg) setMsg(el.spanMsg, 'bad', '日期格式異常。');
+        return false;
       }
 
       if (endMs < startMs){
         setMsg(el.spanMsg, 'bad', '結束日期不可早於起始日期。');
+        return false;
+      }
+
+      const todayMs = parseDateInputMs(toDateInputValue(new Date(Number(window.CFG_time || Date.now()))));
+      if (endMs > todayMs){
+        setMsg(el.spanMsg, 'bad', '迄日不可晚於今天。');
+        return false;
+      }
+
+      const days = Math.floor((endMs - startMs) / MS_DAY);
+      if (days > MAX_SPAN_DAYS){
+        setMsg(el.spanMsg, 'bad', '區間不可超過 6 個月。');
+        return false;
+      }
+
+      clearMsg(el.spanMsg);
+      return true;
+    }
+
+    function sendRoutineMail(){
+      clearMsg(el.actionMsg);
+      clearMsg(el.routineMsg);
+      clearMsg(el.spanMsg);
+      clearMsg(el.monthMsg);
+
+      const p = new URLSearchParams();
+      p.set('action', 'mail_send');
+      p.set('mode', 'resend');
+      appendOperatorInfo(p);
+
+      postMail(p, el.sendRoutineBtn, el.routineMsg, '例行補寄完成');
+    }
+
+    function sendSpanMail(){
+      clearMsg(el.actionMsg);
+      clearMsg(el.routineMsg);
+      clearMsg(el.monthMsg);
+
+      if (!validateSpanDate(true)) {
         return;
       }
 
-      const days = Math.floor((endMs - startMs) / 86400000);
-      if (days > MAX_SPAN_DAYS){
-        setMsg(el.spanMsg, 'bad', '區間不可超過 6 個月。');
-        return;
-      }
+      const start = el.startDate.value;
+      const end = el.endDate.value;
 
       const p = new URLSearchParams();
       p.set('action', 'mail_send');
@@ -321,6 +408,7 @@
 
     function sendMonthMail(){
       clearMsg(el.actionMsg);
+      clearMsg(el.routineMsg);
       clearMsg(el.spanMsg);
 
       const p = new URLSearchParams();
