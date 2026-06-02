@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
+  <script type="text/javascript" nonce="72e075fb16c14676ba6410b7c16" src="//local.adguard.org?ts=1780420789542&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2Fc9fb99b2-ac4e-4aad-a092-44bfa6315c3d.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="72e075fb16c14676ba6410b7c16" src="//local.adguard.org?ts=1780420789542&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢確認表</title>
@@ -1078,10 +1078,10 @@
     A: {},
     B: {},
     F: {},
-    K: {},
+    K: {16: { mode: 'hide' }},
     Q: {},
     C: {
-      2: { mode: 'hideLock', value: '空機' },
+      2: { mode: 'lock', value: '空機' },
       3: { mode: 'hide' },
 	  4: { mode: 'hide' },
 	  5: { mode: 'hide' },
@@ -1111,18 +1111,16 @@
   const ITEM1_REQUIRED_RULES = {
     // 此表為「免檢查值」清單。
     // 預設送出前會檢查項次2~24是否有值。
-    // 若某狀態下某些項目不需審核是否有值，就填入該狀態陣列。
-    // ITEM1_RULES 只控制顯示/鎖定/帶值；ITEM1_REQUIRED_RULES 只控制是否跳過必填檢查。
 
-    A: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
-    B: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
-    F: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
-    K: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
-    Q: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
-    C: [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
-    G: [],
-    R: [],
-    L: []
+    A: [],
+    B: [],
+    F: [],
+    K: [16],
+    Q: [16],
+    C: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,23,24],
+    G: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
+    R: [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
+    L: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
   };
 
   let authState = null;
