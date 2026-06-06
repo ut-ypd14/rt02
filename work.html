@@ -72,7 +72,7 @@
     .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)} .msg.warn{color:#b45309}
     .list{width:100%; border-top:1px solid rgba(226,232,240,.9); background:#fff}
     .row{
-      display:grid; grid-template-columns:2.4ch 2rem 7ch 5.4ch minmax(0,1fr);
+      display:grid; grid-template-columns:2.4ch 2rem 10.8ch 5.4ch minmax(0,1fr);
       align-items:center; column-gap:.42rem; min-height:38px; padding:5px 3px;
       border-bottom:1px solid rgba(226,232,240,.8); font-size:13px; font-weight:850; white-space:nowrap;
     }
@@ -103,7 +103,7 @@
       .status-id,.status-time,.status-gas{font-size:13px}
       .filters{grid-template-columns:1fr 104px 82px; gap:6px}
       .filter-badge,.person-select,.refresh-btn,.delete-btn{font-size:14px}
-      .row{grid-template-columns:2ch 1.7rem 6.4ch 4.8ch minmax(0,1fr); column-gap:.26rem; font-size:12px; min-height:36px}
+      .row{grid-template-columns:2ch 1.7rem 9.8ch 4.8ch minmax(0,1fr); column-gap:.26rem; font-size:12px; min-height:36px}
     }
   </style>
 </head>
@@ -176,7 +176,7 @@
     };
     let authState = null, targetSerial = '', targetShift = '';
     let allRows = [], filteredBaseRows = [], visibleRows = [];
-    let freezeLastAliveAt = window.CFG_time, freezeTimer = null;
+    let freezeLastAliveAt = window.CFG_time, freezeTimer = null, actionMsgTimer = null;
     document.addEventListener('DOMContentLoaded', init);
     async function init(){
       if (!getApiUrl()){ setMsg(el.actionMsg, 'bad', '找不到 GAS 位置'); return; }
@@ -224,6 +224,8 @@
       el.targetText.textContent = formatDateMmDd(targetDate) + ' ' + (targetShift || '-');
     }
     async function loadWorkList(){
+      setupTarget();
+
       if (!targetShift){ setMsg(el.actionMsg, 'bad', '找不到管理者預設班別'); return; }
       setGasStatus('warn'); setMsg(el.actionMsg, 'warn', '讀取中...'); el.refreshBtn.disabled = true; el.deleteBtn.disabled = true;
       try{
@@ -232,7 +234,7 @@
         const data = await postWithTimeout(params, POST_TIMEOUT_MS);
         if (!data || data.status !== 'ok') throw new Error(data && data.msg ? data.msg : '回應異常');
         allRows = rowsFromResponse(data);
-        setGasStatus('ok'); setMsg(el.actionMsg, 'ok', '已更新清單');
+        setGasStatus('ok'); setActionMsg('ok', '已更新清單', 2500);
         applyTargetFilter(); buildPersonSelect(); renderVisibleRows(); resetFreezeAlive();
       }catch(err){
         setGasStatus('bad'); setMsg(el.actionMsg, 'bad', '讀取失敗：' + formatError(err));
@@ -310,7 +312,7 @@
         const idSet = {}; ids.forEach(function(id){ idSet[id] = true; });
         allRows = allRows.filter(function(row){ return !idSet[row.record_id]; });
         closeDeleteModal(); applyTargetFilter(); buildPersonSelect(); renderVisibleRows();
-        setMsg(el.actionMsg, 'ok', '已刪除 ' + Number(data.deleted_count || 0) + ' 筆'); resetFreezeAlive();
+        setActionMsg('ok', '已刪除 ' + Number(data.deleted_count || 0) + ' 筆', 3000); resetFreezeAlive();
       }catch(err){
         setMsg(el.deleteModalMsg, 'bad', '刪除失敗：' + formatError(err)); el.deleteConfirmBtn.disabled = false;
       }
@@ -356,6 +358,17 @@
       if (m) return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
       return '-- --:--:--';
     }
+    function setActionMsg(type, text, ms){
+      clearTimeout(actionMsgTimer);
+      setMsg(el.actionMsg, type, text);
+
+      if (ms && Number(ms) > 0){
+        actionMsgTimer = setTimeout(function(){
+          clearMsg(el.actionMsg);
+        }, Number(ms));
+      }
+    }
+
     function setMsg(target, type, text){ target.className = 'msg ' + (type || ''); target.textContent = text || ''; }
     function clearMsg(target){ target.className = 'msg'; target.textContent = ''; }
     function formatError(err){ if (!err) return 'unknown_error'; if (err.name === 'AbortError') return 'timeout'; return String(err.message || err); }
