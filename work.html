@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <script src="./config.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>工作數據管理</title>
+  <style>
+    :root{
+      --bg:#f4f7fb; --text:#1f2937; --muted:#64748b; --main:#2563eb; --main2:#1d4ed8;
+      --ok:#16a34a; --warn:#f59e0b; --bad:#dc2626; --soft:#eef4ff; --line:#dbe4f0;
+      --shadow:0 10px 28px rgba(15,23,42,.08); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",Arial,sans-serif;
+      color:var(--text);
+      background:radial-gradient(circle at top left, rgba(37,99,235,.12), transparent 34%),
+        linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);
+      -webkit-text-size-adjust:100%;
+    }
+    .page{width:min(980px,100%); margin:0 auto; padding:14px 10px 24px}
+    .hero{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 10px}
+    .title{margin:0; font-size:22px; line-height:1.18; letter-spacing:.02em; font-weight:900}
+    .home-link{
+      flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; min-height:36px;
+      padding:7px 12px; border-radius:999px; border:1px solid rgba(29,78,216,.2); color:#fff;
+      background:linear-gradient(135deg,var(--main),var(--main2)); font-size:14px; font-weight:900;
+      text-decoration:none; white-space:nowrap; box-shadow:0 9px 20px rgba(37,99,235,.18);
+    }
+    .status-line{
+      display:grid; grid-template-columns:4.7em minmax(0,1fr) 3.2em; align-items:center; gap:3px;
+      min-height:40px; margin-bottom:12px; padding:7px 11px 7px 8px;
+      border:1px solid rgba(226,232,240,.95); border-radius:15px; background:rgba(255,255,255,.94);
+      box-shadow:0 8px 20px rgba(15,23,42,.06); overflow:hidden; white-space:nowrap;
+    }
+    .status-id,.status-time,.status-gas{
+      min-width:0; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-size:14px; font-weight:900; white-space:nowrap;
+    }
+    .status-id{text-align:center}
+    .status-time{text-align:center; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+    .status-gas{display:inline-flex; align-items:center; justify-content:flex-end; gap:5px; padding-right:4px}
+    .gas-dot{width:9px; height:9px; border-radius:999px; background:var(--warn); box-shadow:0 0 0 3px rgba(245,158,11,.14); flex:0 0 auto}
+    .gas-dot.ok{background:var(--ok); box-shadow:0 0 0 3px rgba(22,163,74,.13)}
+    .gas-dot.bad{background:var(--bad); box-shadow:0 0 0 3px rgba(220,38,38,.13)}
+    .card{border:1px solid rgba(226,232,240,.96); border-radius:var(--radius); background:rgba(255,255,255,.96); box-shadow:var(--shadow); overflow:hidden}
+    .card-head{
+      display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 13px 9px;
+      border-bottom:1px solid rgba(226,232,240,.72);
+      background:linear-gradient(180deg,rgba(248,251,255,.95),rgba(255,255,255,.95));
+    }
+    .card-title{margin:0; font-size:18px; font-weight:900; letter-spacing:.02em}
+    .count-pill{
+      display:inline-flex; align-items:center; justify-content:center; min-height:26px; padding:3px 9px;
+      border-radius:999px; color:#1d4ed8; background:var(--soft); border:1px solid rgba(147,197,253,.42);
+      font-size:13px; font-weight:900; white-space:nowrap;
+    }
+    .card-body{padding:10px 9px 12px}
+    .filters{display:grid; grid-template-columns:minmax(0,1fr) 122px 92px; gap:8px; align-items:center; margin-bottom:10px}
+    .filter-badge,.person-select,.refresh-btn,.delete-btn,.modal-btn{min-height:40px; border-radius:14px; font-size:15px; font-weight:900}
+    .filter-badge{
+      display:flex; align-items:center; justify-content:center; padding:8px 10px; border:1px solid var(--line);
+      background:#f8fbff; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .person-select{width:100%; border:1px solid var(--line); background:#fff; color:var(--text); padding:8px 9px; outline:none}
+    .refresh-btn{border:1px solid rgba(37,99,235,.22); background:#eff6ff; color:#1d4ed8; cursor:pointer}
+    .action-row{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; margin:8px 0 10px}
+    .delete-btn{min-width:118px; border:1px solid rgba(220,38,38,.2); color:#b91c1c; background:#fff5f5; cursor:pointer}
+    .delete-btn:disabled,.refresh-btn:disabled,.modal-btn:disabled{opacity:.55; cursor:not-allowed}
+    .msg{min-height:20px; color:var(--muted); font-size:13px; font-weight:850}
+    .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)} .msg.warn{color:#b45309}
+    .list{width:100%; border-top:1px solid rgba(226,232,240,.9); background:#fff}
+    .row{
+      display:grid; grid-template-columns:2.4ch 2rem 7ch 5.4ch minmax(0,1fr);
+      align-items:center; column-gap:.42rem; min-height:38px; padding:5px 3px;
+      border-bottom:1px solid rgba(226,232,240,.8); font-size:13px; font-weight:850; white-space:nowrap;
+    }
+    .cell{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .seq{text-align:center; color:#475569; font-variant-numeric:tabular-nums}
+    .check{display:flex; align-items:center; justify-content:center}
+    .check input{width:18px; height:18px; accent-color:var(--main2)}
+    .time{color:#475569; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; font-variant-numeric:tabular-nums; letter-spacing:-.04em}
+    .machine{color:#0f172a; font-weight:950}
+    .part{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; font-variant-numeric:tabular-nums; letter-spacing:-.035em}
+    .empty{padding:22px 10px; color:var(--muted); background:#f8fafc; border:1px dashed #cbd5e1; border-radius:14px; text-align:center; font-size:15px; font-weight:850}
+    .hide{display:none!important}
+    .modal-mask{
+      position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+      padding:18px; background:rgba(15,23,42,.42); backdrop-filter:blur(4px);
+    }
+    .modal-card{width:min(360px,100%); border:1px solid rgba(226,232,240,.96); border-radius:20px; background:rgba(255,255,255,.98); box-shadow:0 18px 46px rgba(15,23,42,.22); padding:16px}
+    .modal-title{margin:0 0 8px; color:#0f172a; font-size:18px; font-weight:950; line-height:1.2}
+    .modal-sub{margin:0 0 12px; color:var(--muted); font-size:13px; font-weight:850; line-height:1.45}
+    .modal-input{width:100%; min-height:44px; padding:10px 12px; border:1px solid rgba(203,213,225,.95); border-radius:15px; font-size:16px; font-weight:850; outline:none}
+    .modal-actions{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:12px}
+    .modal-btn{border:1px solid rgba(37,99,235,.22); background:#eff6ff; color:#1d4ed8; cursor:pointer}
+    .modal-btn.primary{color:#fff; border-color:rgba(29,78,216,.18); background:linear-gradient(135deg,var(--main),var(--main2)); box-shadow:0 9px 20px rgba(37,99,235,.18)}
+    button:active,a:active{transform:scale(.98)}
+    @media (max-width:390px){
+      .page{padding:12px 7px 22px}.title{font-size:19px}.home-link{min-height:34px; padding:7px 9px; font-size:13px}
+      .status-line{grid-template-columns:4.4em minmax(0,1fr) 3.05em; padding:7px 10px 7px 7px; gap:2px}
+      .status-id,.status-time,.status-gas{font-size:13px}
+      .filters{grid-template-columns:1fr 104px 82px; gap:6px}
+      .filter-badge,.person-select,.refresh-btn,.delete-btn{font-size:14px}
+      .row{grid-template-columns:2ch 1.7rem 6.4ch 4.8ch minmax(0,1fr); column-gap:.26rem; font-size:12px; min-height:36px}
+    }
+  </style>
+</head>
+<body>
+  <main class="page" id="app">
+    <section class="hero">
+      <h1 class="title">工作數據管理</h1>
+      <a class="home-link" href="./index.html">返回首頁</a>
+    </section>
+    <section class="status-line" aria-label="目前狀態">
+      <span class="status-id" id="currentIdText">----</span>
+      <span class="status-time" id="localTimeText">--</span>
+      <span class="status-gas"><span id="gasStatusText">GAS</span><span class="gas-dot" id="gasDot"></span></span>
+    </section>
+    <section class="card">
+      <div class="card-head">
+        <h2 class="card-title">工作清單</h2>
+        <span class="count-pill" id="recordCountText">0 筆</span>
+      </div>
+      <div class="card-body">
+        <div class="filters">
+          <div class="filter-badge" id="targetText">--</div>
+          <select class="person-select" id="personSelect" aria-label="人員篩選"><option value="">全部</option></select>
+          <button type="button" class="refresh-btn" id="refreshBtn">重新整理</button>
+        </div>
+        <div class="action-row">
+          <div class="msg" id="actionMsg"></div>
+          <button type="button" class="delete-btn" id="deleteBtn" disabled>刪除選取</button>
+        </div>
+        <div id="listArea" class="empty">資料載入中...</div>
+      </div>
+    </section>
+  </main>
+  <section class="modal-mask hide" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-card">
+      <h2 class="modal-title" id="deleteModalTitle">確認刪除</h2>
+      <p class="modal-sub">請輸入刪除密碼。刪除後僅從本頁移除，正式資料將由系統標記為失效。</p>
+      <input class="modal-input" id="deletePassInput" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="刪除密碼">
+      <div class="modal-actions">
+        <button type="button" class="modal-btn" id="deleteCancelBtn">取消</button>
+        <button type="button" class="modal-btn primary" id="deleteConfirmBtn">確認</button>
+      </div>
+      <div class="msg" id="deleteModalMsg"></div>
+    </div>
+  </section>
+  <script>
+    'use strict';
+    const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
+    const DELETE_PASS = '2486';
+    const FREEZE_LIMIT_MS = 30 * 60 * 1000;
+    const FREEZE_CHECK_MS = 30 * 1000;
+    const POST_TIMEOUT_MS = 15000;
+    const el = {
+      currentIdText:document.getElementById('currentIdText'),
+      localTimeText:document.getElementById('localTimeText'),
+      gasDot:document.getElementById('gasDot'),
+      gasStatusText:document.getElementById('gasStatusText'),
+      targetText:document.getElementById('targetText'),
+      personSelect:document.getElementById('personSelect'),
+      refreshBtn:document.getElementById('refreshBtn'),
+      deleteBtn:document.getElementById('deleteBtn'),
+      actionMsg:document.getElementById('actionMsg'),
+      recordCountText:document.getElementById('recordCountText'),
+      listArea:document.getElementById('listArea'),
+      deleteModal:document.getElementById('deleteModal'),
+      deletePassInput:document.getElementById('deletePassInput'),
+      deleteCancelBtn:document.getElementById('deleteCancelBtn'),
+      deleteConfirmBtn:document.getElementById('deleteConfirmBtn'),
+      deleteModalMsg:document.getElementById('deleteModalMsg')
+    };
+    let authState = null, targetSerial = '', targetShift = '';
+    let allRows = [], filteredBaseRows = [], visibleRows = [];
+    let freezeLastAliveAt = window.CFG_time, freezeTimer = null;
+    document.addEventListener('DOMContentLoaded', init);
+    async function init(){
+      if (!getApiUrl()){ setMsg(el.actionMsg, 'bad', '找不到 GAS 位置'); return; }
+      authState = getAdminAuth();
+      if (!authState){ setMsg(el.actionMsg, 'bad', '無管理權限，返回首頁。'); setTimeout(goHome, 800); return; }
+      bindEvents(); startClock(); startFreezeGuard(); setupTarget(); await loadWorkList();
+    }
+    function bindEvents(){
+      el.refreshBtn.addEventListener('click', loadWorkList);
+      el.personSelect.addEventListener('change', renderVisibleRows);
+      el.deleteBtn.addEventListener('click', openDeleteModal);
+      el.deleteCancelBtn.addEventListener('click', closeDeleteModal);
+      el.deleteConfirmBtn.addEventListener('click', handleDeleteConfirm);
+      el.deletePassInput.addEventListener('keydown', function(evt){
+        if (evt.key === 'Enter') handleDeleteConfirm();
+        if (evt.key === 'Escape') closeDeleteModal();
+      });
+      el.deleteModal.addEventListener('click', function(evt){ if (evt.target === el.deleteModal) closeDeleteModal(); });
+      document.addEventListener('visibilitychange', function(){ if (!document.hidden) checkFreezeGuard(); });
+      window.addEventListener('focus', checkFreezeGuard);
+    }
+    function getApiUrl(){ return typeof window.api_url === 'string' && window.api_url.trim() ? window.api_url.trim() : ''; }
+    function getAdminAuth(){
+      const shortAuth = readJsonStorage(SHORT_AUTH_KEY, null);
+      if (!shortAuth || typeof shortAuth !== 'object') return null;
+      if (!shortAuth.id || !isShortAuthAlive(shortAuth)) return null;
+      if (!isAdminValue(shortAuth.admin)) return null;
+      return { id:normalizeText(shortAuth.id).toUpperCase(), name:normalizeText(shortAuth.name), shift:normalizeShift(shortAuth.shift) };
+    }
+    function isShortAuthAlive(shortAuth){ const expireTime = Number(shortAuth && shortAuth.expire_time || 0); return !!expireTime && window.CFG_time <= expireTime; }
+    function isAdminValue(value){
+      if (value === true) return true;
+      const v = String(value == null ? '' : value).trim().toUpperCase();
+      return v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1';
+    }
+    function normalizeShift(value){ const v = String(value || '').trim().toUpperCase(); return /^[ABC]$/.test(v) ? v : ''; }
+    function setupTarget(){
+      const now = new Date(window.CFG_time);
+      const hm = now.getHours() * 100 + now.getMinutes();
+      const base = startOfDay(now);
+      const targetDate = hm < 1000 ? addDays(base, -1) : base;
+      targetSerial = dateToSerial(targetDate);
+      targetShift = authState.shift;
+      el.currentIdText.textContent = authState.id || '----';
+      el.targetText.textContent = formatDateMmDd(targetDate) + ' ' + (targetShift || '-');
+    }
+    async function loadWorkList(){
+      if (!targetShift){ setMsg(el.actionMsg, 'bad', '找不到管理者預設班別'); return; }
+      setGasStatus('warn'); setMsg(el.actionMsg, 'warn', '讀取中...'); el.refreshBtn.disabled = true; el.deleteBtn.disabled = true;
+      try{
+        const params = new URLSearchParams();
+        params.set('action', 'work_data'); params.set('mode', 'list'); params.set('operator_id', authState.id || '');
+        const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+        if (!data || data.status !== 'ok') throw new Error(data && data.msg ? data.msg : '回應異常');
+        allRows = rowsFromResponse(data);
+        setGasStatus('ok'); setMsg(el.actionMsg, 'ok', '已更新清單');
+        applyTargetFilter(); buildPersonSelect(); renderVisibleRows(); resetFreezeAlive();
+      }catch(err){
+        setGasStatus('bad'); setMsg(el.actionMsg, 'bad', '讀取失敗：' + formatError(err));
+      }finally{ el.refreshBtn.disabled = false; }
+    }
+    function rowsFromResponse(data){
+      const values = Array.isArray(data.values) ? data.values : [];
+      return values.map(function(row){
+        return {
+          record_id:normalizeText(row[0]),
+          server_time:normalizeText(row[1]),
+          date:String(row[2] == null ? '' : row[2]).trim(),
+          shift:normalizeText(row[3]).toUpperCase(),
+          machine_id:normalizeText(row[4]).toUpperCase(),
+          id:normalizeText(row[5]).toUpperCase(),
+          name:normalizeText(row[6]),
+          item_02:normalizeText(row[7])
+        };
+      });
+    }
+    function applyTargetFilter(){
+      filteredBaseRows = allRows.filter(function(row){
+        return isValidRecordId(row.record_id) && String(row.date) === String(targetSerial) && row.shift === targetShift;
+      });
+    }
+    function buildPersonSelect(){
+      const current = el.personSelect.value, map = {};
+      filteredBaseRows.forEach(function(row){ if (row.id && !map[row.id]) map[row.id] = row.name ? row.id + ' ' + row.name : row.id; });
+      const ids = Object.keys(map).sort();
+      el.personSelect.innerHTML = '<option value="">全部</option>';
+      ids.forEach(function(id){ const opt = document.createElement('option'); opt.value = id; opt.textContent = map[id]; el.personSelect.appendChild(opt); });
+      if (current && map[current]) el.personSelect.value = current;
+    }
+    function renderVisibleRows(){
+      const person = normalizeText(el.personSelect.value).toUpperCase();
+      visibleRows = filteredBaseRows.filter(function(row){ return !person || row.id === person; });
+      el.recordCountText.textContent = visibleRows.length + ' 筆';
+      el.listArea.innerHTML = '';
+      if (!visibleRows.length){ el.listArea.className = 'empty'; el.listArea.textContent = '目前無資料'; updateDeleteButton(); return; }
+      el.listArea.className = 'list';
+      visibleRows.forEach(function(row, index){ el.listArea.appendChild(buildRow(row, index + 1)); });
+      updateDeleteButton();
+    }
+    function buildRow(record, seq){
+      const row = document.createElement('div'); row.className = 'row';
+      appendCell(row, String(seq), 'cell seq');
+      const checkCell = document.createElement('div'); checkCell.className = 'cell check';
+      const chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = record.record_id; chk.addEventListener('change', updateDeleteButton);
+      checkCell.appendChild(chk); row.appendChild(checkCell);
+      appendCell(row, formatServerTime(record.server_time), 'cell time');
+      appendCell(row, record.machine_id, 'cell machine');
+      appendCell(row, record.item_02, 'cell part');
+      return row;
+    }
+    function appendCell(row, text, className){ const cell = document.createElement('div'); cell.className = className || 'cell'; cell.textContent = text || ''; row.appendChild(cell); }
+    function getCheckedIds(){ return Array.from(el.listArea.querySelectorAll('input[type="checkbox"]:checked')).map(function(chk){ return normalizeText(chk.value); }).filter(Boolean); }
+    function updateDeleteButton(){ el.deleteBtn.disabled = getCheckedIds().length <= 0; }
+    function openDeleteModal(){
+      if (!getCheckedIds().length){ setMsg(el.actionMsg, 'warn', '請先勾選資料'); return; }
+      clearMsg(el.deleteModalMsg); el.deletePassInput.value = ''; el.deleteConfirmBtn.disabled = false; el.deleteModal.classList.remove('hide');
+      setTimeout(function(){ el.deletePassInput.focus(); }, 80);
+    }
+    function closeDeleteModal(){ el.deleteModal.classList.add('hide'); el.deletePassInput.value = ''; clearMsg(el.deleteModalMsg); el.deleteConfirmBtn.disabled = false; }
+    async function handleDeleteConfirm(){
+      const pass = normalizeText(el.deletePassInput.value);
+      if (pass !== DELETE_PASS){ setMsg(el.deleteModalMsg, 'bad', '密碼錯誤'); el.deletePassInput.select(); return; }
+      const ids = getCheckedIds();
+      if (!ids.length){ closeDeleteModal(); setMsg(el.actionMsg, 'warn', '沒有選取資料'); return; }
+      el.deleteConfirmBtn.disabled = true; setMsg(el.deleteModalMsg, 'warn', '刪除中...');
+      try{
+        const params = new URLSearchParams();
+        params.set('action', 'work_data'); params.set('mode', 'delete'); params.set('record_ids', ids.join(',')); params.set('operator_id', authState.id || '');
+        const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+        if (!data || data.status !== 'ok') throw new Error(data && data.msg ? data.msg : '回應異常');
+        const idSet = {}; ids.forEach(function(id){ idSet[id] = true; });
+        allRows = allRows.filter(function(row){ return !idSet[row.record_id]; });
+        closeDeleteModal(); applyTargetFilter(); buildPersonSelect(); renderVisibleRows();
+        setMsg(el.actionMsg, 'ok', '已刪除 ' + Number(data.deleted_count || 0) + ' 筆'); resetFreezeAlive();
+      }catch(err){
+        setMsg(el.deleteModalMsg, 'bad', '刪除失敗：' + formatError(err)); el.deleteConfirmBtn.disabled = false;
+      }
+    }
+    function startClock(){ renderClock(); window.setInterval(renderClock, 1000); }
+    function renderClock(){ el.localTimeText.textContent = formatMmDdHhMmSs(window.CFG_now); }
+    function startFreezeGuard(){ resetFreezeAlive(); if (freezeTimer) clearInterval(freezeTimer); freezeTimer = setInterval(checkFreezeGuard, FREEZE_CHECK_MS); }
+    function checkFreezeGuard(){ const now = window.CFG_time; const gap = now - freezeLastAliveAt; if (gap > FREEZE_LIMIT_MS){ goHome(); return; } freezeLastAliveAt = now; }
+    function resetFreezeAlive(){ freezeLastAliveAt = window.CFG_time; }
+    function goHome(){ location.href = './index.html'; }
+    function setGasStatus(status){ el.gasDot.classList.remove('ok','bad'); if (status === 'ok') el.gasDot.classList.add('ok'); else if (status === 'bad') el.gasDot.classList.add('bad'); el.gasStatusText.textContent = 'GAS'; }
+    async function postWithTimeout(params, timeoutMs){
+      const controller = new AbortController(); const timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
+      try{
+        const res = await fetch(getApiUrl(), { method:'POST', body:params, signal:controller.signal });
+        const text = await res.text();
+        try{ return JSON.parse(text); }catch(err){ throw new Error('GAS 回傳不是 JSON'); }
+      }finally{ clearTimeout(timer); }
+    }
+    function isValidRecordId(id){ return normalizeText(id).length > 8; }
+    function dateToSerial(date){ const utcMs = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()); return String(Math.floor(utcMs / 86400000) + 25569); }
+    function startOfDay(date){ return new Date(date.getFullYear(), date.getMonth(), date.getDate()); }
+    function addDays(date, days){ const d = new Date(date.getTime()); d.setDate(d.getDate() + days); return d; }
+    function formatDateMmDd(date){ return pad2(date.getMonth() + 1) + '/' + pad2(date.getDate()); }
+    function formatServerTime(value){
+      const s = String(value || '').trim(); if (!s) return '';
+      let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+      if (m) return pad2(m[3]) + ' ' + pad2(m[4]) + ':' + pad2(m[5]) + ':' + pad2(m[6] || 0);
+      m = s.match(/^(\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+      if (m) return pad2(m[2]) + ' ' + pad2(m[3]) + ':' + pad2(m[4]) + ':' + pad2(m[5] || 0);
+      m = s.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+      if (m) return '-- ' + pad2(m[1]) + ':' + pad2(m[2]) + ':' + pad2(m[3] || 0);
+      return s;
+    }
+    function readJsonStorage(key, fallback){ try{ const raw = localStorage.getItem(key); if (!raw) return fallback; const data = JSON.parse(raw); return data == null ? fallback : data; }catch(err){ return fallback; } }
+    function normalizeText(value){ return String(value == null ? '' : value).trim(); }
+    function pad2(n){ return String(n).padStart(2, '0'); }
+    function formatMmDdHhMmSs(v){
+      const s = String(v || '').trim();
+      let m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+      if (m) return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+      m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2}):(\d{2})/);
+      if (m) return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
+      return '-- --:--:--';
+    }
+    function setMsg(target, type, text){ target.className = 'msg ' + (type || ''); target.textContent = text || ''; }
+    function clearMsg(target){ target.className = 'msg'; target.textContent = ''; }
+    function formatError(err){ if (!err) return 'unknown_error'; if (err.name === 'AbortError') return 'timeout'; return String(err.message || err); }
+  </script>
+</body>
+</html>

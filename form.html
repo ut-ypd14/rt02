@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
+  <script type="text/javascript" nonce="536404230b0b4325860489af455" src="//local.adguard.org?ts=1780675748735&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F6855c666-45df-48c4-9e05-b5084d1732f2.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="536404230b0b4325860489af455" src="//local.adguard.org?ts=1780675748735&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" nonce="72e075fb16c14676ba6410b7c16" src="//local.adguard.org?ts=1780420789542&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F10061efd-d5a0-4297-a988-572ed1dee0c0.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="72e075fb16c14676ba6410b7c16" src="//local.adguard.org?ts=1780420789542&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢確認表</title>
@@ -622,6 +622,62 @@
       width: 100%;
     }
 
+    .routine-alert-mask {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .42);
+      z-index: 78;
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+    .routine-alert-mask.active { display: flex; }
+    .routine-alert-card {
+      width: min(90vw, 430px);
+      border-radius: 24px;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 54px rgba(0,0,0,.25);
+      padding: 20px 18px;
+      overflow: hidden;
+      text-align: center;
+    }
+    .routine-alert-title {
+      font-size: 20px;
+      font-weight: 950;
+      color: var(--brand2);
+      margin-bottom: 12px;
+    }
+    .routine-alert-marquee {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 999px;
+      border: 1px solid #c8d8f2;
+      background: #eef4ff;
+      color: #174c99;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .routine-alert-marquee span {
+      display: inline-block;
+      min-width: 100%;
+      padding: 9px 14px;
+      font-size: 15px;
+      font-weight: 950;
+      animation: routineMarquee 3.1s linear 1;
+    }
+    @keyframes routineMarquee {
+      0% { transform: translateX(100%); }
+      12% { transform: translateX(0); }
+      88% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
     .footer-version {
       color: #7a8798;
       text-align: center;
@@ -950,7 +1006,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.3.5</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.3.7</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -975,6 +1031,15 @@
       <div class="resume-actions">
         <button type="button" class="btn btn-soft" id="resumeKeepBtn">保留輸入</button>
         <button type="button" class="btn btn-primary" id="resumeReloadBtn">重新整理</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="routine-alert-mask" id="routineAlertMask" aria-live="polite">
+    <div class="routine-alert-card">
+      <div class="routine-alert-title">接班檢查提醒</div>
+      <div class="routine-alert-marquee">
+        <span id="routineAlertText">本機台本班已有接班檢查紀錄，如需再次確認，可繼續送出。</span>
       </div>
     </div>
   </div>
@@ -1012,6 +1077,7 @@
   const FREEZE_FORCE_RELOAD_MS = 30 * 60 * 1000;
   const EDIT_FREEZE_DROP_MS = 10 * 60 * 1000;
   const SHIFT_SELECT_GRACE_MIN = 40;
+  const ROUTINE_ALERT_MS = 3300;
 
   const ITEMS = [
     { no: 1, title: '機台狀態', note: '', type: 'selectPlus',
@@ -1026,8 +1092,8 @@
 	    { value: 'C',label: 'C:( 空機 | 架料 | 物料 )' },
 	    { value: 'Q',label: 'Q:待( 臨條 | 量測 | QA )' }
 	  ]	},
-    { no: 2, title: '機台作業料號', note: '註明料號', type: 'text', allow: 'alphaNumDotParen', highlightIfEmpty: true },
-    { no: 3, title: '臨條&ERP&內通&謀規', note: '作業資料表條件', type: 'okng' },
+    { no: 2, title: '機台作業料號', note: 'WU', type: 'text', allow: 'alphaNumDotParen', highlightIfEmpty: true },
+    { no: 3, title: '臨條&ERP&內通&內規', note: '作業資料表條件', type: 'okng' },
     { no: 4, title: '核對參數對照表', note: '作業資料表參數', type: 'okng' },
     { no: 5, title: '轉速、下刀、壽命', note: 'S、F、N', type: 'okng' },
     { no: 6, hotkey: 'F8', title: '索引表', note: '補償值', type: 'okng' },
@@ -1193,6 +1259,8 @@
     resumeMask: document.getElementById('resumeMask'),
     resumeKeepBtn: document.getElementById('resumeKeepBtn'),
     resumeReloadBtn: document.getElementById('resumeReloadBtn'),
+    routineAlertMask: document.getElementById('routineAlertMask'),
+    routineAlertText: document.getElementById('routineAlertText'),
     toast: document.getElementById('toast'),
 	proxyInputMask: document.getElementById('proxyInputMask'),
 	proxyInputTitle: document.getElementById('proxyInputTitle'),
@@ -1380,6 +1448,7 @@
     el.shiftSelect.addEventListener('change', () => {
       writeJson(SHIFT_PICK_KEY, { windowKey, value: el.shiftSelect.value, saved_at: window.CFG_time });
       updateSelectedShiftText();
+      remindRoutineDuplicateIfChecked_();
     });
   }
 
@@ -1661,6 +1730,7 @@ function setTime(date, hour, minute) {
       showToast(`已取得機台 ID：${parsed}`, 'ok');
     });
     el.checkForm.addEventListener('submit', submitForm);
+    el.routineCheck.addEventListener('change', handleRoutineCheckChange);
     el.resumeKeepBtn.addEventListener('click', keepAfterFreeze);
     el.resumeReloadBtn.addEventListener('click', () => location.reload());
 	bindProxyInputEvents();
@@ -1901,6 +1971,7 @@ function setTime(date, hour, minute) {
   function setMachineId(value) {
     machineId = String(value || '').trim().toUpperCase();
     el.machineIdText.textContent = machineId || '未掃描';
+    remindRoutineDuplicateIfChecked_();
   }
 
   function applyStatusRules() {
@@ -2115,6 +2186,87 @@ function setTime(date, hour, minute) {
     return date instanceof Date && !Number.isNaN(date.getTime());
   }
 
+  function handleRoutineCheckChange() {
+    if (!el.routineCheck || !el.routineCheck.checked) {
+      return;
+    }
+
+    remindRoutineDuplicateIfChecked_();
+  }
+
+  function remindRoutineDuplicateIfChecked_() {
+    if (!el.routineCheck || !el.routineCheck.checked) {
+      return;
+    }
+
+    const dup = findRoutineDuplicateDraft_();
+
+    if (dup) {
+      showRoutineAlert_('本機台本班已有接班檢查紀錄，如需再次確認，可繼續送出。');
+    }
+  }
+
+  function findRoutineDuplicateDraft_() {
+    if (!machineId) {
+      return null;
+    }
+
+    const selected = getSelectedShift();
+    const dateSerial = dateTextToSerial(selected.date);
+    const shift = String(selected.shift || '').trim().toUpperCase();
+
+    if (!dateSerial || !shift) {
+      return null;
+    }
+
+    const old = readJson(WORK_LOG_KEY);
+    const list = Array.isArray(old) ? old : [];
+    const cutoff = window.CFG_time - WORK_LOG_KEEP_MS;
+    const currentRecordId = getEditRecordId();
+
+    for (let i = list.length - 1; i >= 0; i--) {
+      const item = list[i];
+
+      if (Number(item && item.saved_at || 0) < cutoff) {
+        continue;
+      }
+
+      const row = Array.isArray(item && item.row) ? item.row : [];
+      const recordId = String(row[EDIT_COL.record] || '');
+      const rowDate = String(row[EDIT_COL.date] || '').trim();
+      const rowShift = String(row[EDIT_COL.shift] || '').trim().toUpperCase();
+      const rowMachine = String(row[EDIT_COL.machine_id] || '').trim().toUpperCase();
+      const routine = String(row[EDIT_COL.routine_check] || '').trim().toUpperCase();
+
+      if (currentRecordId && recordId === currentRecordId) {
+        continue;
+      }
+
+      if (rowDate === String(dateSerial) && rowShift === shift && rowMachine === machineId && routine === 'TRUE') {
+        return row;
+      }
+    }
+
+    return null;
+  }
+
+  function showRoutineAlert_(message) {
+    if (!el.routineAlertMask || !el.routineAlertText) {
+      showToast(message, 'warn');
+      return;
+    }
+
+    el.routineAlertText.textContent = message;
+    el.routineAlertMask.classList.remove('active');
+    void el.routineAlertMask.offsetWidth;
+    el.routineAlertMask.classList.add('active');
+
+    clearTimeout(showRoutineAlert_.timer);
+    showRoutineAlert_.timer = setTimeout(() => {
+      el.routineAlertMask.classList.remove('active');
+    }, ROUTINE_ALERT_MS);
+  }
+
   function validateRequiredBeforeSubmit() {
     if (!hasItemValue(1)) {
       focusItemNo(1);
@@ -2235,27 +2387,29 @@ function setTime(date, hour, minute) {
 
     const row = buildWorkLogRow(data, submitParams);
     const recordId = String(row[0] || '');
+    const editOldRecordId = getEditRecordId();
 
     const alive = list.filter(item => Number(item && item.saved_at || 0) >= cutoff);
 
-    if (editMode && recordId) {
+    if (editMode && editOldRecordId) {
       let replaced = false;
 
       const next = alive.map(item => {
-      const oldRow = Array.isArray(item && item.row) ? item.row : [];
-      const oldRecordId = String(oldRow[0] || '');
+        const oldRow = Array.isArray(item && item.row) ? item.row : [];
+        const oldRecordId = String(oldRow[0] || '');
 
-      if (oldRecordId === recordId) {
-        replaced = true;
-        return {
-          saved_at: now,
-          row
+        if (oldRecordId === editOldRecordId) {
+          replaced = true;
+          return {
+            saved_at: now,
+            row
           };
         }
+
         return item;
       });
 
-      if (!replaced) {
+      if (!replaced && recordId) {
         next.push({
           saved_at: now,
           row
@@ -2265,15 +2419,19 @@ function setTime(date, hour, minute) {
       writeJson(WORK_LOG_KEY, next);
       return;
     }
-    alive.push({
-      saved_at: now,
-      row
-    });
+
+    if (recordId) {
+      alive.push({
+        saved_at: now,
+        row
+      });
+    }
+
     writeJson(WORK_LOG_KEY, alive);
   }
 
   function buildWorkLogRow(data, submitParams) {
-    const recordId = getEditRecordId() || String(data && data.record_id ? data.record_id : '');
+    const recordId = String(data && data.record_id ? data.record_id : '') || getEditRecordId();
 
     const row = [
       recordId, // 欄1：record_id
