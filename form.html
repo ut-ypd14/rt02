@@ -1006,7 +1006,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 v0.3.7</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 v0.3.8</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -1100,7 +1100,7 @@
     { no: 7, title: '象限', note: 'FV', type: 'radio', options: ['1', '3'] },
     { no: 8, title: '座標', note: 'FAX、FAY', type: 'okng' },
     { no: 9, title: '作業高度(H)', note: '0.9 ~ 1.8', type: 'number', min: 0.9, max: 1.81, step: 0.1, decimals: 1, autoZero: true, clearInvalidOnBlur: true },
-    { no: 10, title: '作業深度(Z)', note: '0.360 ~ 0.640', type: 'number', min: 0.360, max: 0.677, step: 0.0001, decimals: 4, autoZero: true, clearInvalidOnBlur: true },
+    { no: 10, title: '作業深度(Z)', note: '0.360 ~ 0.640', type: 'number', min: 0.360, max: 0.640, step: 0.0001, decimals: 4, autoZero: true, clearInvalidOnBlur: true },
     { no: 11, hotkey: 'F8', title: '開關軸', note: '#1、#2、#3、#4、#5、#6', type: 'multi', compact: true, options: ['#1', '#2', '#3', '#4', '#5', '#6'] },
     { no: 12, title: '排版數', note: '排版數', type: 'singleAxis7', options: ['6', '5', '4', '3', '2', '1', 'P'] },
     { no: 13, title: '軸襯', note: '毛刷有無毛、塑膠有無破損', type: 'okng' },
@@ -2339,6 +2339,18 @@ function setTime(date, hour, minute) {
         scrollToTopAfterSuccess();
         showToast('送出成功，已保留作業料號，並清除機台 ID。', 'ok');
       } else {
+        if (isEditRecordInvalidated_(data)) {
+          removeEditWorkLogDraft_();
+          sessionStorage.removeItem(FORM_RESTORE_KEY);
+          editMode = false;
+          editRow = null;
+          showToast('此筆資料已由管理端處理，已從本機工作日誌移除。', 'warn');
+          window.setTimeout(() => {
+            location.href = './index.html';
+          }, 1200);
+          return;
+        }
+
         const msg = data && data.msg ? data.msg : 'GAS 回應非 status:"ok"。';
         showToast(`送出失敗：${msg}`, 'bad');
       }
@@ -2347,6 +2359,34 @@ function setTime(date, hour, minute) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function isEditRecordInvalidated_(data) {
+    if (!editMode || !data || data.status === 'ok') {
+      return false;
+    }
+
+    const msg = String(data.msg || '').trim();
+
+    return msg === 'record_not_found' || msg === 'record_changed';
+  }
+
+  function removeEditWorkLogDraft_() {
+    const oldRecordId = getEditRecordId();
+
+    if (!oldRecordId) {
+      return;
+    }
+
+    const old = readJson(WORK_LOG_KEY);
+    const list = Array.isArray(old) ? old : [];
+
+    const next = list.filter(item => {
+      const row = Array.isArray(item && item.row) ? item.row : [];
+      return String(row[EDIT_COL.record] || '') !== oldRecordId;
+    });
+
+    writeJson(WORK_LOG_KEY, next);
   }
 
   function buildSubmitParams() {
@@ -2816,14 +2856,6 @@ async function updateGasStatus() {
 
   function writeJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
-  }
-
-  function formatHeaderTime(date) {
-    return `${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
-  }
-
-  function formatLocalDateTime(date) {
-    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
   }
 
   function formatDateSlash(date) {
