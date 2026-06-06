@@ -1,6 +1,6 @@
 /**
  * 巡檢人員點檢確認表{記錄} - GAS
- * Version: v0.3.5
+ * Version: v0.3.11
  * 人員主檔：A id、B pass、C name、D shift、E active、F admin
  * 表單記錄：sh
  */
@@ -9,22 +9,25 @@ const SPREADSHEET_ID = '1TCEeGdAQvRTuxdknDeGKRXAbYS8iTYdda2XybPqDzNY';
 const SH_USER = 'id';
 const SH_FORM = 'sh';
 const FORM_ITEM_COUNT = 24;
+const FORM_UPDATE_SCAN = 300;
+const WORK_SCAN = 500;
 const LOCK_USER_MS = 10000;
 const LOCK_WRITE_MS = 60000;
 const LOCK_MAINT_MS = 180000;
 
-const MAIL_TO = 'ut.ypd14@gmail.com,weihao-hsu@pcbut.com.tw';
+const MAIL_TO = 'ut.ypd14@gmail.com,alvin-cheng@pcbut.com.tw,hank-chen@pcbut.com.tw,mandy-li@pcbut.com.tw,weihao-hsu@pcbut.com.tw, yen-lo@pcbut.com.tw';
 const APP_TZ = 'Asia/Taipei';
 const MAIL_SCAN = 500;
 const MAIL_COLS = 38; // A:AL
 const MAIL_MAX_SPAN_DAYS = 186;
 const MAIL_TMP_PREFIX = 'PI_MAIL_';
+
 let RUN_NOW = null;
 let DATA_SS = null;
 
 function doGet(e) {
   return json_({
-    //version: 'v0.3.5',
+    //version: 'v0.3.11',
     //ts: new Date().toISOString(),
     action: 'gas_alive',
 	status: 'ok'
@@ -49,6 +52,10 @@ function doPost(e) {
 
     if (action === 'mail_send') {
       return rMail_(p, getSS_(), SH_FORM);
+    }
+
+    if (action === 'work_data') {
+      return rWork_(p, getSS_(), SH_FORM);
     }
 
     if (action === 'personnel_save') {
@@ -79,8 +86,8 @@ function rAuth_(p, ss, sheetName) {
 
   const user = findUserById_(id, ss, sheetName);
 
-  if (!user) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
-  if (String(user.pass || '') !== pass) return json_({ status: 'error', action: 'auth', msg: 'auth_failed' });
+  if (!user) return json_({ status: 'error', action: 'auth', msg: 'auth_failed_ID' });
+  if (String(user.pass || '') !== pass) return json_({ status: 'error', action: 'auth', msg: 'auth_failed_PW' });
   if (user.active !== true) return json_({ status: 'error', action: 'auth', msg: 'account_disabled' });
 
   return json_({
@@ -310,45 +317,64 @@ function rFormW_(p, ss, sheetName) {
 }
 
 function rFormU_(p, ss, sheetName) {
+  const sh = getSheet_(ss, sheetName);
+  const old_record_id = String(param_(p, 'record_id') || '').trim();
+
+  if (!old_record_id) {
+    return json_({
+      action: 'form_update',
+      msg: 'missing_record',
+      status: 'error'
+    });
+  }
+
+  const targetRow = findFormRecordRowRecent_(sh, old_record_id, FORM_UPDATE_SCAN);
+
+  if (targetRow <= 0) {
+    return json_({
+      action: 'form_update',
+      msg: 'record_not_found',
+      record_id: old_record_id,
+      status: 'error'
+    });
+  }
+
   return withLock_(LOCK_WRITE_MS, 'form_update', function () {
-    const sh = getSheet_(ss, sheetName);
-    const record_id = String(param_(p, 'record_id') || '').trim();
+    const currentId = String(sh.getRange(targetRow, 1).getDisplayValue() || '').trim();
 
-    if (!record_id) {
+    if (currentId !== old_record_id) {
       return json_({
         action: 'form_update',
-        msg: 'missing_record',
-		status: 'error'
+        msg: 'record_changed',
+        old_record_id: old_record_id,
+        row_index: targetRow,
+        current_record_id: currentId,
+        status: 'error'
       });
     }
 
-    const targetRow = findFormRecordRow_(sh, record_id);
-
-    if (targetRow <= 0) {
-      return json_({
-        action: 'form_update',
-        msg: 'record_not_found',
-        record_id: record_id,
-		status: 'error'
-      });
-    }
-
+    const new_record_id = Utilities.getUuid();
     const gasTimeText = Utilities.formatDate(
       new Date(),
       APP_TZ,
       'yyyy/MM/dd HH:mm:ss'
     );
 
-    const values = [gasTimeText].concat(buildFormDataValues_(p));
+    const row = [new_record_id, gasTimeText].concat(buildFormDataValues_(p));
 
-    sh.getRange(targetRow, 2, 1, values.length).setValues([values]);
+    sh.appendRow(row);
+    const newRow = sh.getLastRow();
+
+    sh.getRange(targetRow, 1).setValue('Ng_id');
 
     return json_({
       action: 'form_update',
-      record_id: record_id,
-      row_index: targetRow,
+      old_record_id: old_record_id,
+      record_id: new_record_id,
+      old_row_index: targetRow,
+      new_row_index: newRow,
       server_time: gasTimeText,
-	  status: 'ok',
+      status: 'ok'
     });
   });
 }
@@ -368,11 +394,32 @@ function findFormRecordRow_(sh, record_id) {
   return 0;
 }
 
+function findFormRecordRowRecent_(sh, record_id, scanCount) {
+  record_id = String(record_id || '').trim();
+  if (!record_id) return 0;
+
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const cnt = Math.min(Number(scanCount || FORM_UPDATE_SCAN), lastRow - 1);
+  const startRow = lastRow - cnt + 1;
+  const values = sh.getRange(startRow, 1, cnt, 1).getDisplayValues();
+
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (String(values[i][0] || '').trim() === record_id) {
+      return startRow + i;
+    }
+  }
+
+  return 0;
+}
+
 function buildFormDataValues_(p) {
   const row = [
     param_(p, 'date'),
     param_(p, 'shift'),
     param_(p, 'machine_id'),
+	param_(p, 'id'),
     param_(p, 'name'),
     param_(p, 'routine_check')
   ];
@@ -382,6 +429,144 @@ function buildFormDataValues_(p) {
   }
 
   return row;
+}
+
+
+function rWork_(p, ss, sheetName) {
+  const mode = String(mVal_(p, 'mode') || '').trim().toLowerCase();
+
+  if (mode === 'list') {
+    return rWorkList_(p, ss, sheetName);
+  }
+
+  if (mode === 'delete') {
+    return rWorkDelete_(p, ss, sheetName);
+  }
+
+  return json_({
+    action: 'work_data',
+    mode: mode,
+    msg: 'unknown_work_mode',
+    status: 'error'
+  });
+}
+
+function rWorkList_(p, ss, sheetName) {
+  const sh = getSheet_(ss, sheetName);
+  const lastRow = sh.getLastRow();
+  const fields = [
+    'record_id',
+    'server_time',
+    'date',
+    'shift',
+    'machine_id',
+    'id',
+    'name',
+    'item_02'
+  ];
+
+  if (lastRow < 2) {
+    return json_({
+      action: 'work_data',
+      mode: 'list',
+      fields: fields,
+      values: [],
+      scan_count: 0,
+      status: 'ok'
+    });
+  }
+
+  const cnt = Math.min(WORK_SCAN, lastRow - 1);
+  const startRow = lastRow - cnt + 1;
+  const data = sh.getRange(startRow, 1, cnt, 10).getValues();
+  const bDisp = sh.getRange(startRow, 2, cnt, 1).getDisplayValues();
+  const values = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+
+    values.push([
+      String(row[0] || ''),
+      String(bDisp[i][0] || ''),
+      normSer_(row[2]),
+      String(row[3] || '').trim().toUpperCase(),
+      String(row[4] || '').trim().toUpperCase(),
+      String(row[5] || '').trim().toUpperCase(),
+      String(row[6] || ''),
+      String(row[9] || '')
+    ]);
+  }
+
+  return json_({
+    action: 'work_data',
+    mode: 'list',
+    fields: fields,
+    values: values,
+    scan_count: cnt,
+    status: 'ok'
+  });
+}
+
+function rWorkDelete_(p, ss, sheetName) {
+  const ids = parseWorkRecordIds_(mVal_(p, 'record_ids'));
+
+  if (!ids.length) {
+    return json_({
+      action: 'work_data',
+      mode: 'delete',
+      msg: 'missing_record_ids',
+      deleted_count: 0,
+      skipped_count: 0,
+      status: 'error'
+    });
+  }
+
+  return withLock_(LOCK_WRITE_MS, 'work_delete', function () {
+    const sh = getSheet_(ss, sheetName);
+    let deleted = 0;
+    let skipped = 0;
+
+    ids.forEach(function(id) {
+      const rowNo = findFormRecordRowRecent_(sh, id, WORK_SCAN);
+
+      if (rowNo <= 0) {
+        skipped += 1;
+        return;
+      }
+
+      const currentId = String(sh.getRange(rowNo, 1).getDisplayValue() || '').trim();
+
+      if (currentId.length <= 8 || currentId !== id) {
+        skipped += 1;
+        return;
+      }
+
+      sh.getRange(rowNo, 1).setValue('Ng_id');
+      deleted += 1;
+    });
+
+    return json_({
+      action: 'work_data',
+      mode: 'delete',
+      deleted_count: deleted,
+      skipped_count: skipped,
+      status: 'ok'
+    });
+  });
+}
+
+function parseWorkRecordIds_(text) {
+  const seen = {};
+  const out = String(text || '').split(',');
+
+  return out.map(function(id) {
+    return String(id || '').trim();
+  }).filter(function(id) {
+    if (id.length <= 8) return false;
+    if (seen[id]) return false;
+    seen[id] = true;
+    return true;
+  });
 }
 
 
@@ -668,6 +853,7 @@ function getRowsByKeys_(sh, head, keys, scan) {
   const startRow = lastRow - cnt + 1;
 
   const data = sh.getRange(startRow, 1, cnt, MAIL_COLS).getValues();
+  const bDisp = sh.getRange(startRow, 2, cnt, 1).getDisplayValues();
   const keySet = {};
 
   keys.forEach(function(k) {
@@ -682,7 +868,7 @@ function getRowsByKeys_(sh, head, keys, scan) {
     const s = String(row[3] || '').trim().toUpperCase(); // D
 
     if (keySet[String(d) + '|' + s]) {
-      rows.push(row);
+      rows.push(mailRowWithBDisplay_(row, bDisp[i][0]));
     }
   }
 
@@ -721,13 +907,14 @@ function getRowsBySpan_(sh, head, start, end) {
 
   const cnt = maxRow - minRow + 1;
   const data = sh.getRange(minRow, 1, cnt, MAIL_COLS).getValues();
+  const bDisp = sh.getRange(minRow, 2, cnt, 1).getDisplayValues();
   const rows = [];
 
   for (let i = 0; i < data.length; i++) {
     const d = normSer_(data[i][2]);
 
     if (d >= start && d <= end) {
-      rows.push(data[i]);
+      rows.push(mailRowWithBDisplay_(data[i], bDisp[i][0]));
     }
   }
 
@@ -736,6 +923,12 @@ function getRowsBySpan_(sh, head, start, end) {
     rows: rows,
     scanCount: cnt
   };
+}
+
+function mailRowWithBDisplay_(row, bText) {
+  const out = row.slice();
+  out[1] = String(bText || '');
+  return out;
 }
 
 /**
@@ -748,10 +941,12 @@ function mkXlsx_(pack, q, opt) {
   const tmpId = tmp.getId();
 
   try {
+    tmp.setSpreadsheetTimeZone(APP_TZ);
+
     const sh = tmp.getSheets()[0];
     sh.setName('明細');
 
-    const out = [pack.head].concat(pack.rows);
+    const out = mailXlsxRows_([pack.head].concat(pack.rows));
 
     if (out.length > 0) {
       sh.getRange(1, 1, out.length, MAIL_COLS).setValues(out);
@@ -794,6 +989,32 @@ function mkXlsx_(pack, q, opt) {
   }
 }
 
+function mailXlsxRows_(rows) {
+  return rows.map(function(row) {
+    return row.map(function(cell) {
+      return mailXlsxCell_(cell);
+    });
+  });
+}
+
+function mailXlsxCell_(cell) {
+  if (cell instanceof Date) {
+    return formatMailDateCell_(cell);
+  }
+
+  return cell;
+}
+
+function formatMailDateCell_(date) {
+  const hms = Utilities.formatDate(date, APP_TZ, 'HHmmss');
+
+  if (hms === '000000') {
+    return Utilities.formatDate(date, APP_TZ, 'yyyy/MM/dd');
+  }
+
+  return Utilities.formatDate(date, APP_TZ, 'yyyy/MM/dd HH:mm:ss');
+}
+
 function sendMail_(subject, body, blob) {
   MailApp.sendEmail({
     to: MAIL_TO,
@@ -804,13 +1025,15 @@ function sendMail_(subject, body, blob) {
 }
 
 function mkSubj_(opt, q, n) {
+  if (isKeyMail_(q)) {
+    return keySubject_(q);
+  }
+
   const mode = String(opt.mode || '').toLowerCase();
   let tag = '巡檢';
 
-  if (mode === 'auto') tag = '班別自動';
-  else if (mode === 'month') tag = '月報';
+  if (mode === 'month') tag = '月報';
   else if (mode === 'span') tag = '區間匯出';
-  else if (mode === 'resend' || mode === 'now') tag = '補寄';
 
   return '[' + tag + '] 巡檢資料 ' + qText_(q) + ' 共 ' + n + ' 筆';
 }
@@ -828,11 +1051,58 @@ function mkBody_(opt, q, pack) {
 }
 
 function fileName_(opt, q) {
-  const mode = String(opt.mode || 'mail').toUpperCase();
+  if (isKeyMail_(q)) {
+    return keyFileName_(opt, q);
+  }
+
+  const mode = modeCode_(opt);
   const ts = Utilities.formatDate(runNow_(), APP_TZ, 'yyyyMMdd_HHmmss');
 
   return '巡檢資料_' + mode + '_' + safeName_(qText_(q)) + '_' + ts;
 }
+
+function isKeyMail_(q) {
+  return !!(q && q.kind === 'keys' && Array.isArray(q.keys) && q.keys.length > 0);
+}
+
+function keySubject_(q) {
+  const k = q.keys[0];
+  const shift = String(k.s || '').trim().toUpperCase();
+
+  return '[班別自動] ' + shiftText_(shift) + '巡檢資料 ' + serFmt_(k.d, 'MMdd');
+}
+
+function keyFileName_(opt, q) {
+  const k = q.keys[0];
+  const shift = String(k.s || '').trim().toUpperCase();
+
+  return '巡檢資料_' + modeCode_(opt) + '_' + serFmt_(k.d, 'yyyyMMdd') + shift;
+}
+
+function modeCode_(opt) {
+  const mode = String(opt && opt.mode ? opt.mode : 'resend').trim().toUpperCase();
+
+  if (!mode || mode === 'NOW') return 'RESEND';
+
+  return mode;
+}
+
+function shiftText_(shift) {
+  if (shift === 'A') return '早班';
+  if (shift === 'B') return '中班';
+  if (shift === 'C') return '夜班';
+
+  return String(shift || '');
+}
+
+function serFmt_(serial, fmt) {
+  const n = Math.floor(Number(serial));
+  const ms = (n - 25569) * 86400000;
+  const dt = new Date(ms);
+
+  return Utilities.formatDate(dt, 'UTC', fmt);
+}
+
 
 function qText_(q) {
   if (q.kind === 'keys') {
