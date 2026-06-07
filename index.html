@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
+  <script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F22efa87b-70d4-4475-aaeb-5f8eb8b53c58.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="1bedd552b0bf4401832b01ee234" src="//local.adguard.org?ts=1779576934309&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢首頁</title>
@@ -75,12 +75,11 @@
     .top-link:active,
     .edit-btn:active,
     .tool-btn:active,
-    .clear-btn:active,
-    .modal-btn:active{ transform:scale(.98); }
+    .clear-btn:active{ transform:scale(.98); }
 
     .status-line{
       display:grid;
-      grid-template-columns:4.0em 5.8em minmax(0,1fr) 3.2em;
+      grid-template-columns:4.7em minmax(0,1fr) 3.2em;
       align-items:center;
       gap:3px;
       min-height:40px;
@@ -95,7 +94,6 @@
     }
 
     .status-id,
-    .status-name,
     .status-time,
     .status-gas{
       min-width:0;
@@ -108,7 +106,6 @@
     }
 
     .status-id{ text-align:center; }
-    .status-name{ text-align:center; }
     .status-time{
       text-align:center;
       font-variant-numeric:tabular-nums;
@@ -163,8 +160,9 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-height:26px;
-      padding:3px 9px;
+      min-height:28px;
+      min-width:112px;
+      padding:4px 12px;
       border-radius:999px;
       color:#1d4ed8;
       background:var(--soft);
@@ -206,7 +204,7 @@
 
     .log-row{
       display:grid;
-      grid-template-columns:2ch 1.55rem 5ch 4.4ch 5.1ch 4.6ch minmax(0,1fr);
+      grid-template-columns:2.5ch 1.48rem 5.6ch 4.4ch 4.9ch 4.1ch minmax(0,1fr);
       align-items:center;
       column-gap:.34rem;
       min-height:34px;
@@ -223,28 +221,6 @@
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
-    }
-
-    .log-row.has-x{
-      animation:xRowPulse 1.8s ease-in-out infinite;
-      box-shadow:inset 3px 0 0 rgba(245,158,11,.55);
-    }
-
-    .log-row.has-x .log-status,
-    .log-row.has-x .log-part{
-      color:#92400e;
-      font-weight:950;
-    }
-
-    @keyframes xRowPulse{
-      0%, 100%{
-        background:#fff;
-        box-shadow:inset 3px 0 0 rgba(245,158,11,.28);
-      }
-      50%{
-        background:#fff8e6;
-        box-shadow:inset 3px 0 0 rgba(245,158,11,.68);
-      }
     }
 
     .log-seq{
@@ -308,39 +284,25 @@
 
     .clear-area{
       display:grid;
-      grid-template-columns:1fr auto 1fr;
+      grid-template-columns:56px minmax(0,1fr) 56px;
       align-items:center;
-      gap:6px;
+      gap:8px;
       margin-top:15px;
       padding:0 2px;
     }
 
-    .tool-group{
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      gap:8px;
-      min-width:0;
-    }
-
     .tool-btn{
-      width:36px;
-      height:36px;
-      min-width:36px;
-      border:0;
-      border-radius:0;
+      width:42px;
+      height:40px;
+      min-width:42px;
+      justify-self:start;
+      border:1px solid rgba(37,99,235,.18);
+      border-radius:999px;
       color:#1d4ed8;
-      background:transparent;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      text-decoration:none;
-      font-size:22px;
-      font-weight:950;
-      line-height:1;
+      background:#eff6ff;
+      font-size:19px;
+      font-weight:900;
       cursor:pointer;
-      box-shadow:none;
-      padding:0;
     }
 
     .tool-btn.hidden{
@@ -350,9 +312,8 @@
 
     .clear-btn{
       justify-self:center;
-      min-width:104px;
-      min-height:38px;
-      padding:0 14px;
+      min-width:122px;
+      min-height:40px;
       border:1px solid rgba(37,99,235,.22);
       border-radius:999px;
       color:#1d4ed8;
@@ -369,8 +330,8 @@
     }
 
     .clear-spacer{
-      width:100%;
-      height:38px;
+      width:42px;
+      height:40px;
       justify-self:end;
     }
 
@@ -386,104 +347,16 @@
     .msg.bad{ color:var(--bad); }
     .msg.warn{ color:#b45309; }
 
-    .hide{ display:none!important; }
-
-
-    .modal-mask{
-      position:fixed;
-      inset:0;
-      z-index:80;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      background:rgba(15,23,42,.42);
-      backdrop-filter:blur(4px);
-    }
-
-    .modal-card{
-      width:min(360px, 100%);
-      border:1px solid rgba(226,232,240,.96);
-      border-radius:20px;
-      background:rgba(255,255,255,.98);
-      box-shadow:0 18px 46px rgba(15,23,42,.22);
-      padding:16px;
-    }
-
-    .modal-title{
-      margin:0 0 8px;
-      color:#0f172a;
-      font-size:18px;
-      font-weight:950;
-      line-height:1.2;
-    }
-
-    .modal-sub{
-      margin:0 0 12px;
-      color:var(--muted);
-      font-size:13px;
-      font-weight:850;
-      line-height:1.45;
-    }
-
-    .modal-input{
-      width:100%;
-      min-height:44px;
-      padding:10px 12px;
-      border:1px solid rgba(203,213,225,.95);
-      border-radius:15px;
-      font-size:16px;
-      font-weight:850;
-      outline:none;
-    }
-
-    .modal-input:focus{
-      border-color:#93c5fd;
-      box-shadow:0 0 0 4px rgba(37,99,235,.12);
-    }
-
-    .modal-actions{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:9px;
-      margin-top:12px;
-    }
-
-    .modal-btn{
-      min-height:40px;
-      border-radius:999px;
-      border:1px solid rgba(37,99,235,.22);
-      background:#eff6ff;
-      color:#1d4ed8;
-      font-size:15px;
-      font-weight:950;
-      cursor:pointer;
-    }
-
-    .modal-btn.primary{
-      color:#fff;
-      border-color:rgba(29,78,216,.18);
-      background:linear-gradient(135deg, var(--main), var(--main2));
-      box-shadow:0 9px 20px rgba(37,99,235,.18);
-    }
-
-    .modal-btn:disabled{
-      opacity:.58;
-      cursor:not-allowed;
-      transform:none;
-    }
-
     @media (max-width:390px){
       .page{ padding:12px 7px 22px; }
       .title{ font-size:19px; }
       .top-link{ min-height:34px; padding:7px 9px; font-size:13px; }
       .status-line{
-        grid-template-columns:3.7em 5.4em minmax(0,1fr) 3.05em;
+        grid-template-columns:4.4em minmax(0,1fr) 3.05em;
         padding:7px 10px 7px 7px;
         gap:2px;
       }
       .status-id,
-      .status-name,
       .status-time,
       .status-gas{ font-size:13px; }
       .status-gas{ gap:4px; }
@@ -491,11 +364,12 @@
       .gas-dot.ok{ box-shadow:0 0 0 3px rgba(22,163,74,.13); }
       .gas-dot.bad{ box-shadow:0 0 0 3px rgba(220,38,38,.13); }
       .card-head{ padding:10px 10px 8px; }
+      .count-pill{ min-width:108px; padding:4px 10px; font-size:13px; }
       .card-body{ padding:8px 7px 10px; }
       .group-title{ font-size:13.5px; }
       .log-row{
-        grid-template-columns:1.8ch 1.38rem 4.75ch 4ch 4.55ch 4ch minmax(0,1fr);
-        column-gap:.24rem;
+        grid-template-columns:2.4ch 1.34rem 5.4ch 4ch 4.2ch 3.7ch minmax(0,1fr);
+        column-gap:.20rem;
         min-height:32px;
         font-size:12px;
       }
@@ -506,13 +380,12 @@
         font-size:16px;
       }
       .clear-area{
-        grid-template-columns:1fr auto 1fr;
-        gap:4px;
+        grid-template-columns:48px minmax(0,1fr) 48px;
+        gap:6px;
       }
-      .tool-group{ gap:4px; }
-      .tool-btn{ width:34px; height:34px; min-width:34px; font-size:20px; }
-      .clear-spacer{ width:100%; height:36px; min-width:0; }
-      .clear-btn{ min-width:96px; min-height:36px; padding:0 12px; font-size:14px; }
+      .tool-btn,
+      .clear-spacer{ width:40px; height:38px; min-width:40px; }
+      .clear-btn{ min-width:112px; min-height:38px; font-size:14px; }
       .log-part{ letter-spacing:-.045em; }
     }
   </style>
@@ -521,12 +394,11 @@
   <main class="page">
     <section class="hero">
       <h1 class="title">巡檢人員點檢首頁</h1>
-      <a class="top-link" id="newFormLink" href="./form.html">進入點檢表</a>
+      <a class="top-link" href="./form.html">進入點檢表</a>
     </section>
 
     <section class="status-line" aria-label="目前狀態">
-      <span class="status-id" id="currentIdText"></span>
-      <span class="status-name" id="currentNameText">訪客</span>
+      <span class="status-id" id="currentIdText">訪客</span>
       <span class="status-time" id="localTimeText">--</span>
       <span class="status-gas"><span id="gasStatusText">GAS</span><span class="gas-dot" id="gasDot"></span></span>
     </section>
@@ -534,7 +406,7 @@
     <section class="card" aria-label="工作日誌">
       <div class="card-head">
         <h2 class="card-title">工作日誌</h2>
-        <span class="count-pill" id="recordCountText">0 筆</span>
+        <span class="count-pill" id="recordCountText">共 0 筆｜含 × 0 筆</span>
       </div>
       <div class="card-body">
         <div id="historyArea" class="empty">目前沒有可編輯紀錄</div>
@@ -543,29 +415,12 @@
     </section>
 
     <div class="clear-area" aria-label="快捷操作">
-      <div class="tool-group">
-        <button type="button" class="tool-btn hidden" id="adminToolBtn" title="管理工具" aria-label="管理工具">🛠</button>
-        <a class="tool-btn hidden" id="workDataToolBtn" href="./work.html" title="工作數據管理" aria-label="工作數據管理">▤</a>
-        <a class="tool-btn" id="mailToolBtn" href="./mail.html" title="補寄資料" aria-label="補寄資料">✉</a>
-      </div>
+      <button type="button" class="tool-btn hidden" id="adminToolBtn" title="管理工具" aria-label="管理工具">🛠</button>
       <button type="button" class="clear-btn" id="clearLoginDraftBtn">登錄</button>
       <span class="clear-spacer" aria-hidden="true"></span>
     </div>
     <div class="msg" id="actionMsg"></div>
   </main>
-
-  <section class="modal-mask hide" id="mailModal" role="dialog" aria-modal="true" aria-labelledby="mailModalTitle">
-    <div class="modal-card">
-      <h2 class="modal-title" id="mailModalTitle">補寄巡檢資料</h2>
-      <p class="modal-sub">請輸入補寄密碼。送出後將依 GAS 目前時間補寄應檢視的兩班資料。</p>
-      <input class="modal-input" id="mailPassInput" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="補寄密碼">
-      <div class="modal-actions">
-        <button type="button" class="modal-btn" id="mailCancelBtn">取消</button>
-        <button type="button" class="modal-btn primary" id="mailSendBtn">送出</button>
-      </div>
-      <div class="msg" id="mailModalMsg"></div>
-    </div>
-  </section>
 
   <script>
     'use strict';
@@ -574,12 +429,9 @@
     const SHORT_AUTH_KEY = 'PI_SHORT_AUTH_V001';
     const WORK_LOG_KEY = 'PI_WORK_LOG_DRAFT_V001';
     const FORM_RESTORE_KEY = 'PI_FORM_RESTORE_DRAFT_V001';
-    const MAIL_RESEND_PASS = '88888888';
 
     const el = {
-      newFormLink:document.getElementById('newFormLink'),
       currentIdText:document.getElementById('currentIdText'),
-      currentNameText:document.getElementById('currentNameText'),
       localTimeText:document.getElementById('localTimeText'),
       gasDot:document.getElementById('gasDot'),
       gasStatusText:document.getElementById('gasStatusText'),
@@ -587,15 +439,8 @@
       historyArea:document.getElementById('historyArea'),
       historyMsg:document.getElementById('historyMsg'),
       adminToolBtn:document.getElementById('adminToolBtn'),
-      workDataToolBtn:document.getElementById('workDataToolBtn'),
-      mailToolBtn:document.getElementById('mailToolBtn'),
       clearLoginDraftBtn:document.getElementById('clearLoginDraftBtn'),
-      actionMsg:document.getElementById('actionMsg'),
-      mailModal:document.getElementById('mailModal'),
-      mailPassInput:document.getElementById('mailPassInput'),
-      mailCancelBtn:document.getElementById('mailCancelBtn'),
-      mailSendBtn:document.getElementById('mailSendBtn'),
-      mailModalMsg:document.getElementById('mailModalMsg')
+      actionMsg:document.getElementById('actionMsg')
     };
 
     let groupedTodayHistory = [];
@@ -611,19 +456,8 @@
     }
 
     function bindEvents(){
-      el.newFormLink.addEventListener('click', clearFormRestoreDraft);
       el.clearLoginDraftBtn.addEventListener('click', handleAuthButton);
       el.adminToolBtn.addEventListener('click', handleAdminToolButton);
-      el.mailToolBtn.addEventListener('click', handleMailToolClick);
-      el.mailCancelBtn.addEventListener('click', closeMailModal);
-      el.mailSendBtn.addEventListener('click', handleMailResendSubmit);
-      el.mailPassInput.addEventListener('keydown', function(evt){
-        if (evt.key === 'Enter') handleMailResendSubmit();
-        if (evt.key === 'Escape') closeMailModal();
-      });
-      el.mailModal.addEventListener('click', function(evt){
-        if (evt.target === el.mailModal) closeMailModal();
-      });
 
       window.addEventListener('focus', loadAndRenderHistory);
       window.addEventListener('pageshow', loadAndRenderHistory);
@@ -633,10 +467,6 @@
       window.addEventListener('storage', function(evt){
         if (evt && evt.key === WORK_LOG_KEY) loadAndRenderHistory();
       });
-    }
-
-    function clearFormRestoreDraft(){
-      sessionStorage.removeItem(FORM_RESTORE_KEY);
     }
 
     function handleAuthButton(){
@@ -659,83 +489,6 @@
     function handleAdminToolButton(){
       if (!hasAdminAccess()) return;
       window.location.href = './admin.html';
-    }
-
-    function handleMailToolClick(evt){
-      if (hasAdminAccess()) return;
-
-      evt.preventDefault();
-      openMailModal();
-    }
-
-    function openMailModal(){
-      clearMsg(el.actionMsg);
-      clearMsg(el.mailModalMsg);
-      el.mailPassInput.value = '';
-      el.mailSendBtn.disabled = false;
-      el.mailModal.classList.remove('hide');
-      window.setTimeout(function(){
-        el.mailPassInput.focus();
-      }, 80);
-    }
-
-    function closeMailModal(){
-      el.mailModal.classList.add('hide');
-      el.mailPassInput.value = '';
-      clearMsg(el.mailModalMsg);
-      el.mailSendBtn.disabled = false;
-    }
-
-    function handleMailResendSubmit(){
-      const pass = normalizeText(el.mailPassInput.value);
-
-      if (pass !== MAIL_RESEND_PASS){
-        setMsg(el.mailModalMsg, 'bad', '密碼錯誤');
-        el.mailPassInput.select();
-        return;
-      }
-
-      sendMailResend();
-    }
-
-    function sendMailResend(){
-      if (typeof api_url === 'undefined' || !api_url){
-        setMsg(el.mailModalMsg, 'bad', '找不到 GAS 位置');
-        return;
-      }
-
-      const p = new URLSearchParams();
-      p.set('action', 'mail_send');
-      p.set('mode', 'resend');
-
-      const currentId = getCurrentId();
-      if (currentId) p.set('operator_id', currentId);
-
-      el.mailSendBtn.disabled = true;
-      setMsg(el.mailModalMsg, 'warn', '補寄中...');
-
-      fetch(api_url, {
-        method:'POST',
-        body:p
-      })
-        .then(function(res){ return res.text(); })
-        .then(function(text){
-          const data = parseJsonSafe(text);
-
-          if (data && data.status === 'ok'){
-            const n = Number(data.row_count || 0);
-            closeMailModal();
-            setMsg(el.actionMsg, 'ok', '補寄完成，共 ' + n + ' 筆');
-            return;
-          }
-
-          setMsg(el.mailModalMsg, 'bad', '補寄失敗：' + (data && data.msg ? data.msg : '回應異常'));
-          el.mailSendBtn.disabled = false;
-        })
-        .catch(function(){
-          setMsg(el.mailModalMsg, 'bad', '補寄失敗：GAS 無回應');
-          el.mailSendBtn.disabled = false;
-        });
     }
 
     function readJsonStorage(key, fallback){
@@ -763,11 +516,6 @@
       ).toUpperCase();
     }
 
-    function getCurrentName(){
-      const shortAuth = readJsonStorage(SHORT_AUTH_KEY, null);
-      return normalizeText(getFirstValue(shortAuth, ['name']) || '');
-    }
-
     function hasAdminAccess(){
       const shortAuth = readJsonStorage(SHORT_AUTH_KEY, null);
       if (!shortAuth || typeof shortAuth !== 'object') return false;
@@ -791,18 +539,10 @@
 
     function renderCurrentId(){
       const id = getCurrentId();
-      const isAdmin = hasAdminAccess();
-
-      const name = getCurrentName();
-
-      el.currentIdText.textContent = id || '';
-      el.currentNameText.textContent = id ? (name || id) : '訪客';
+      el.currentIdText.textContent = id || '訪客';
       el.clearLoginDraftBtn.textContent = id ? '登出' : '登錄';
       el.clearLoginDraftBtn.classList.toggle('logout', !!id);
-      el.adminToolBtn.classList.toggle('hidden', !isAdmin);
-      el.workDataToolBtn.classList.toggle('hidden', !isAdmin);
-      el.mailToolBtn.title = isAdmin ? '郵件匯出' : '補寄資料';
-      el.mailToolBtn.setAttribute('aria-label', isAdmin ? '郵件匯出' : '補寄資料');
+      el.adminToolBtn.classList.toggle('hidden', !hasAdminAccess());
     }
 
     function startClock(){
@@ -837,14 +577,6 @@
         .catch(function(){
           setGasStatus('bad');
         });
-    }
-
-    function parseJsonSafe(text){
-      try{
-        return JSON.parse(String(text || '').trim());
-      }catch(err){
-        return null;
-      }
     }
 
     function isOkResponseText(text){
@@ -917,7 +649,13 @@
         return sum + group.rows.length;
       }, 0);
 
-      el.recordCountText.textContent = total + ' 筆';
+      const xTotal = groupedTodayHistory.reduce(function(sum, group){
+        return sum + group.rows.filter(function(item){
+          return getRecordXItemNos(item.record).length > 0;
+        }).length;
+      }, 0);
+
+      el.recordCountText.textContent = '共 ' + total + ' 筆｜含 × ' + xTotal + ' 筆';
       el.historyArea.innerHTML = '';
 
       if (!groupedTodayHistory.length){
@@ -927,9 +665,8 @@
       }
 
       el.historyArea.className = '';
-      const currentId = getCurrentId();
-
-      groupedTodayHistory.forEach(function(group){
+      groupedTodayHistory.forEach(function(group, groupIndex){
+        const canEditGroup = groupIndex === 0;
         let seq = 1;
         const block = document.createElement('section');
         block.className = 'group-block';
@@ -951,8 +688,7 @@
         list.className = 'log-list';
 
         group.rows.forEach(function(item){
-          const canEdit = !!currentId && getRecordOwnerId(item.record) === currentId;
-          list.appendChild(buildHistoryRow(item.record, seq, canEdit));
+          list.appendChild(buildHistoryRow(item.record, seq, canEditGroup));
           seq += 1;
         });
 
@@ -964,11 +700,6 @@
     function buildHistoryRow(record, seq, canEdit){
       const row = document.createElement('div');
       row.className = 'log-row';
-
-      const xNos = getRecordXItemNos(record);
-      if (xNos.length){
-        row.classList.add('has-x');
-      }
 
       appendLogCell(row, String(seq), 'log-cell log-seq');
       appendEditButton(row, record, canEdit);
@@ -1009,6 +740,14 @@
 
     function passRecordToForm(record){
       clearMsg(el.historyMsg);
+
+      const currentId = getCurrentId();
+      const recordOwnerId = getRecordOwnerId(record);
+
+      if (!currentId || !recordOwnerId || currentId !== recordOwnerId){
+        return;
+      }
+
       writeSessionJsonStorage(FORM_RESTORE_KEY, record);
       window.location.href = './form.html';
     }
@@ -1146,7 +885,7 @@
 
     function formatRoutineCheckShort(value){
       const v = String(value || '').trim().toUpperCase();
-      return (v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1') ? '接班' : '';
+      return (v === 'TRUE' || v === 'Y' || v === 'YES' || v === '1') ? '例' : '';
     }
 
     function formatWorkTimeText(raw){
@@ -1195,27 +934,6 @@
       return 0;
     }
 
-    function getRecordXItemNos(record){
-      const out = [];
-
-      for (let no = 2; no <= 24; no++){
-        if (hasXValue(getDisplayItem(record, no))) {
-          out.push(no);
-        }
-      }
-
-      return out;
-    }
-
-    function hasXValue(value){
-      const v = normalizeText(value).toUpperCase();
-
-      if (!v) return false;
-      if (v === 'X' || v === '×') return true;
-
-      return v.indexOf('×') >= 0;
-    }
-
     function getFirstValue(obj, names){
       if (!obj || typeof obj !== 'object') return '';
       for (let i = 0; i < names.length; i++){
@@ -1234,20 +952,12 @@
     }
 
 	function formatMmDdHhMmSs(v){
-      const s = String(v || '').trim();
-
-      let m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
-      if (m) {
-        return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
-      }
-
-      m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2}):(\d{2})/);
-      if (m) {
-        return m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + m[6];
-      }
-
-      return '-- --:--:--';
-    }
+	  const s = String(v || '').trim();
+	  if (m) {
+	    return `${m[2]}-${m[3]} ${m[4]}:${m[5]}:${m[6]}`;
+	  }
+	  return formatMmDdHhMmSs(new Date());
+	}
 
     function setMsg(target, type, text){
       target.className = 'msg ' + (type || '');
