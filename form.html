@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script src="./config.js"></script>
+  <script type="text/javascript" nonce="5c969be3521d4365b40428c9256" src="//local.adguard.org?ts=1780837040540&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F11692b0b-d09f-4873-903e-41595541e162.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="5c969be3521d4365b40428c9256" src="//local.adguard.org?ts=1780837040540&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢確認表</title>
@@ -1718,7 +1718,10 @@ function setTime(date, hour, minute) {
 
   function bindEvents() {
     el.openQrBtn.addEventListener('click', toggleQr);
-    el.clearMachineBtn.addEventListener('click', () => setMachineId(''));
+	el.clearMachineBtn.addEventListener('click', () => {
+	  setMachineId('');
+	  resetItem11ByMachine();
+	});
     el.parseManualBtn.addEventListener('click', () => {
       const parsed = parseMachineId(el.manualQrText.value);
       if (!parsed) {
@@ -1726,7 +1729,7 @@ function setTime(date, hour, minute) {
 		//需為 ?-A6-? 或 ?-N57-? 這類格式。
         return;
       }
-      setMachineId(parsed);
+	  applyQrMachineId(parsed);
       showToast(`已取得機台 ID：${parsed}`, 'ok');
     });
     el.checkForm.addEventListener('submit', submitForm);
@@ -1898,7 +1901,7 @@ function setTime(date, hour, minute) {
         const parsed = parseMachineId(decodedText);
         if (!parsed) return false;
         scanLocked = true;
-        setMachineId(parsed);
+		applyQrMachineId(parsed);
         showToast(`已取得機台 ID：${parsed}`, 'ok');
         await stopQrScanner();
         el.qrBox.classList.remove('active');
@@ -1971,7 +1974,38 @@ function setTime(date, hour, minute) {
   function setMachineId(value) {
     machineId = String(value || '').trim().toUpperCase();
     el.machineIdText.textContent = machineId || '未掃描';
+    refreshItem11ByMachine();
     remindRoutineDuplicateIfChecked_();
+  }
+
+  function applyQrMachineId(value) {
+    setMachineId(value);
+    resetItem11ByMachine();
+  }
+
+  function resetItem11ByMachine() {
+    setValueByItemNo(11, '');
+    refreshItem11ByMachine();
+  }
+
+  function refreshItem11ByMachine() {
+    const first = String(machineId || '').charAt(0).toUpperCase();
+    const maxAxis = first === 'N' ? 6 : 4;
+    const inputs = getInputsByItemNo(11);
+
+    inputs.forEach(input => {
+      const label = input.closest('label');
+      const n = Number(String(input.value || '').replace('#', ''));
+
+      const show = Number.isFinite(n) && n >= 1 && n <= maxAxis;
+
+      input.disabled = !show;
+      input.checked = show ? input.checked : false;
+
+      if (label) {
+        label.style.display = show ? '' : 'none';
+      }
+    });
   }
 
   function applyStatusRules() {
@@ -2202,7 +2236,7 @@ function setTime(date, hour, minute) {
     const dup = findRoutineDuplicateDraft_();
 
     if (dup) {
-      showRoutineAlert_('此機台本班已有接班檢查紀錄。');
+      showRoutineAlert_('此機台　本班已有接班檢查紀錄');
     }
   }
 
