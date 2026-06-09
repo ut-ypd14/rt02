@@ -937,7 +937,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 form3 v0.1.1（項次19下拉版）</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 form3 v0.1.2（項次19下拉版）</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -1889,7 +1889,7 @@ function setTime(date, hour, minute) {
 
   function parseMachineId(text) {
     const raw = String(text || '').trim();
-    const match = raw.match(/^\?\-([A-Za-z0-9]+)\-\?$/);
+    const match = raw.match(/\?-([A-Za-z][A-Za-z0-9]*)-\?/);
     if (!match) return '';
     return parseManualMachineId(match[1]);
   }
