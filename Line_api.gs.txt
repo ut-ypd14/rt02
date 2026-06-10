@@ -1,0 +1,31 @@
+function setupLineTestTokenAndCheck() {
+  const KEY = 'LINE_TEST_TOKEN';
+
+  // 只在這裡臨時貼上測試 token，執行成功後建議刪掉或清空
+  const TOKEN = 'muyapjTbN9djZlRCLpkP8Fq8nZ8MvjrFDiBpvppgjgIZ//IPfjH2R2PSi0hgUj7LLl1+NvSav7AcO0W5JgFiiw vVJwLwwWEBzQd4dK7EmhuBWUzwo7ZquXWu/xJgdZFF56gmeJxXp6J6mRn1FGM6sAdB04t89/1O/w1cDnyilFU=';
+
+  const props = PropertiesService.getScriptProperties();
+
+  // 新增或覆蓋
+  props.setProperty(KEY, TOKEN);
+
+  // 延遲 3 秒
+  Utilities.sleep(3000);
+
+  // 讀回確認
+  const saved = props.getProperty(KEY);
+
+  if (saved && saved === TOKEN) {
+    Logger.log('LINE_TEST_TOKEN 已新增/覆蓋成功，讀回確認正常。');
+    return {
+      status: 'ok',
+      msg: 'LINE_TEST_TOKEN 已新增/覆蓋成功'
+    };
+  }
+
+  Logger.log('LINE_TEST_TOKEN 寫入後讀回失敗。');
+  return {
+    status: 'error',
+    msg: 'LINE_TEST_TOKEN 寫入後讀回失敗'
+  };
+}
