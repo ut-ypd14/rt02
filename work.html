@@ -45,6 +45,8 @@
     .gas-dot.ok{background:var(--ok); box-shadow:0 0 0 3px rgba(22,163,74,.13)}
     .gas-dot.bad{background:var(--bad); box-shadow:0 0 0 3px rgba(220,38,38,.13)}
     .card{border:1px solid rgba(226,232,240,.96); border-radius:var(--radius); background:rgba(255,255,255,.96); box-shadow:var(--shadow); overflow:hidden}
+    .card + .card{margin-top:12px}
+    .alert-card{margin-bottom:12px}
     .card-head{
       display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 13px 9px;
       border-bottom:1px solid rgba(226,232,240,.72);
@@ -71,8 +73,24 @@
     .msg{min-height:20px; color:var(--muted); font-size:13px; font-weight:850}
     .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)} .msg.warn{color:#b45309}
     .list{width:100%; border-top:1px solid rgba(226,232,240,.9); background:#fff}
+    .alert-tools{display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:8px; align-items:center; margin-bottom:10px}
+    .alert-summary{
+      display:flex; align-items:center; min-height:40px; padding:8px 10px; border:1px solid var(--line);
+      border-radius:14px; background:#f8fbff; color:#0f172a; font-size:14px; font-weight:900;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .alert-list{width:100%; border-top:1px solid rgba(226,232,240,.9); background:#fff}
+    .alert-row{display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:8px; align-items:center; padding:8px 4px; border-bottom:1px solid rgba(226,232,240,.8)}
+    .alert-main{min-width:0; overflow:hidden}
+    .alert-line1,.alert-line2{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .alert-line1{font-size:13px; font-weight:950; color:#0f172a}
+    .alert-line2{margin-top:3px; font-size:13px; font-weight:850; color:#475569}
+    .alert-status{margin-top:4px; font-size:12px; font-weight:900; color:var(--ok)}
+    .alert-status.muted{color:#b45309}
+    .alert-btn{min-height:36px; border-radius:13px; border:1px solid rgba(37,99,235,.22); background:#eff6ff; color:#1d4ed8; cursor:pointer; font-size:13px; font-weight:950}
+    .alert-btn.muted{border-color:rgba(245,158,11,.28); background:#fffbeb; color:#b45309}
     .row{
-      display:grid; grid-template-columns:2.4ch 2rem 10.8ch 5.4ch minmax(0,1fr);
+      display:grid; grid-template-columns:2.4ch 2rem 8.2ch 5.4ch minmax(0,1fr);
       align-items:center; column-gap:.42rem; min-height:38px; padding:5px 3px;
       border-bottom:1px solid rgba(226,232,240,.8); font-size:13px; font-weight:850; white-space:nowrap;
     }
@@ -103,7 +121,11 @@
       .status-id,.status-time,.status-gas{font-size:13px}
       .filters{grid-template-columns:1fr 104px 82px; gap:6px}
       .filter-badge,.person-select,.refresh-btn,.delete-btn{font-size:14px}
-      .row{grid-template-columns:2ch 1.7rem 9.8ch 4.8ch minmax(0,1fr); column-gap:.26rem; font-size:12px; min-height:36px}
+      .alert-tools{grid-template-columns:minmax(0,1fr) 82px; gap:6px}
+      .alert-row{grid-template-columns:minmax(0,1fr) 82px; gap:6px}
+      .alert-line1,.alert-line2{font-size:12px}
+      .alert-btn{font-size:12px; min-height:34px}
+      .row{grid-template-columns:2ch 1.7rem 7.4ch 4.8ch minmax(0,1fr); column-gap:.26rem; font-size:12px; min-height:36px}
     }
   </style>
 </head>
@@ -117,6 +139,20 @@
       <span class="status-id" id="currentIdText">----</span>
       <span class="status-time" id="localTimeText">--</span>
       <span class="status-gas"><span id="gasStatusText">GAS</span><span class="gas-dot" id="gasDot"></span></span>
+    </section>
+    <section class="card alert-card" aria-label="LINE提醒管理">
+      <div class="card-head">
+        <h2 class="card-title">LINE提醒管理</h2>
+        <span class="count-pill" id="alertCountText">0 筆</span>
+      </div>
+      <div class="card-body">
+        <div class="alert-tools">
+          <div class="alert-summary" id="alertSummaryText">提醒載入中...</div>
+          <button type="button" class="refresh-btn" id="alertRefreshBtn">重新整理</button>
+        </div>
+        <div class="msg" id="alertMsg"></div>
+        <div id="alertListArea" class="empty">提醒載入中...</div>
+      </div>
     </section>
     <section class="card">
       <div class="card-head">
@@ -161,6 +197,11 @@
       localTimeText:document.getElementById('localTimeText'),
       gasDot:document.getElementById('gasDot'),
       gasStatusText:document.getElementById('gasStatusText'),
+      alertCountText:document.getElementById('alertCountText'),
+      alertSummaryText:document.getElementById('alertSummaryText'),
+      alertRefreshBtn:document.getElementById('alertRefreshBtn'),
+      alertMsg:document.getElementById('alertMsg'),
+      alertListArea:document.getElementById('alertListArea'),
       targetText:document.getElementById('targetText'),
       personSelect:document.getElementById('personSelect'),
       refreshBtn:document.getElementById('refreshBtn'),
@@ -175,16 +216,17 @@
       deleteModalMsg:document.getElementById('deleteModalMsg')
     };
     let authState = null, targetSerial = '', targetShift = '';
-    let allRows = [], filteredBaseRows = [], visibleRows = [];
+    let allRows = [], filteredBaseRows = [], visibleRows = [], lineAlertRows = [];
     let freezeLastAliveAt = window.CFG_time, freezeTimer = null, actionMsgTimer = null;
     document.addEventListener('DOMContentLoaded', init);
     async function init(){
       if (!getApiUrl()){ setMsg(el.actionMsg, 'bad', '找不到 GAS 位置'); return; }
       authState = getAdminAuth();
       if (!authState){ setMsg(el.actionMsg, 'bad', '無管理權限，返回首頁。'); setTimeout(goHome, 800); return; }
-      bindEvents(); startClock(); startFreezeGuard(); setupTarget(); await loadWorkList();
+      bindEvents(); startClock(); startFreezeGuard(); setupTarget(); await loadLineAlertList(); await loadWorkList();
     }
     function bindEvents(){
+      el.alertRefreshBtn.addEventListener('click', loadLineAlertList);
       el.refreshBtn.addEventListener('click', loadWorkList);
       el.personSelect.addEventListener('change', renderVisibleRows);
       el.deleteBtn.addEventListener('click', openDeleteModal);
@@ -223,6 +265,124 @@
       el.currentIdText.textContent = authState.id || '----';
       el.targetText.textContent = formatDateMmDd(targetDate) + ' ' + (targetShift || '-');
     }
+    async function loadLineAlertList(){
+      setMsg(el.alertMsg, 'warn', '讀取提醒中...');
+      el.alertRefreshBtn.disabled = true;
+
+      try{
+        const params = new URLSearchParams();
+        params.set('action', 'line_alert');
+        params.set('mode', 'list');
+        const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+        if (!data || data.status !== 'ok') throw new Error(data && data.msg ? data.msg : '回應異常');
+        lineAlertRows = Array.isArray(data.values) ? data.values.map(normalizeLineAlertRow) : [];
+        renderLineAlerts();
+        clearMsg(el.alertMsg);
+      }catch(err){
+        lineAlertRows = [];
+        renderLineAlerts();
+        setMsg(el.alertMsg, 'bad', '提醒讀取失敗：' + formatError(err));
+      }finally{
+        el.alertRefreshBtn.disabled = false;
+      }
+    }
+
+    function normalizeLineAlertRow(row){
+      row = row || {};
+      return {
+        record_id:normalizeText(row.record_id),
+        hhmm:normalizeText(row.hhmm),
+        machine:normalizeText(row.machine || row.machine_id).toUpperCase(),
+        id:normalizeText(row.id).toUpperCase(),
+        name:normalizeText(row.name),
+        item1:normalizeText(row.item1 || row.item_01),
+        item2:normalizeText(row.item2 || row.item_02),
+        x_items:normalizeText(row.x_items),
+        send_count:Number(row.send_count || 0),
+        muted:row.muted === true || String(row.muted || '').toUpperCase() === 'TRUE'
+      };
+    }
+
+    function renderLineAlerts(){
+      const total = lineAlertRows.length;
+      const mutedCount = lineAlertRows.filter(function(row){ return row.muted; }).length;
+      const activeCount = total - mutedCount;
+
+      el.alertCountText.textContent = total + ' 筆';
+      el.alertSummaryText.textContent = '提醒中：' + activeCount + '｜已關閉：' + mutedCount;
+      el.alertListArea.innerHTML = '';
+
+      if (!total){
+        el.alertListArea.className = 'empty';
+        el.alertListArea.textContent = '目前無 LINE 提醒';
+        return;
+      }
+
+      el.alertListArea.className = 'alert-list';
+      lineAlertRows.forEach(function(row, index){
+        el.alertListArea.appendChild(buildLineAlertRow(row, index + 1));
+      });
+    }
+
+    function buildLineAlertRow(record, seq){
+      const row = document.createElement('div');
+      row.className = 'alert-row';
+
+      const main = document.createElement('div');
+      main.className = 'alert-main';
+
+      const line1 = document.createElement('div');
+      line1.className = 'alert-line1';
+      line1.textContent = String(seq) + ') ' + (record.hhmm || '--:--') + '｜' + (record.machine || '-') + '｜' + (record.id || '-') + (record.name ? ' ' + record.name : '');
+      main.appendChild(line1);
+
+      const line2 = document.createElement('div');
+      line2.className = 'alert-line2';
+      line2.textContent = (record.item1 || '-') + ' | ' + (record.item2 || '-') + ' | [' + (record.x_items || '-') + ']';
+      main.appendChild(line2);
+
+      const status = document.createElement('div');
+      status.className = 'alert-status' + (record.muted ? ' muted' : '');
+      status.textContent = record.muted ? '已關閉' : ('提醒中' + (record.send_count ? '｜已發 ' + record.send_count + ' 次' : ''));
+      main.appendChild(status);
+
+      row.appendChild(main);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'alert-btn' + (record.muted ? ' muted' : '');
+      btn.textContent = record.muted ? '再次開啟' : '關閉提醒';
+      btn.addEventListener('click', function(){ handleLineAlertToggle(record, btn); });
+      row.appendChild(btn);
+
+      return row;
+    }
+
+    async function handleLineAlertToggle(record, btn){
+      if (!record || !record.record_id){
+        setMsg(el.alertMsg, 'bad', '缺少提醒識別碼');
+        return;
+      }
+
+      const mode = record.muted ? 'unmute' : 'mute';
+      btn.disabled = true;
+      setMsg(el.alertMsg, 'warn', record.muted ? '重新開啟中...' : '關閉中...');
+
+      try{
+        const params = new URLSearchParams();
+        params.set('action', 'line_alert');
+        params.set('mode', mode);
+        params.set('record_id', record.record_id);
+        const data = await postWithTimeout(params, POST_TIMEOUT_MS);
+        if (!data || data.status !== 'ok') throw new Error(data && data.msg ? data.msg : '回應異常');
+        setMsg(el.alertMsg, 'ok', record.muted ? '已再次開啟提醒' : '已關閉提醒');
+        await loadLineAlertList();
+      }catch(err){
+        btn.disabled = false;
+        setMsg(el.alertMsg, 'bad', '操作失敗：' + formatError(err));
+      }
+    }
+
     async function loadWorkList(){
       setupTarget();
 
@@ -312,7 +472,7 @@
         const idSet = {}; ids.forEach(function(id){ idSet[id] = true; });
         allRows = allRows.filter(function(row){ return !idSet[row.record_id]; });
         closeDeleteModal(); applyTargetFilter(); buildPersonSelect(); renderVisibleRows();
-        setActionMsg('ok', '已刪除 ' + Number(data.deleted_count || 0) + ' 筆', 3000); resetFreezeAlive();
+        setActionMsg('ok', '已刪除 ' + Number(data.deleted_count || 0) + ' 筆', 3000); loadLineAlertList(); resetFreezeAlive();
       }catch(err){
         setMsg(el.deleteModalMsg, 'bad', '刪除失敗：' + formatError(err)); el.deleteConfirmBtn.disabled = false;
       }
@@ -340,11 +500,11 @@
     function formatServerTime(value){
       const s = String(value || '').trim(); if (!s) return '';
       let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-      if (m) return pad2(m[3]) + ' ' + pad2(m[4]) + ':' + pad2(m[5]) + ':' + pad2(m[6] || 0);
+      if (m) return pad2(m[4]) + ':' + pad2(m[5]) + ':' + pad2(m[6] || 0);
       m = s.match(/^(\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-      if (m) return pad2(m[2]) + ' ' + pad2(m[3]) + ':' + pad2(m[4]) + ':' + pad2(m[5] || 0);
+      if (m) return pad2(m[3]) + ':' + pad2(m[4]) + ':' + pad2(m[5] || 0);
       m = s.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-      if (m) return '-- ' + pad2(m[1]) + ':' + pad2(m[2]) + ':' + pad2(m[3] || 0);
+      if (m) return pad2(m[1]) + ':' + pad2(m[2]) + ':' + pad2(m[3] || 0);
       return s;
     }
     function readJsonStorage(key, fallback){ try{ const raw = localStorage.getItem(key); if (!raw) return fallback; const data = JSON.parse(raw); return data == null ? fallback : data; }catch(err){ return fallback; } }
