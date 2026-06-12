@@ -1,6 +1,6 @@
 /**
  * 巡檢人員點檢確認表{記錄} - GAS
- * Version: v0.3.11
+ * Version: v0.3.14
  * 人員主檔：A id、B pass、C name、D shift、E active、F admin
  * 表單記錄：sh
  */
@@ -27,7 +27,7 @@ let DATA_SS = null;
 
 function doGet(e) {
   return json_({
-    //version: 'v0.3.11',
+    //version: 'v0.3.13',
     //ts: new Date().toISOString(),
     action: 'gas_alive',
 	status: 'ok'
@@ -38,6 +38,13 @@ function doPost(e) {
   try {
     const p = (e && e.parameter) ? e.parameter : {};
     const action = String(p.action || '').trim();
+
+    // 無 action：交給 LINE_Bot.gs 處理。
+    // LINE_Bot.gs 內的 lineBot_doPost_(e) 再自行解析 JSON / webhook。
+    if (!action) {
+      return lineBot_doPost_(e);
+    }
+
     if (action === 'auth') {
       return rAuth_(p, getSS_(), SH_USER);
     }
@@ -225,7 +232,7 @@ function rUserSave_(p, ss, sheetName) {
 
       return json_({
         action: 'personnel_save',
-        fields: ['mode', 'id', 'active', 'system_time', 'operator_id'],
+        fields: ['mode', 'id', 'active', 'system_time', 'admin_id'],
         values: ['disable', id, 'FALSE', systemTime, adminId],
         status: 'ok'
       });
@@ -246,7 +253,7 @@ function rUserSave_(p, ss, sheetName) {
 
       return json_({
         action: 'personnel_save',
-        fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'operator_id'],
+        fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'admin_id'],
         values: [
           activeProvided && activeValue === true ? 'enable_update' : 'update',
           id,
@@ -272,7 +279,7 @@ function rUserSave_(p, ss, sheetName) {
 
     return json_({
       action: 'personnel_save',
-      fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'operator_id'],
+      fields: ['mode', 'id', 'name', 'shift', 'active', 'system_time', 'admin_id'],
       values: ['insert', id, name, shift, 'TRUE', systemTime, adminId],
       status: 'ok'
     });
@@ -353,6 +360,7 @@ function rFormU_(p, ss, sheetName) {
       });
     }
 
+    const userId = normalizeId_(param_(p, 'id'));
     const new_record_id = Utilities.getUuid();
     const gasTimeText = Utilities.formatDate(
       new Date(),
@@ -365,7 +373,7 @@ function rFormU_(p, ss, sheetName) {
     sh.appendRow(row);
     const newRow = sh.getLastRow();
 
-    sh.getRange(targetRow, 1).setValue('Ng_id');
+    sh.getRange(targetRow, 1).setValue(softDeleteIdText_(userId));
 
     return json_({
       action: 'form_update',
@@ -523,6 +531,7 @@ function rWorkDelete_(p, ss, sheetName) {
 
   return withLock_(LOCK_WRITE_MS, 'work_delete', function () {
     const sh = getSheet_(ss, sheetName);
+    const userId = normalizeId_(mVal_(p, 'id'));
     let deleted = 0;
     let skipped = 0;
 
@@ -541,7 +550,7 @@ function rWorkDelete_(p, ss, sheetName) {
         return;
       }
 
-      sh.getRange(rowNo, 1).setValue('Ng_id');
+      sh.getRange(rowNo, 1).setValue(softDeleteIdText_(userId));
       deleted += 1;
     });
 
@@ -616,6 +625,7 @@ function rMail_(p, ss, sheetName) {
 
     const opt = {
       mode: mode,
+      userId: normalizeId_(mVal_(p, 'id')),
       ss: getSS_(ss),
       sheetName: sheetName || SH_FORM,
       scan: MAIL_SCAN
@@ -652,6 +662,7 @@ function mailAuto_() {
 
   return mailRun_({
     mode: 'auto',
+    userId: '',
     ss: getSS_(),
     sheetName: SH_FORM,
     scan: MAIL_SCAN,
@@ -670,6 +681,7 @@ function mailMonth_() {
 
   return mailRun_({
     mode: 'month',
+    userId: '',
     ss: getSS_(),
     sheetName: SH_FORM,
     scan: MAIL_SCAN,
@@ -1038,11 +1050,22 @@ function mkSubj_(opt, q, n) {
   return '[' + tag + '] 巡檢資料 ' + qText_(q) + ' 共 ' + n + ' 筆';
 }
 
+function mailTypeText_(opt) {
+  const mode = String(opt && opt.mode ? opt.mode : '');
+  const userId = normalizeId_(opt && opt.userId ? opt.userId : '');
+
+  if (mode.toLowerCase() === 'resend' && userId) {
+    return mode + ' ' + userId;
+  }
+
+  return mode;
+}
+
 function mkBody_(opt, q, pack) {
   return [
     '巡檢資料附件已產生。',
     '',
-    '類型：' + String(opt.mode || ''),
+    '類型：' + mailTypeText_(opt),
     '範圍：' + qText_(q),
     '筆數：' + pack.rows.length,
     '掃描筆數：' + pack.scanCount,
@@ -1088,7 +1111,7 @@ function modeCode_(opt) {
 }
 
 function shiftText_(shift) {
-  if (shift === 'A') return '早班';
+  if (shift === 'A') return '日班';
   if (shift === 'B') return '中班';
   if (shift === 'C') return '夜班';
 
@@ -1182,6 +1205,10 @@ function mPad2_(n) {
   return String(n).padStart(2, '0');
 }
 
+
+function softDeleteIdText_(userId) {
+  return 'Ng_' + normalizeId_(userId);
+}
 
 function rFormD_(p, ss, sheetName) {
   return withLock_(LOCK_MAINT_MS, 'form_delete', function () {
