@@ -1,31 +1,74 @@
-function setupLineTestTokenAndCheck() {
-  const KEY = 'LINE_TEST_TOKEN';
+function setupLineTokenAndTargetsAndCheck() {
+  const TOKEN_KEY = 'LINE_TEST_TOKEN';
+  const TARGETS_KEY = 'LINE_ALERT_TARGETS';
 
-  // 只在這裡臨時貼上測試 token，執行成功後建議刪掉或清空
+  // LINE Token：照你提供的內容原樣放這裡
   const TOKEN = 'muyapjTbN9djZlRCLpkP8Fq8nZ8MvjrFDiBpvppgjgIZ//IPfjH2R2PSi0hgUj7LLl1+NvSav7AcO0W5JgFiiw vVJwLwwWEBzQd4dK7EmhuBWUzwo7ZquXWu/xJgdZFF56gmeJxXp6J6mRn1FGM6sAdB04t89/1O/w1cDnyilFU=';
+
+  // 聊天室 / 群組 / 個人 ID，可放多個
+  const TARGET_IDS = [
+    'C54852800a5498a0a4ac15466ec81c40a'
+
+  ];
+
+  const cleanedTargets = TARGET_IDS
+    .map(function(id) {
+      return String(id || '').trim();
+    })
+    .filter(function(id) {
+      return id !== '';
+    });
 
   const props = PropertiesService.getScriptProperties();
 
   // 新增或覆蓋
-  props.setProperty(KEY, TOKEN);
+  props.setProperty(TOKEN_KEY, TOKEN);
+  props.setProperty(TARGETS_KEY, JSON.stringify(cleanedTargets));
 
   // 延遲 3 秒
   Utilities.sleep(3000);
 
   // 讀回確認
-  const saved = props.getProperty(KEY);
+  const savedToken = props.getProperty(TOKEN_KEY);
+  const savedTargetsText = props.getProperty(TARGETS_KEY);
 
-  if (saved && saved === TOKEN) {
+  let savedTargets = [];
+  try {
+    savedTargets = JSON.parse(savedTargetsText || '[]');
+  } catch (err) {
+    savedTargets = [];
+  }
+
+  const tokenOk = savedToken && savedToken === TOKEN;
+  const targetsOk =
+    Array.isArray(savedTargets) &&
+    savedTargets.length === cleanedTargets.length;
+
+  if (tokenOk && targetsOk) {
     Logger.log('LINE_TEST_TOKEN 已新增/覆蓋成功，讀回確認正常。');
+    Logger.log('LINE_ALERT_TARGETS 已新增/覆蓋成功，讀回確認正常。');
+    Logger.log('target_count=' + savedTargets.length);
+
+    savedTargets.forEach(function(id, i) {
+      Logger.log((i + 1) + '. ' + id);
+    });
+
     return {
       status: 'ok',
-      msg: 'LINE_TEST_TOKEN 已新增/覆蓋成功'
+      msg: 'LINE_TEST_TOKEN / LINE_ALERT_TARGETS 已新增或覆蓋成功',
+      target_count: savedTargets.length
     };
   }
 
-  Logger.log('LINE_TEST_TOKEN 寫入後讀回失敗。');
+  Logger.log('寫入後讀回失敗。');
+  Logger.log('tokenOk=' + tokenOk);
+  Logger.log('targetsOk=' + targetsOk);
+
   return {
     status: 'error',
-    msg: 'LINE_TEST_TOKEN 寫入後讀回失敗'
+    msg: 'LINE_TEST_TOKEN 或 LINE_ALERT_TARGETS 寫入後讀回失敗',
+    tokenOk: tokenOk,
+    targetsOk: targetsOk,
+    target_count: savedTargets.length
   };
 }
