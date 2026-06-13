@@ -1,0 +1,360 @@
+/**
+ * 2號 GAS：主系統健康狀態代理
+ * Version: v0.1.1
+ *
+ * 用途：
+ * 1) 由 2號 GAS 每 5 分鐘 ping 1號 GAS。
+ * 2) 2號 GAS 保存最近一次健康結果。
+ * 3) 前端只呼叫 2號 doGet，不直接頻繁呼叫 1號。
+ * 4) doGet 不使用 action，進來就直接回傳目前保存狀態。
+ * 5) 回應明確區分 2號狀態服務本身與 1號主 GAS 健康狀態。
+ */
+
+const HEALTH_PROXY_VERSION = 'v0.1.1';
+
+// 1號主 GAS /exec
+const MAIN_GAS_URL = 'https://script.google.com/macros/s/AKfycbyjWHFBi-mroT1O2CbwpehxVVx0VCdFhsWiZL162ZhT38Xyf3PqfRJlSa8v0W7CZY45Yg/exec';
+
+// 狀態保存設定
+const HEALTH_PROP_KEY = 'PI_MAIN_GAS_HEALTH_V001';
+const HEALTH_CACHE_KEY = 'PI_MAIN_GAS_HEALTH_V001';
+const HEALTH_CACHE_TTL_SEC = 600;       // 10 分鐘，降低 PropertiesService 讀取量
+const HEALTH_STALE_MS = 12 * 60 * 1000; // 超過 12 分鐘沒有新檢查，視為異常
+
+// ping 設定
+const HEALTH_RETRY_COUNT = 2;       // 失敗後最多重試 2 次；總嘗試次數 = 1 + 2
+const HEALTH_RETRY_SLEEP_MS = 3000; // 每次重試前等待 3 秒
+
+// 健康分級門檻：2號 GAS → 1號 GAS 的耗時
+const HEALTH_GOOD_MS = 1500;
+const HEALTH_OK_MS = 4000;
+
+/**
+ * 前端呼叫入口。
+ * 不判斷 action，不即時呼叫 1號，只讀取 2號保存的最近狀態。
+ */
+function doGet(e) {
+  return hpJson_(hpGetStatus_());
+}
+
+/**
+ * 排程入口：每 5 分鐘執行一次。
+ * 由 2號 GAS 呼叫 1號 GAS，並保存健康狀態。
+ */
+function pingMain_() {
+  const result = hpCheckMainWithRetry_();
+  hpSaveStatus_(result);
+  return result;
+}
+
+/**
+ * 建立 5 分鐘排程。
+ * 手動執行一次 setupHealthTrigger_() 即可。
+ */
+function setupHealthTrigger_() {
+  clearHealthTriggers_();
+  ScriptApp.newTrigger('pingMain_').timeBased().everyMinutes(5).create();
+  const first = pingMain_();
+  return {
+    status: 'ok',
+    version: HEALTH_PROXY_VERSION,
+    msg: 'health trigger created',
+    first_check: first
+  };
+}
+
+/**
+ * 清除本模組排程。
+ */
+function clearHealthTriggers_() {
+  const names = {
+    pingMain_: true
+  };
+  const triggers = ScriptApp.getProjectTriggers();
+  let deleted = 0;
+
+  triggers.forEach(function (t) {
+    if (names[t.getHandlerFunction()]) {
+      ScriptApp.deleteTrigger(t);
+      deleted++;
+    }
+  });
+
+  return {
+    status: 'ok',
+    version: HEALTH_PROXY_VERSION,
+    deleted: deleted
+  };
+}
+
+/**
+ * 讀取保存狀態，並依目前時間重新判斷是否過期。
+ */
+function hpGetStatus_() {
+  const now = Date.now();
+  let data = hpReadStoredStatus_();
+
+  if (!data) {
+    return hpBuildStatus_({
+      ok: false,
+      health: 'bad',
+      level: 3,
+      text: '異常',
+      latency_ms: null,
+      http_code: null,
+      attempt: 0,
+      error: 'no_status',
+      last_check_ms: 0,
+      now_ms: now,
+      stale: true
+    });
+  }
+
+  data.now_ms = now;
+  data.age_ms = Math.max(0, now - Number(data.last_check_ms || 0));
+
+  if (!data.last_check_ms || data.age_ms > HEALTH_STALE_MS) {
+    data.main_ok = false;
+    data.main_health = 'bad';
+    data.main_health_text = '異常';
+    data.main_level = 3;
+    data.stale = true;
+    data.reason = 'stale';
+  } else {
+    data.stale = false;
+    data.reason = data.reason || '';
+  }
+
+  data.status = 'ok';
+  data.proxy_ok = true;
+  data.proxy_status = 'good';
+  data.proxy_text = '狀態服務正常';
+  data.proxy_version = HEALTH_PROXY_VERSION;
+  data.gas2_ok = true;
+  data.gas2_status = 'good';
+  data.gas2_text = '狀態服務正常';
+
+  data.main_status = String(data.main_health || data.main_status || 'bad');
+  data.main_text = String(data.main_health_text || data.main_text || '異常');
+  data.main_health = data.main_status;
+  data.main_health_text = data.main_text;
+  data.main_ok = Boolean(data.main_ok);
+  data.gas1_ok = data.main_ok;
+  data.gas1_status = data.main_status;
+  data.gas1_text = data.main_text;
+
+  data.stale_limit_ms = HEALTH_STALE_MS;
+  return data;
+}
+
+/**
+ * 實際檢查 1號 GAS，失敗後短暫等待再重試。
+ */
+function hpCheckMainWithRetry_() {
+  let last = null;
+
+  for (let i = 0; i <= HEALTH_RETRY_COUNT; i++) {
+    if (i > 0) Utilities.sleep(HEALTH_RETRY_SLEEP_MS);
+
+    last = hpCheckMainOnce_(i + 1);
+    if (last.main_ok) return last;
+  }
+
+  return last || hpBuildStatus_({
+    ok: false,
+    health: 'bad',
+    level: 3,
+    text: '異常',
+    latency_ms: null,
+    http_code: null,
+    attempt: 0,
+    error: 'unknown_error',
+    last_check_ms: Date.now(),
+    now_ms: Date.now(),
+    stale: false
+  });
+}
+
+/**
+ * 單次 ping 1號 GAS。
+ */
+function hpCheckMainOnce_(attempt) {
+  const t0 = Date.now();
+  let latency = null;
+  let code = null;
+  let body = '';
+
+  try {
+    const url = hpUrlWithTs_(MAIN_GAS_URL);
+    const res = UrlFetchApp.fetch(url, {
+      method: 'get',
+      muteHttpExceptions: true,
+      followRedirects: true
+    });
+
+    latency = Date.now() - t0;
+    code = res.getResponseCode();
+    body = String(res.getContentText() || '');
+
+    const httpOk = code >= 200 && code < 300;
+
+    if (!httpOk) {
+      return hpBuildStatus_({
+        ok: false,
+        health: 'bad',
+        level: 3,
+        text: '異常',
+        latency_ms: latency,
+        http_code: code,
+        attempt: attempt,
+        error: 'http_' + code,
+        body_sample: hpLimitText_(body),
+        last_check_ms: Date.now(),
+        now_ms: Date.now(),
+        stale: false
+      });
+    }
+
+    const grade = hpGradeLatency_(latency);
+    return hpBuildStatus_({
+      ok: true,
+      health: grade.health,
+      level: grade.level,
+      text: grade.text,
+      latency_ms: latency,
+      http_code: code,
+      attempt: attempt,
+      error: '',
+      body_sample: hpLimitText_(body),
+      last_check_ms: Date.now(),
+      now_ms: Date.now(),
+      stale: false
+    });
+  } catch (err) {
+    latency = Date.now() - t0;
+    return hpBuildStatus_({
+      ok: false,
+      health: 'bad',
+      level: 3,
+      text: '異常',
+      latency_ms: latency,
+      http_code: code,
+      attempt: attempt,
+      error: String(err && err.message ? err.message : err),
+      body_sample: '',
+      last_check_ms: Date.now(),
+      now_ms: Date.now(),
+      stale: false
+    });
+  }
+}
+
+/**
+ * 依耗時分級。
+ */
+function hpGradeLatency_(latencyMs) {
+  if (latencyMs <= HEALTH_GOOD_MS) {
+    return { health: 'good', level: 0, text: '良好' };
+  }
+  if (latencyMs <= HEALTH_OK_MS) {
+    return { health: 'ok', level: 1, text: '尚可' };
+  }
+  return { health: 'poor', level: 2, text: '稍差' };
+}
+
+/**
+ * 統一輸出資料格式。
+ */
+function hpBuildStatus_(opt) {
+  const now = Number(opt.now_ms || Date.now());
+  const last = Number(opt.last_check_ms || now);
+  const mainOk = Boolean(opt.ok);
+  const mainHealth = String(opt.health || 'bad');
+  const mainText = String(opt.text || '異常');
+  const mainLevel = Number(opt.level == null ? 3 : opt.level);
+
+  return {
+    status: 'ok',
+
+    // 2號狀態服務本身：只要 doGet 成功回 JSON，這層就是成功。
+    proxy_ok: true,
+    proxy_status: 'good',
+    proxy_text: '狀態服務正常',
+    proxy_version: HEALTH_PROXY_VERSION,
+    gas2_ok: true,
+    gas2_status: 'good',
+    gas2_text: '狀態服務正常',
+
+    // 1號主 GAS 健康狀態：由 pingMain_ 最近一次檢查結果決定。
+    main_ok: mainOk,
+    main_status: mainHealth,
+    main_text: mainText,
+    main_health: mainHealth,
+    main_health_text: mainText,
+    main_level: mainLevel,
+    main_latency_ms: opt.latency_ms == null ? null : Number(opt.latency_ms),
+    main_http_code: opt.http_code == null ? null : Number(opt.http_code),
+    gas1_ok: mainOk,
+    gas1_status: mainHealth,
+    gas1_text: mainText,
+
+    attempt: Number(opt.attempt || 0),
+    last_check_ms: last,
+    now_ms: now,
+    age_ms: Math.max(0, now - last),
+    stale: Boolean(opt.stale),
+    stale_limit_ms: HEALTH_STALE_MS,
+    error: String(opt.error || ''),
+    reason: String(opt.reason || ''),
+    body_sample: String(opt.body_sample || '')
+  };
+}
+
+/**
+ * 保存狀態到 CacheService 與 PropertiesService。
+ */
+function hpSaveStatus_(data) {
+  const text = JSON.stringify(data);
+  CacheService.getScriptCache().put(HEALTH_CACHE_KEY, text, HEALTH_CACHE_TTL_SEC);
+  PropertiesService.getScriptProperties().setProperty(HEALTH_PROP_KEY, text);
+}
+
+/**
+ * 先讀 Cache，沒有再讀 Properties。
+ */
+function hpReadStoredStatus_() {
+  const cache = CacheService.getScriptCache().get(HEALTH_CACHE_KEY);
+  if (cache) return hpParseJson_(cache);
+
+  const prop = PropertiesService.getScriptProperties().getProperty(HEALTH_PROP_KEY);
+  if (!prop) return null;
+
+  const data = hpParseJson_(prop);
+  if (data) {
+    CacheService.getScriptCache().put(HEALTH_CACHE_KEY, JSON.stringify(data), HEALTH_CACHE_TTL_SEC);
+  }
+  return data;
+}
+
+function hpParseJson_(text) {
+  try {
+    return JSON.parse(String(text || ''));
+  } catch (err) {
+    return null;
+  }
+}
+
+function hpUrlWithTs_(url) {
+  const sep = String(url).indexOf('?') >= 0 ? '&' : '?';
+  return String(url) + sep + 'hp_ts=' + encodeURIComponent(String(Date.now()));
+}
+
+function hpLimitText_(text) {
+  return String(text || '').replace(/\s+/g, ' ').slice(0, 120);
+}
+
+function hpJson_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
