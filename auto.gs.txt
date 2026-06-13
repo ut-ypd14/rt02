@@ -1,0 +1,67 @@
+/**
+ * 建立 排程
+ * Version: trigger_v0.1.2
+ *
+ * 每班自動：
+ * 07:50 / 15:50 / 23:50 → mailAuto_()
+ *
+ * 月報：
+ * 每月 2 號 04:10 → mailMonth_()
+ *
+ * 定時清理：
+ * 每月 3 號 04:10 → cleanData_()
+ */
+function setupMailTriggers() {
+  clearMailTriggers_();
+
+  // 每班下班前 10 分鐘
+  makeDailyTrigger_('mailAuto_', 7, 50);
+  makeDailyTrigger_('mailAuto_', 15, 50);
+  makeDailyTrigger_('mailAuto_', 23, 50);
+
+  // 每月 2 號寄上個月資料
+  makeMonthlyTrigger_('mailMonth_', 2, 4, 10);
+
+  // 每月 3 號定時清理表數據
+  makeMonthlyTrigger_('cleanData_', 3, 4, 10);
+
+  return 'triggers created';
+}
+
+function clearMailTriggers_() {
+  const names = {
+    mailAuto_: true,
+    mailMonth_: true,
+    cleanData_: true
+  };
+
+  const triggers = ScriptApp.getProjectTriggers();
+
+  for (let i = 0; i < triggers.length; i++) {
+    const fn = triggers[i].getHandlerFunction();
+
+    if (names[fn]) {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+}
+
+function makeDailyTrigger_(fnName, hour, minute) {
+  ScriptApp.newTrigger(fnName)
+    .timeBased()
+    .inTimezone(APP_TZ)
+    .everyDays(1)
+    .atHour(hour)
+    .nearMinute(minute)
+    .create();
+}
+
+function makeMonthlyTrigger_(fnName, day, hour, minute) {
+  ScriptApp.newTrigger(fnName)
+    .timeBased()
+    .inTimezone(APP_TZ)
+    .onMonthDay(day)
+    .atHour(hour)
+    .nearMinute(minute)
+    .create();
+}
