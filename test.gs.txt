@@ -37,55 +37,6 @@ function doGet(e) {
   return hpJson_(hpGetStatus_());
 }
 
-/**
- * 排程入口：每 5 分鐘執行一次。
- * 由 2號 GAS 呼叫 1號 GAS，並保存健康狀態。
- */
-function pingMain_() {
-  const result = hpCheckMainWithRetry_();
-  hpSaveStatus_(result);
-  return result;
-}
-
-/**
- * 建立 5 分鐘排程。
- * 手動執行一次 setupHealthTrigger_() 即可。
- */
-function setupHealthTrigger_() {
-  clearHealthTriggers_();
-  ScriptApp.newTrigger('pingMain_').timeBased().everyMinutes(5).create();
-  const first = pingMain_();
-  return {
-    status: 'ok',
-    version: HEALTH_PROXY_VERSION,
-    msg: 'health trigger created',
-    first_check: first
-  };
-}
-
-/**
- * 清除本模組排程。
- */
-function clearHealthTriggers_() {
-  const names = {
-    pingMain_: true
-  };
-  const triggers = ScriptApp.getProjectTriggers();
-  let deleted = 0;
-
-  triggers.forEach(function (t) {
-    if (names[t.getHandlerFunction()]) {
-      ScriptApp.deleteTrigger(t);
-      deleted++;
-    }
-  });
-
-  return {
-    status: 'ok',
-    version: HEALTH_PROXY_VERSION,
-    deleted: deleted
-  };
-}
 
 /**
  * 讀取保存狀態，並依目前時間重新判斷是否過期。
