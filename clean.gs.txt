@@ -1,0 +1,365 @@
+/**
+ * clean.gs - 巡檢人員點檢確認表{記錄} 定期清理模組
+ * Version: clean_v0.1.0
+ *
+ * 排程建議：每月 3 號 04:10 執行 cleanData_()
+ *
+ * 功能：
+ *   1) 清理人員表：E 欄 active=FALSE，且 G 欄停用時間超過 28 天，即刪除該列。
+ *   2) 清理主數據表：依 sh 表 C 欄日期，刪除早於「當月往前 6 個月月初」的開頭連續舊資料。
+ *      從第 2 列開始掃描，遇到第一筆在保留範圍內的日期即停止。
+ *   3) 清理完成後寄送通知信給 CLEAN_MAIL_TO。
+ *
+ * 依賴主 GAS 全域：
+ *   APP_TZ, SH_USER, SH_FORM, LOCK_MAINT_MS, getSS_()
+ */
+
+const CLEAN_VER = 'clean_v0.1.0';
+const CLEAN_MAIL_TO = 'ut.ypd14@gmail.com';
+const CLEAN_USER_KEEP_DAYS = 28;
+const CLEAN_FORM_KEEP_MONTHS = 6;
+const CLEAN_BUFFER_MS = 3000;
+
+function cleanData_() {
+  const t0 = Date.now();
+  let rep;
+  let locked = false;
+  const lock = LockService.getScriptLock();
+
+  try {
+    lock.waitLock(clLockMs_());
+    locked = true;
+
+    const ss = getSS_();
+    const users = clUsers_(ss, t0);
+    const form = clForm_(ss, t0);
+
+    clSleep_(CLEAN_BUFFER_MS);
+
+    rep = {
+      action: 'clean_data',
+      version: CLEAN_VER,
+      status: 'ok',
+      started_at: clFmt_(t0),
+      finished_at: clFmt_(Date.now()),
+      users: users,
+      form: form
+    };
+
+  } catch (err) {
+    rep = {
+      action: 'clean_data',
+      version: CLEAN_VER,
+      status: 'error',
+      started_at: clFmt_(t0),
+      finished_at: clFmt_(Date.now()),
+      msg: String(err && err.message ? err.message : err)
+    };
+
+  } finally {
+    if (locked) {
+      try {
+        lock.releaseLock();
+      } catch (releaseErr) {}
+    }
+  }
+
+  try {
+    clMail_(rep);
+    rep.mail_status = 'ok';
+  } catch (mailErr) {
+    rep.mail_status = 'error';
+    rep.mail_msg = String(mailErr && mailErr.message ? mailErr.message : mailErr);
+    try {
+      Logger.log('cleanData_ mail failed: ' + rep.mail_msg);
+    } catch (logErr) {}
+  }
+
+  return rep;
+}
+
+function clUsers_(ss, nowMs) {
+  const sh = clSheet_(ss, SH_USER);
+  const lastRow = sh.getLastRow();
+  const out = [];
+
+  if (lastRow < 2) {
+    return {
+      sheet: SH_USER,
+      deleted_count: 0,
+      deleted: []
+    };
+  }
+
+  const values = sh.getRange(2, 1, lastRow - 1, 7).getValues();
+  const limitMs = Number(nowMs || Date.now()) - CLEAN_USER_KEEP_DAYS * 24 * 60 * 60 * 1000;
+  const rows = [];
+
+  for (let i = values.length - 1; i >= 0; i--) {
+    const row = values[i];
+    const activeFalse = clFalse_(row[4]);
+    const disabledMs = clMs_(row[6]);
+
+    if (!activeFalse || !disabledMs || disabledMs >= limitMs) continue;
+
+    rows.push(i + 2);
+    out.push({
+      row: i + 2,
+      id: String(row[0] || '').trim(),
+      name: String(row[2] || '').trim(),
+      disabled_at: clFmt_(disabledMs)
+    });
+  }
+
+  clDelRows_(sh, rows);
+
+  out.sort(function (a, b) {
+    return a.row - b.row;
+  });
+
+  return {
+    sheet: SH_USER,
+    deleted_count: out.length,
+    deleted: out
+  };
+}
+
+function clForm_(ss, nowMs) {
+  const sh = clSheet_(ss, SH_FORM);
+  const lastRow = sh.getLastRow();
+  const keepStartSer = clKeepStartSer_(nowMs || Date.now());
+  const keepStartText = clSerText_(keepStartSer);
+
+  if (lastRow < 2) {
+    return {
+      sheet: SH_FORM,
+      keep_start: keepStartText,
+      deleted_rows: 0,
+      deleted_from: 0,
+      deleted_to: 0,
+      stop_reason: 'no_data'
+    };
+  }
+
+  const vals = sh.getRange(2, 3, lastRow - 1, 1).getValues();
+  let oldCount = 0;
+  let stopReason = 'end_of_data';
+  let stopRow = 0;
+
+  for (let i = 0; i < vals.length; i++) {
+    const rowNo = i + 2;
+    const ser = clSer_(vals[i][0]);
+
+    if (!ser) {
+      stopReason = 'invalid_date_at_row_' + rowNo;
+      stopRow = rowNo;
+      break;
+    }
+
+    if (ser >= keepStartSer) {
+      stopReason = 'in_range_at_row_' + rowNo;
+      stopRow = rowNo;
+      break;
+    }
+
+    oldCount += 1;
+  }
+
+  if (oldCount > 0) {
+    sh.deleteRows(2, oldCount);
+  }
+
+  return {
+    sheet: SH_FORM,
+    keep_start: keepStartText,
+    deleted_rows: oldCount,
+    deleted_from: oldCount > 0 ? 2 : 0,
+    deleted_to: oldCount > 0 ? oldCount + 1 : 0,
+    stop_reason: stopReason,
+    stop_row: stopRow
+  };
+}
+
+function clMail_(rep) {
+  rep = rep || {};
+
+  const subject = '[系統清理完成] 巡檢資料定期清理 ' + clFmt_(Date.now(), 'yyyy/MM/dd HH:mm');
+  const lines = [];
+
+  lines.push('巡檢資料定期清理已完成。');
+  lines.push('');
+  lines.push('狀態：' + String(rep.status || ''));
+  lines.push('版本：' + String(rep.version || CLEAN_VER));
+  lines.push('開始：' + String(rep.started_at || ''));
+  lines.push('完成：' + String(rep.finished_at || ''));
+
+  if (rep.status !== 'ok') {
+    lines.push('');
+    lines.push('錯誤：' + String(rep.msg || ''));
+  }
+
+  lines.push('');
+  lines.push('【人員清理】');
+
+  const users = rep.users || {};
+  const deleted = Array.isArray(users.deleted) ? users.deleted : [];
+  lines.push('刪除筆數：' + Number(users.deleted_count || 0));
+
+  if (deleted.length) {
+    deleted.forEach(function (u, idx) {
+      lines.push((idx + 1) + '. ' + String(u.id || '') + '｜' + String(u.name || '') + '｜停用時間：' + String(u.disabled_at || ''));
+    });
+  } else {
+    lines.push('已清理人員：無');
+  }
+
+  lines.push('');
+  lines.push('【主數據清理】');
+
+  const form = rep.form || {};
+  lines.push('保留起點：' + String(form.keep_start || ''));
+  lines.push('刪除列數：' + Number(form.deleted_rows || 0));
+
+  if (Number(form.deleted_rows || 0) > 0) {
+    lines.push('刪除範圍：第 ' + form.deleted_from + ' 列 ~ 第 ' + form.deleted_to + ' 列');
+  } else {
+    lines.push('主數據清理：無需清理');
+  }
+
+  lines.push('停止原因：' + String(form.stop_reason || ''));
+
+  MailApp.sendEmail({
+    to: CLEAN_MAIL_TO,
+    subject: subject,
+    body: lines.join('\n')
+  });
+}
+
+function clDelRows_(sh, rows) {
+  rows = (rows || []).map(function (n) {
+    return Number(n);
+  }).filter(function (n) {
+    return Number.isFinite(n) && n > 1;
+  }).sort(function (a, b) {
+    return a - b;
+  });
+
+  if (!rows.length) return;
+
+  const ranges = [];
+  let start = rows[0];
+  let prev = rows[0];
+
+  for (let i = 1; i < rows.length; i++) {
+    const cur = rows[i];
+
+    if (cur === prev + 1) {
+      prev = cur;
+      continue;
+    }
+
+    ranges.push([start, prev]);
+    start = cur;
+    prev = cur;
+  }
+
+  ranges.push([start, prev]);
+
+  for (let j = ranges.length - 1; j >= 0; j--) {
+    const r = ranges[j];
+    sh.deleteRows(r[0], r[1] - r[0] + 1);
+  }
+}
+
+function clSheet_(ss, name) {
+  if (typeof getSheet_ === 'function') return getSheet_(ss, name);
+
+  const sh = ss.getSheetByName(name);
+  if (!sh) throw new Error('sheet_not_found:' + name);
+  return sh;
+}
+
+function clFalse_(v) {
+  if (v === false) return true;
+
+  const s = String(v == null ? '' : v).trim().toUpperCase();
+  return s === 'FALSE' || s === 'F' || s === '0';
+}
+
+function clMs_(v) {
+  if (v instanceof Date) return v.getTime();
+
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return 0;
+
+  const m = s.replace(/-/g, '/').match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (!m) return 0;
+
+  return new Date(
+    Number(m[1]),
+    Number(m[2]) - 1,
+    Number(m[3]),
+    Number(m[4] || 0),
+    Number(m[5] || 0),
+    Number(m[6] || 0)
+  ).getTime();
+}
+
+function clSer_(v) {
+  if (v instanceof Date) {
+    return clDateSer_(Utilities.formatDate(v, APP_TZ, 'yyyy/MM/dd'));
+  }
+
+  const n = Number(v);
+  if (Number.isFinite(n) && n > 0) return Math.floor(n);
+
+  const s = String(v == null ? '' : v).trim();
+  if (/^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/.test(s)) {
+    return clDateSer_(s);
+  }
+
+  return 0;
+}
+
+function clDateSer_(text) {
+  const s = String(text || '').trim().replace(/-/g, '/');
+  const p = s.split('/');
+  if (p.length !== 3) return 0;
+
+  const y = Number(p[0]);
+  const m = Number(p[1]);
+  const d = Number(p[2]);
+  if (!y || !m || !d) return 0;
+
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000) + 25569;
+}
+
+function clKeepStartSer_(nowMs) {
+  const dt = new Date(Number(nowMs || Date.now()));
+  const y = Number(Utilities.formatDate(dt, APP_TZ, 'yyyy'));
+  const m = Number(Utilities.formatDate(dt, APP_TZ, 'MM'));
+  const keep = new Date(Date.UTC(y, m - 1 - CLEAN_FORM_KEEP_MONTHS, 1));
+
+  return Math.floor(Date.UTC(keep.getUTCFullYear(), keep.getUTCMonth(), 1) / 86400000) + 25569;
+}
+
+function clSerText_(serial) {
+  const n = Math.floor(Number(serial || 0));
+  if (!n) return '';
+
+  const dt = new Date((n - 25569) * 86400000);
+  return Utilities.formatDate(dt, 'UTC', 'yyyy/MM/dd');
+}
+
+function clFmt_(ms, fmt) {
+  return Utilities.formatDate(new Date(Number(ms || Date.now())), APP_TZ, fmt || 'yyyy/MM/dd HH:mm:ss');
+}
+
+function clLockMs_() {
+  return Number(typeof LOCK_MAINT_MS === 'number' ? LOCK_MAINT_MS : 180000);
+}
+
+function clSleep_(ms) {
+  const n = Math.max(0, Number(ms || 0));
+  if (n > 0) Utilities.sleep(n);
+}
