@@ -1,6 +1,8 @@
 	/* ===== API_URL ===== */
 	window.api_url = "https://script.google.com/macros/s/AKfycbyjWHFBi-mroT1O2CbwpehxVVx0VCdFhsWiZL162ZhT38Xyf3PqfRJlSa8v0W7CZY45Yg/exec";
 
+	window.status_api_url = "https://script.google.com/macros/s/AKfycbzRWO2yy2qsck9qPufqDgrXuFlfUjGa_dZwOyJts5GQsIrbDVi_pmabK_aew7EERUAB/exec";
+
 	/* ===== min Tools ===== */
 	window.epoch = Date.UTC(1899,11,30);
  window.CFG_time = 0;
