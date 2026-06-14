@@ -1,6 +1,6 @@
 /**
  * 巡檢人員點檢確認表{記錄} - GAS
- * Version: v0.3.14
+ * Version: v0.3.21
  * 人員主檔：A id、B pass、C name、D shift、E active、F admin
  * 表單記錄：sh
  */
@@ -14,6 +14,8 @@ const WORK_SCAN = 500;
 const LOCK_USER_MS = 10000;
 const LOCK_WRITE_MS = 60000;
 const LOCK_MAINT_MS = 180000;
+const FORM_WRITE_DEDUP_TTL_SECONDS = 60;
+const FORM_WRITE_DEDUP_PREFIX = 'PI_FORM_WRITE_DEDUP_V001_';
 
 const MAIL_TO = 'ut.ypd14@gmail.com,alvin-cheng@pcbut.com.tw,hank-chen@pcbut.com.tw,mandy-li@pcbut.com.tw,weihao-hsu@pcbut.com.tw, yen-lo@pcbut.com.tw';
 const APP_TZ = 'Asia/Taipei';
@@ -27,7 +29,7 @@ let DATA_SS = null;
 
 function doGet(e) {
   return json_({
-    //version: 'v0.3.13',
+    //version: 'v0.3.20',
     //ts: new Date().toISOString(),
     action: 'gas_alive',
 	status: 'ok'
@@ -72,6 +74,10 @@ function doPost(e) {
 	if (action === 'personnel_list') {
 	  return rUserList_(p, getSS_(), SH_USER);
 	}
+
+    if (action === 'line_alert') {
+      return json_(laRoute_(p));
+    }
 
     return json_({ status: 'error', action: action || '', msg: 'unknown_action' });
 
@@ -288,8 +294,19 @@ function rUserSave_(p, ss, sheetName) {
 
 
 function rFormW_(p, ss, sheetName) {
-  return withLock_(LOCK_WRITE_MS, 'form_write', function () {
+  const pack = withLock_(LOCK_WRITE_MS, 'form_write', function () {
     const sh = getSheet_(ss, sheetName);
+    const dupKey = fwDupKey_(p);
+    const dupId = fwDupGet_(dupKey);
+
+    if (dupId) {
+      return {
+        __ok: true,
+        __dup: true,
+        record_id: dupId,
+        gas_time_text: ''
+      };
+    }
 
 	const record_id = Utilities.getUuid();
     const gasTimeText = Utilities.formatDate(
@@ -314,12 +331,33 @@ function rFormW_(p, ss, sheetName) {
     }
 
     sh.appendRow(row);
+    fwDupPut_(dupKey, record_id);
 
-    return json_({
+    return {
+      __ok: true,
 	  record_id: record_id,
+      gas_time_text: gasTimeText
+    };
+  });
+
+  if (!pack || pack.__ok !== true) return pack;
+
+  if (pack.__dup === true) {
+    return json_({
+      record_id: pack.record_id,
       action: 'form_write',
+      duplicate: true,
       status: 'ok'
     });
+  }
+
+  laSafeUp_(p, pack.record_id, pack.gas_time_text);
+
+  return json_({
+	record_id: pack.record_id,
+    action: 'form_write',
+    duplicate: false,
+    status: 'ok'
   });
 }
 
@@ -346,7 +384,7 @@ function rFormU_(p, ss, sheetName) {
     });
   }
 
-  return withLock_(LOCK_WRITE_MS, 'form_update', function () {
+  const pack = withLock_(LOCK_WRITE_MS, 'form_update', function () {
     const currentId = String(sh.getRange(targetRow, 1).getDisplayValue() || '').trim();
 
     if (currentId !== old_record_id) {
@@ -375,15 +413,29 @@ function rFormU_(p, ss, sheetName) {
 
     sh.getRange(targetRow, 1).setValue(softDeleteIdText_(userId));
 
-    return json_({
-      action: 'form_update',
+    return {
+      __ok: true,
       old_record_id: old_record_id,
       record_id: new_record_id,
       old_row_index: targetRow,
       new_row_index: newRow,
-      server_time: gasTimeText,
-      status: 'ok'
-    });
+      server_time: gasTimeText
+    };
+  });
+
+  if (!pack || pack.__ok !== true) return pack;
+
+  laSafeDel_(pack.old_record_id);
+  laSafeUp_(p, pack.record_id, pack.server_time);
+
+  return json_({
+    action: 'form_update',
+    old_record_id: pack.old_record_id,
+    record_id: pack.record_id,
+    old_row_index: pack.old_row_index,
+    new_row_index: pack.new_row_index,
+    server_time: pack.server_time,
+    status: 'ok'
   });
 }
 
@@ -437,6 +489,49 @@ function buildFormDataValues_(p) {
   }
 
   return row;
+}
+
+function laSafeUp_(p, recordId, serverTime) {
+  try {
+    if (typeof laUp_ !== 'function') {
+      return { status: 'skip', msg: 'alert_cache_module_missing' };
+    }
+
+    return laUp_(p, {
+      record_id: recordId,
+      server_time: serverTime
+    });
+
+  } catch (err) {
+    try {
+      Logger.log('laSafeUp_ failed: ' + String(err && err.message ? err.message : err));
+    } catch (logErr) {}
+
+    return {
+      status: 'error',
+      msg: String(err && err.message ? err.message : err)
+    };
+  }
+}
+
+function laSafeDel_(recordId) {
+  try {
+    if (typeof laDel_ !== 'function') {
+      return { status: 'skip', msg: 'alert_cache_module_missing' };
+    }
+
+    return laDel_(recordId);
+
+  } catch (err) {
+    try {
+      Logger.log('laSafeDel_ failed: ' + String(err && err.message ? err.message : err));
+    } catch (logErr) {}
+
+    return {
+      status: 'error',
+      msg: String(err && err.message ? err.message : err)
+    };
+  }
 }
 
 
@@ -529,11 +624,12 @@ function rWorkDelete_(p, ss, sheetName) {
     });
   }
 
-  return withLock_(LOCK_WRITE_MS, 'work_delete', function () {
+  const pack = withLock_(LOCK_WRITE_MS, 'work_delete', function () {
     const sh = getSheet_(ss, sheetName);
     const userId = normalizeId_(mVal_(p, 'id'));
     let deleted = 0;
     let skipped = 0;
+    const deletedIds = [];
 
     ids.forEach(function(id) {
       const rowNo = findFormRecordRowRecent_(sh, id, WORK_SCAN);
@@ -551,16 +647,30 @@ function rWorkDelete_(p, ss, sheetName) {
       }
 
       sh.getRange(rowNo, 1).setValue(softDeleteIdText_(userId));
+      deletedIds.push(id);
       deleted += 1;
     });
 
-    return json_({
-      action: 'work_data',
-      mode: 'delete',
+    return {
+      __ok: true,
       deleted_count: deleted,
       skipped_count: skipped,
-      status: 'ok'
-    });
+      deleted_ids: deletedIds
+    };
+  });
+
+  if (!pack || pack.__ok !== true) return pack;
+
+  pack.deleted_ids.forEach(function(id) {
+    laSafeDel_(id);
+  });
+
+  return json_({
+    action: 'work_data',
+    mode: 'delete',
+    deleted_count: pack.deleted_count,
+    skipped_count: pack.skipped_count,
+    status: 'ok'
   });
 }
 
@@ -622,10 +732,15 @@ function rMail_(p, ss, sheetName) {
     initRun_();
 
     const mode = String(mVal_(p, 'mode') || 'resend').trim().toLowerCase();
+    let mailUserId = normalizeId_(mVal_(p, 'operator_id'));
+
+    if (!isValidId_(mailUserId)) {
+      mailUserId = 'user';
+    }
 
     const opt = {
       mode: mode,
-      userId: normalizeId_(mVal_(p, 'id')),
+      userId: mailUserId,
       ss: getSS_(ss),
       sheetName: sheetName || SH_FORM,
       scan: MAIL_SCAN
@@ -660,17 +775,53 @@ function rMail_(p, ss, sheetName) {
 function mailAuto_() {
   initRun_();
 
-  return mailRun_({
-    mode: 'auto',
-    userId: '',
-    ss: getSS_(),
-    sheetName: SH_FORM,
-    scan: MAIL_SCAN,
-    q: {
-      kind: 'keys',
-      keys: mkKeys_()
+  const q = {
+    kind: 'keys',
+    keys: mkKeys_()
+  };
+
+  let res = null;
+  let lineClear = null;
+
+  try {
+    res = mailRun_({
+      mode: 'auto',
+      userId: '',
+      ss: getSS_(),
+      sheetName: SH_FORM,
+      scan: MAIL_SCAN,
+      q: q
+    });
+
+    return res;
+
+  } finally {
+    lineClear = mailLineClear_();
+
+    if (res && typeof res === 'object') {
+      res.line_clear = lineClear;
     }
-  });
+  }
+}
+
+function mailLineClear_() {
+  try {
+    if (typeof laClear_ !== 'function') {
+      return { status: 'skip', msg: 'line_event_module_missing' };
+    }
+
+    return laClear_();
+
+  } catch (err) {
+    try {
+      Logger.log('mailLineClear_ failed: ' + String(err && err.message ? err.message : err));
+    } catch (logErr) {}
+
+    return {
+      status: 'error',
+      msg: String(err && err.message ? err.message : err)
+    };
+  }
 }
 
 /**
@@ -1052,7 +1203,8 @@ function mkSubj_(opt, q, n) {
 
 function mailTypeText_(opt) {
   const mode = String(opt && opt.mode ? opt.mode : '');
-  const userId = normalizeId_(opt && opt.userId ? opt.userId : '');
+  const rawUserId = String(opt && opt.userId ? opt.userId : '').trim();
+  const userId = rawUserId === 'user' ? 'user' : normalizeId_(rawUserId);
 
   if (mode.toLowerCase() === 'resend' && userId) {
     return mode + ' ' + userId;
@@ -1205,6 +1357,60 @@ function mPad2_(n) {
   return String(n).padStart(2, '0');
 }
 
+
+
+function fwDupKey_(p) {
+  const parts = [
+    'form_write',
+    param_(p, 'date'),
+    param_(p, 'shift'),
+    param_(p, 'machine_id'),
+    param_(p, 'id'),
+    param_(p, 'name'),
+    param_(p, 'routine_check')
+  ];
+
+  for (let i = 1; i <= FORM_ITEM_COUNT; i++) {
+    parts.push(param_(p, 'item_' + pad2_(i)));
+  }
+
+  const raw = parts.join('');
+  const bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    raw,
+    Utilities.Charset.UTF_8
+  );
+
+  return FORM_WRITE_DEDUP_PREFIX + hex_(bytes);
+}
+
+function fwDupGet_(key) {
+  try {
+    return String(CacheService.getScriptCache().get(String(key || '')) || '').trim();
+  } catch (err) {
+    return '';
+  }
+}
+
+function fwDupPut_(key, recordId) {
+  try {
+    CacheService.getScriptCache().put(
+      String(key || ''),
+      String(recordId || ''),
+      FORM_WRITE_DEDUP_TTL_SECONDS
+    );
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+function hex_(bytes) {
+  return bytes.map(function (b) {
+    const v = (Number(b) + 256) % 256;
+    return ('0' + v.toString(16)).slice(-2);
+  }).join('');
+}
 
 function softDeleteIdText_(userId) {
   return 'Ng_' + normalizeId_(userId);
