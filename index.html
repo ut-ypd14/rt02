@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <script type="text/javascript" nonce="536404230b0b4325860489af455" src="//local.adguard.org?ts=1780675748735&amp;type=content-script&amp;dmn=lineapi.pcbut.com.tw:888&amp;url=https%3A%2F%2Flineapi.pcbut.com.tw%3A888%2Fapi%2FFile%2Fdownload%2F23b4ad61-951d-4613-b787-515498de2586.html&amp;app=com.android.chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0"></script><script type="text/javascript" nonce="536404230b0b4325860489af455" src="//local.adguard.org?ts=1780675748735&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script src="./config.js"></script>
+  <script src="./config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>巡檢人員點檢首頁</title>
@@ -549,7 +549,7 @@
       <div class="tool-group">
         <button type="button" class="tool-btn hidden" id="adminToolBtn" title="管理工具" aria-label="管理工具">🛠</button>
         <a class="tool-btn hidden" id="workDataToolBtn" href="./work.html" title="工作數據管理" aria-label="工作數據管理">▤</a>
-        <a class="tool-btn" id="mailToolBtn" href="./mail.html" title="補寄資料" aria-label="補寄資料">✉</a>
+        <a class="tool-btn hidden" id="mailToolBtn" href="./mail.html" title="補寄資料" aria-label="補寄資料">✉</a>
       </div>
       <button type="button" class="clear-btn" id="clearLoginDraftBtn">登錄</button>
       <span class="clear-spacer" aria-hidden="true"></span>
@@ -665,6 +665,13 @@
     }
 
     function handleMailToolClick(evt){
+      const id = getCurrentId();
+
+      if (!id){
+        evt.preventDefault();
+        return;
+      }
+
       if (hasAdminAccess()) return;
 
       evt.preventDefault();
@@ -794,16 +801,17 @@
 
     function renderCurrentId(){
       const id = getCurrentId();
+      const isLoggedIn = !!id;
       const isAdmin = hasAdminAccess();
-
       const name = getCurrentName();
 
       el.currentIdText.textContent = id || '';
-      el.currentNameText.textContent = id ? (name || id) : '訪客';
-      el.clearLoginDraftBtn.textContent = id ? '登出' : '登錄';
-      el.clearLoginDraftBtn.classList.toggle('logout', !!id);
+      el.currentNameText.textContent = isLoggedIn ? (name || id) : '訪客';
+      el.clearLoginDraftBtn.textContent = isLoggedIn ? '登出' : '登錄';
+      el.clearLoginDraftBtn.classList.toggle('logout', isLoggedIn);
       el.adminToolBtn.classList.toggle('hidden', !isAdmin);
       el.workDataToolBtn.classList.toggle('hidden', !isAdmin);
+      el.mailToolBtn.classList.toggle('hidden', !isLoggedIn);
       el.mailToolBtn.title = isAdmin ? '郵件匯出' : '補寄資料';
       el.mailToolBtn.setAttribute('aria-label', isAdmin ? '郵件匯出' : '補寄資料');
     }
@@ -825,21 +833,32 @@
     }
 
     function pingGasByGet(){
-      if (typeof api_url === 'undefined' || !api_url){
+      const statusUrl = getStatusApiUrl();
+
+      if (!statusUrl){
         setGasStatus('bad');
         return;
       }
 
       setGasStatus('warn');
 
-      fetch(api_url, { method:'GET', cache:'no-store' })
+      fetch(statusUrl, { method:'GET', cache:'no-store' })
         .then(function(res){ return res.text(); })
         .then(function(text){
-          setGasStatus(isOkResponseText(text) ? 'ok' : 'bad');
+          setGasStatus(isHealthyProxyStatus(parseJsonSafe(text)) ? 'ok' : 'bad');
         })
         .catch(function(){
           setGasStatus('bad');
         });
+    }
+
+    function getStatusApiUrl(){
+      return (typeof window.status_api_url === 'string' && window.status_api_url.trim()) ? window.status_api_url.trim() : '';
+    }
+
+    function isHealthyProxyStatus(data){
+      if (!data || String(data.status || '').toLowerCase() !== 'ok') return false;
+      return data.proxy_ok === true && data.main_ok === true;
     }
 
     function parseJsonSafe(text){
@@ -850,16 +869,6 @@
       }
     }
 
-    function isOkResponseText(text){
-      const raw = String(text || '').trim();
-      if (!raw) return false;
-      try{
-        const data = JSON.parse(raw);
-        return data && String(data.status || '').toLowerCase() === 'ok';
-      }catch(err){
-        return raw.toLowerCase().indexOf('ok') >= 0;
-      }
-    }
 
     function loadAndRenderHistory(){
       renderCurrentId();
