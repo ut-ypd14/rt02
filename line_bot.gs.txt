@@ -1,0 +1,815 @@
+/**
+ * LINE_AlertCache.gs - 巡檢異常批次提醒模組
+ * Version: v0.3.4-slot-event-control-overlay
+ *
+ * 架構重點：
+ *   - 取消 Active / Cancel / Control 長期 Cache 與中場續命。
+ *   - LINE event 暫存表固定使用 sheet：slot。
+ *   - slot 表採 append-only 事件流水，不更新舊列、不刪舊列。
+ *   - slot 表欄位：
+ *       A record_id
+ *       B valid        T=有效異常 / F=失效
+ *       C event_ms     事件時間，用於 15 分鐘成立判斷
+ *       D payload_json 顯示與提醒所需最小資料
+ *   - form_write 新增：含 X 才 append T；不含 X 不寫 slot。
+ *   - form_upData 修改：主 GAS 先 laDel_(舊 uuid) append F，再 laUp_(新 uuid)；新資料含 X 才 append T。
+ *   - work_delete：主 GAS 呼叫 laDel_(uuid) append F。
+ *   - laPing_：讀 slot 表快照，依 record_id 最末筆判斷有效狀態，產生前端 list 快取，並在 30 分鐘批次點發 LINE。
+ *   - 前端 list 只讀快取，不掃 slot 表、不掃主資料表 sh。
+ *   - list 回傳前即時套用 LC_CTRL_ 覆蓋 muted / allow_line，避免短時間重開頁面讀到舊控制狀態。
+ *   - Control 使用 PropertiesService，固定前綴 LC_CTRL_；不存在=預設發送，F=關閉推送，重新開啟=刪除該 property。
+ *   - mailAuto_ 執行後由主 GAS 呼叫 laClear_()，清空 slot 表、LC_CTRL_、LC_SENT_ 與 list 快取。
+ *   - payload_json 瘦身：T 僅存 d/sh/hh/mid/id/nm/i1/i2/xs；F 的 D 欄留空。
+ *   - 取消舊相容入口：不再支援 mute/unmute/set/init/renew/mute-shift 等舊模式或 no-op 函式。
+ *
+ * 主 GAS 外部呼叫短名：
+ *   - laRoute_(p)
+ *   - laUp_(p, opt)
+ *   - laDel_(recordId)
+ *   - laPing_()
+ *   - laSend_()
+ *   - laClear_()
+ *
+ * 依賴：
+ *   - 主 GAS 提供 getSS_() / APP_TZ 可選。
+ *   - Script Properties：LINE_TEST_TOKEN
+ *   - Script Properties：LINE_ALERT_TARGETS，JSON 陣列。
+ */
+
+const AC_VER = 'v0.3.4-slot-event-control-overlay';
+
+const LC_SLOT_SHEET = 'slot';
+const LC_VIEW_KEY = 'LC_VIEW_V001';
+const LC_VIEW_TTL = 3600;          // 前端 list 快取 1H；由 laPing_ 定時重建
+const LC_CTRL_PREFIX = 'LC_CTRL_'; // 固定前綴；mailAuto 後整批清除
+const LC_SENT_PREFIX = 'LC_SENT_'; // 30 分鐘批次防重；mailAuto 後整批清除
+
+const AC_GRACE_MIN = 15;           // 異常成立後滿 15 分鐘才進入 LINE 提醒
+const AC_BATCH_MIN = 30;           // 每 30 分鐘建立一次提醒批次
+const AC_ITEM_N = 24;
+const AC_X1 = 3;
+const AC_X2 = 24;
+
+const AC_PROP_TOKEN = 'LINE_TEST_TOKEN';
+const AC_PROP_TARGETS = 'LINE_ALERT_TARGETS';
+
+/* =========================================================
+ * 外部入口：route
+ * ========================================================= */
+function laRoute_(p) {
+  p = p || {};
+  const mode = s_(q_(p, 'mode')).toLowerCase();
+  const u = rid_(p);
+
+  if (mode === 'list') return laList_(p);
+  if (mode === 'control') return laControl_(u, q_(p, 'push'));
+  if (mode === 'ping') return laPing_();
+  if (mode === 'send') return laSend_();
+  if (mode === 'build') return laBuild_();
+  if (mode === 'clear') return laClear_();
+
+  return er_('line_alert', 'unknown_alert_mode', { mode: mode });
+}
+
+/* =========================================================
+ * 外部入口：form 寫入 / 更新後呼叫
+ * ========================================================= */
+function laUp_(p, opt) {
+  p = p || {};
+  opt = opt || {};
+
+  const f = {
+    record_id: s_(opt.record_id || q_(p, 'record_id')),
+    server_time: s_(opt.server_time || q_(p, 'server_time')),
+    date: s_(q_(p, 'date')),
+    shift: up_(q_(p, 'shift')),
+    machine_id: up_(q_(p, 'machine_id')),
+    id: up_(q_(p, 'id')),
+    name: s_(q_(p, 'name'))
+  };
+
+  for (let i = 1; i <= AC_ITEM_N; i++) {
+    const k = 'item_' + p2_(i);
+    f[k] = s_(q_(p, k));
+  }
+
+  return laUpForm_(f);
+}
+
+function laUpForm_(form) {
+  form = form || {};
+  const u = s_(form.record_id);
+
+  if (!u) return er_('line_event_upsert', 'missing_record_id');
+
+  const xp = xFind_(form);
+
+  if (!xp.items.length) {
+    return ok_('line_event_upsert', {
+      mode: 'skip_no_x',
+      record_id: u,
+      written: false
+    });
+  }
+
+  const ctx = ctxDs_(form.date, form.shift);
+  if (!ctx.ok) {
+    return er_('line_event_upsert', 'invalid_date_or_shift', {
+      record_id: u,
+      date: s_(form.date),
+      shift: s_(form.shift)
+    });
+  }
+
+  const now = Date.now();
+  const payload = {
+    d: ctx.d,
+    sh: ctx.sh,
+    hh: hh_(form.server_time),
+    mid: up_(form.machine_id),
+    id: up_(form.id),
+    nm: s_(form.name),
+    i1: s_(form.item_01),
+    i2: s_(form.item_02),
+    xs: xp.items.join(',')
+  };
+
+  slotAppend_(u, 'T', now, payload);
+
+  return ok_('line_event_upsert', {
+    mode: 'active',
+    record_id: u,
+    written: true,
+    valid: 'T',
+    x_items: payload.xs
+  });
+}
+
+/* =========================================================
+ * 外部入口：取消 / Control
+ * ========================================================= */
+function laDel_(recordId) {
+  const u = s_(recordId);
+
+  if (!u) {
+    return er_('line_event_cancel', 'missing_record_id', { written: false });
+  }
+
+  slotAppend_(u, 'F', Date.now(), '');
+
+  return ok_('line_event_cancel', {
+    record_id: u,
+    written: true,
+    valid: 'F'
+  });
+}
+
+/**
+ * 前端控制推送狀態：
+ * push=F → 關閉推送 → LC_CTRL_{uuid}=F
+ * push=T → 開啟推送 → delete LC_CTRL_{uuid}
+ */
+function laControl_(recordId, pushValue) {
+  const u = s_(recordId);
+  const v = up_(pushValue);
+
+  if (!u) {
+    return er_('line_control_set', 'missing_record_id', {
+      record_id: u,
+      request_push: v
+    });
+  }
+
+  if (v !== 'T' && v !== 'F') {
+    return er_('line_control_set', 'invalid_control_value', {
+      record_id: u,
+      request_push: v
+    });
+  }
+
+  const props = PropertiesService.getScriptProperties();
+  const key = ctrlKey_(u);
+
+  if (v === 'F') {
+    props.setProperty(key, 'F');
+    return ok_('line_control_set', {
+      record_id: u,
+      request_push: 'F',
+      stored_control: 'F',
+      effective_push: false
+    });
+  }
+
+  props.deleteProperty(key);
+  return ok_('line_control_set', {
+    record_id: u,
+    request_push: 'T',
+    stored_control: '',
+    effective_push: true
+  });
+}
+
+/* =========================================================
+ * 外部入口：前端 list，只讀快取
+ * ========================================================= */
+function laList_(p) {
+  const view = viewGet_();
+
+  if (!view) {
+    return ok_('alert_cache_list', {
+      key: LC_VIEW_KEY,
+      count: 0,
+      values: [],
+      stale: true,
+      msg: 'view_cache_not_ready'
+    });
+  }
+
+  const rawVals = Array.isArray(view.values) ? view.values : [];
+  const vals = applyCtrlOverlay_(rawVals);
+  const first = vals[0] || {};
+
+  return ok_('alert_cache_list', {
+    key: LC_VIEW_KEY,
+    form_date_text: first.form_date_text || '',
+    shift: first.shift || '',
+    count: vals.length,
+    values: vals,
+    built_at: fmt_(view.built_ms || 0),
+    built_ms: Number(view.built_ms || 0),
+    source_rows: Number(view.source_rows || 0),
+    active_count: Number(view.active_count || 0),
+    ctrl_overlay: true,
+    stale: false
+  });
+}
+
+/* =========================================================
+ * 外部入口：ping / build / send
+ * ========================================================= */
+function laPing_() {
+  const build = laBuild_();
+  const send = laSend_();
+
+  if ((build && build.status === 'error') || (send && send.status === 'error')) {
+    return er_('alert_cache_ping', 'build_or_send_error', {
+      build: build,
+      sender: send
+    });
+  }
+
+  return ok_('alert_cache_ping', {
+    build: build,
+    sender: send,
+    sent: !!(send && send.sent)
+  });
+}
+
+function laPing() {
+  return laPing_();
+}
+
+function laBuild_() {
+  const rows = slotRows_();
+  const latest = {};
+  let invalid = 0;
+
+  rows.forEach(function (row) {
+    const u = s_(row[0]);
+    const valid = up_(row[1]);
+    const eventMs = Number(row[2] || 0);
+    const payload = parseJson_(row[3]);
+
+    if (!u || (valid !== 'T' && valid !== 'F')) {
+      invalid += 1;
+      return;
+    }
+
+    latest[u] = {
+      record_id: u,
+      valid: valid,
+      event_ms: eventMs,
+      payload: payload || {}
+    };
+  });
+
+  const values = [];
+
+  Object.keys(latest).forEach(function (u) {
+    const ev = latest[u];
+    if (!ev || ev.valid !== 'T') return;
+
+    const val = viewValue_(ev);
+    values.push(val);
+  });
+
+  values.sort(function (a, b) {
+    return String(a.hhmm || '').localeCompare(String(b.hhmm || '')) ||
+      String(a.machine || '').localeCompare(String(b.machine || '')) ||
+      String(a.record_id || '').localeCompare(String(b.record_id || ''));
+  });
+
+  const view = {
+    v: AC_VER,
+    built_ms: Date.now(),
+    source_rows: rows.length,
+    invalid_rows: invalid,
+    active_count: values.length,
+    values: values
+  };
+
+  viewPut_(view);
+
+  return ok_('alert_cache_build', {
+    key: LC_VIEW_KEY,
+    source_rows: rows.length,
+    invalid_rows: invalid,
+    active_count: values.length,
+    built_at: fmt_(view.built_ms)
+  });
+}
+
+function laSend_() {
+  const view = viewGet_();
+
+  if (!view) {
+    return ok_('alert_cache_send', {
+      sent: false,
+      mode: 'no_view_cache',
+      due_count: 0
+    });
+  }
+
+  const now = Date.now();
+  const bms = bFloor_(now);
+  const sentKey = sentKey_(bms);
+
+  if (PropertiesService.getScriptProperties().getProperty(sentKey)) {
+    return ok_('alert_cache_send', {
+      sent: false,
+      mode: 'batch_exists',
+      batch_key: sentKey,
+      batch: fmt_(bms)
+    });
+  }
+
+  const due = dueFromView_(view, now);
+
+  if (!due.length) {
+    return ok_('alert_cache_send', {
+      sent: false,
+      mode: 'no_due',
+      batch_key: sentKey,
+      due_count: 0,
+      batch: fmt_(bms)
+    });
+  }
+
+  const tg = targets_();
+  if (!tg.length) {
+    return er_('alert_cache_send', 'no_active_line_target', {
+      batch_key: sentKey,
+      due_count: due.length
+    });
+  }
+
+  const msgs = msg_(due, bms);
+  const results = [];
+  let okPush = 0;
+
+  msgs.forEach(function (text, msgIndex) {
+    tg.forEach(function (to, targetIndex) {
+      const r = push_(to, text);
+      results.push({
+        message_index: msgIndex + 1,
+        target_index: targetIndex + 1,
+        ok: r.ok,
+        code: r.code
+      });
+      if (r.ok) okPush += 1;
+    });
+  });
+
+  if (okPush > 0) {
+    PropertiesService.getScriptProperties().setProperty(sentKey, String(Date.now()));
+  }
+
+  return ok_('alert_cache_send', {
+    sent: okPush > 0,
+    mode: okPush > 0 ? 'sent' : 'send_failed',
+    batch_key: sentKey,
+    batch: fmt_(bms),
+    due_count: due.length,
+    message_count: msgs.length,
+    ok_push_count: okPush,
+    results: results
+  });
+}
+
+/* =========================================================
+ * 外部入口：清空 / 舊入口 no-op
+ * ========================================================= */
+function laClear_() {
+  const res = {
+    slot_cleared: false,
+    view_cache_removed: false,
+    ctrl_deleted: 0,
+    sent_deleted: 0
+  };
+
+  const sh = slotSheet_();
+  sh.clearContents();
+  res.slot_cleared = true;
+
+  CacheService.getScriptCache().remove(LC_VIEW_KEY);
+  res.view_cache_removed = true;
+
+  res.ctrl_deleted = propDeletePrefix_(LC_CTRL_PREFIX);
+  res.sent_deleted = propDeletePrefix_(LC_SENT_PREFIX);
+
+  return ok_('line_event_clear', res);
+}
+
+/* =========================================================
+ * slot / view helpers
+ * ========================================================= */
+function slotAppend_(recordId, valid, eventMs, payload) {
+  const sh = slotSheet_();
+  let payloadText = '';
+
+  if (payload !== null && payload !== undefined && payload !== '') {
+    payloadText = JSON.stringify(payload || {});
+  }
+
+  sh.appendRow([
+    s_(recordId),
+    up_(valid) === 'F' ? 'F' : 'T',
+    Number(eventMs || Date.now()),
+    payloadText
+  ]);
+}
+
+function slotRows_() {
+  const sh = slotSheet_();
+  const lastRow = sh.getLastRow();
+
+  if (lastRow < 1) return [];
+
+  return sh.getRange(1, 1, lastRow, 4).getValues();
+}
+
+function slotSheet_() {
+  let ss = null;
+
+  if (typeof getSS_ === 'function') {
+    ss = getSS_();
+  } else if (typeof SPREADSHEET_ID !== 'undefined' && SPREADSHEET_ID) {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  } else {
+    throw new Error('spreadsheet_getter_missing');
+  }
+
+  const sh = ss.getSheetByName(LC_SLOT_SHEET);
+  if (!sh) throw new Error('slot_sheet_not_found:' + LC_SLOT_SHEET);
+  return sh;
+}
+
+function viewPut_(view) {
+  CacheService.getScriptCache().put(LC_VIEW_KEY, JSON.stringify(view || {}), LC_VIEW_TTL);
+}
+
+function viewGet_() {
+  const raw = CacheService.getScriptCache().get(LC_VIEW_KEY);
+  if (!raw) return null;
+  return parseJson_(raw);
+}
+
+function viewValue_(ev) {
+  const p = ev.payload || {};
+  const u = s_(ev.record_id || p.u);
+  const muted = ctrlMuted_(u);
+  const eventMs = Number(ev.event_ms || p.cm || 0);
+
+  return {
+    record_id: u,
+    form_date: p.d || '',
+    form_date_text: p.d || '',
+    shift: p.sh || '',
+    hhmm: p.hh || '',
+    machine: p.mid || '',
+    id: p.id || '',
+    name: p.nm || '',
+    item1: p.i1 || '',
+    item2: p.i2 || '',
+    x_items: p.xs || '',
+    muted: muted,
+    allow_line: !muted,
+    event_ms: eventMs,
+    created_at: fmt_(eventMs),
+    updated_at: fmt_(eventMs)
+  };
+}
+
+function dueFromView_(view, now) {
+  const vals = view && Array.isArray(view.values) ? view.values : [];
+  const limit = Number(now || Date.now()) - AC_GRACE_MIN * 60000;
+
+  return vals.filter(function (v) {
+    const eventMs = Number(v.event_ms || 0);
+    if (!eventMs || eventMs > limit) return false;
+    if (v.muted === true || v.allow_line === false) return false;
+    if (ctrlMuted_(v.record_id)) return false;
+    return true;
+  });
+}
+
+function applyCtrlOverlay_(values) {
+  return (values || []).map(function (row) {
+    const out = cloneRow_(row);
+    const muted = ctrlMuted_(out.record_id);
+    out.muted = muted;
+    out.allow_line = !muted;
+    return out;
+  });
+}
+
+function cloneRow_(row) {
+  const out = {};
+  row = row || {};
+
+  Object.keys(row).forEach(function (k) {
+    out[k] = row[k];
+  });
+
+  return out;
+}
+
+
+/* =========================================================
+ * Control Properties
+ * ========================================================= */
+function ctrlKey_(recordId) {
+  return LC_CTRL_PREFIX + s_(recordId);
+}
+
+function ctrlMuted_(recordId) {
+  const u = s_(recordId);
+  if (!u) return false;
+  return up_(PropertiesService.getScriptProperties().getProperty(ctrlKey_(u))) === 'F';
+}
+
+function propDeletePrefix_(prefix) {
+  const props = PropertiesService.getScriptProperties();
+  const all = props.getProperties();
+  let n = 0;
+
+  Object.keys(all).forEach(function (k) {
+    if (String(k).indexOf(prefix) === 0) {
+      props.deleteProperty(k);
+      n += 1;
+    }
+  });
+
+  return n;
+}
+
+function sentKey_(bms) {
+  return LC_SENT_PREFIX + fmt_(bms, 'yyyyMMdd_HHmm');
+}
+
+/* =========================================================
+ * 事件 / X 判斷
+ * ========================================================= */
+function xFind_(form) {
+  const it = [];
+  const det = [];
+
+  for (let i = AC_X1; i <= AC_X2; i++) {
+    const k = 'item_' + p2_(i);
+    const v = s_(form[k]);
+    if (/[xX×]/.test(v)) {
+      it.push(String(i));
+      det.push(i + '=' + v);
+    }
+  }
+
+  return { items: it, detail: det.join('｜') };
+}
+
+/* =========================================================
+ * LINE message
+ * ========================================================= */
+function msg_(records, bms) {
+  const head = [
+    '【巡檢異常提醒】',
+    msgHead_(records, bms),
+    ''
+  ].join('\n');
+
+  const arr = [];
+  let tx = head;
+  let no = 1;
+
+  records.forEach(function (r) {
+    const line = [
+      no + ') ' + clip_(r.hhmm, 5) + '｜' + clip_(r.machine, 12) + '｜' + clip_(r.id, 8) + ' ' + clip_(r.name, 12),
+      clip_(r.item1, 24) + ' | ' + clip_(r.item2, 36) + ' | [' + clip_(r.x_items, 80) + ']'
+    ].join('\n');
+
+    if ((tx + '\n' + line).length > 4500) {
+      arr.push(tx.trim());
+      tx = head;
+    }
+
+    tx += '\n' + line + '\n';
+    no += 1;
+  });
+
+  if (tx.trim()) arr.push(tx.trim());
+  return arr;
+}
+
+function msgHead_(records, bms) {
+  const r = records[0] || {};
+  const mmdd = String(r.form_date_text || fmt_(bms, 'yyyy/MM/dd')).replace(/^\d{4}\//, '');
+  return mmdd + ' ' + String(r.shift || '') + '｜未修正 ' + records.length + ' 筆';
+}
+
+/* =========================================================
+ * LINE push
+ * ========================================================= */
+function targets_() {
+  const raw = PropertiesService.getScriptProperties().getProperty(AC_PROP_TARGETS);
+  if (!raw) return [];
+
+  let a;
+  try {
+    a = JSON.parse(String(raw || ''));
+  } catch (err) {
+    return [];
+  }
+
+  if (!Array.isArray(a)) return [];
+
+  const seen = {};
+  const out = [];
+  a.forEach(function (x) {
+    x = s_(x);
+    if (!x || seen[x]) return;
+    seen[x] = true;
+    out.push(x);
+  });
+
+  return out;
+}
+
+function token_() {
+  return s_(PropertiesService.getScriptProperties().getProperty(AC_PROP_TOKEN));
+}
+
+function push_(to, text) {
+  const target = s_(to);
+  const msg = String(text || '');
+  const tk = token_();
+
+  if (!target) return { ok: false, code: 0, body: 'missing_target_id' };
+  if (!msg) return { ok: false, code: 0, body: 'missing_message_text' };
+  if (!tk) return { ok: false, code: 0, body: 'missing_' + AC_PROP_TOKEN };
+
+  try {
+    const res = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: 'Bearer ' + tk },
+      payload: JSON.stringify({
+        to: target,
+        messages: [{ type: 'text', text: msg }]
+      }),
+      muteHttpExceptions: true
+    });
+
+    const code = res.getResponseCode();
+    return {
+      ok: code >= 200 && code < 300,
+      code: code,
+      body: res.getContentText()
+    };
+  } catch (err) {
+    return { ok: false, code: 0, body: String(err && err.message ? err.message : err) };
+  }
+}
+
+/* =========================================================
+ * context / date
+ * ========================================================= */
+function ctxDs_(dateValue, shiftValue) {
+  const d = dTxt_(dateValue);
+  const sh = up_(shiftValue);
+
+  if (!/^\d{4}\/\d{2}\/\d{2}$/.test(d) || !/^(A|B|C)$/.test(sh)) {
+    return { ok: false, d: d, ym: ym_(d), sh: sh };
+  }
+
+  return { ok: true, d: d, ym: ym_(d), sh: sh };
+}
+
+function dTxt_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, tz_(), 'yyyy/MM/dd');
+
+  const s = String(v || '').trim();
+  if (!s) return '';
+
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const n = Math.floor(Number(s));
+    if (n > 0) {
+      return Utilities.formatDate(new Date((n - 25569) * 86400000), 'UTC', 'yyyy/MM/dd');
+    }
+  }
+
+  const m = s.replace(/-/g, '/').match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (m) return m[1] + '/' + p2_(m[2]) + '/' + p2_(m[3]);
+
+  return s;
+}
+
+function ym_(d) {
+  return String(d || '').replace(/\//g, '');
+}
+
+function bFloor_(ms) {
+  const step = AC_BATCH_MIN * 60000;
+  return Math.floor(Number(ms || 0) / step) * step;
+}
+
+/* =========================================================
+ * small utils
+ * ========================================================= */
+function q_(p, k) {
+  if (!p) return '';
+  if (typeof param_ === 'function') return param_(p, k);
+  return p[k];
+}
+
+function rid_(p) {
+  return s_(q_(p, 'record_id'));
+}
+
+function parseJson_(v) {
+  if (v && typeof v === 'object') return v;
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return {};
+  try {
+    return JSON.parse(s);
+  } catch (err) {
+    return {};
+  }
+}
+
+function s_(v) {
+  return String(v == null ? '' : v).trim();
+}
+
+function up_(v) {
+  return s_(v).toUpperCase();
+}
+
+function p2_(n) {
+  return String(n).padStart(2, '0');
+}
+
+function tz_() {
+  return typeof APP_TZ !== 'undefined' && APP_TZ ? APP_TZ : 'Asia/Taipei';
+}
+
+function fmt_(ms, pattern) {
+  if (!ms) return '';
+  return Utilities.formatDate(new Date(Number(ms)), tz_(), pattern || 'yyyy/MM/dd HH:mm');
+}
+
+function hh_(serverTime) {
+  const s = String(serverTime || '').trim();
+  const m = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (m) return p2_(m[1]) + ':' + m[2];
+  return Utilities.formatDate(new Date(), tz_(), 'HH:mm');
+}
+
+function clip_(v, n) {
+  const s = String(v || '');
+  n = Number(n || 30);
+  return s.length > n ? s.slice(0, n) : s;
+}
+
+function ok_(action, obj) {
+  obj = obj || {};
+  obj.action = action;
+  obj.status = 'ok';
+  return obj;
+}
+
+function er_(action, msg, obj) {
+  obj = obj || {};
+  obj.action = action;
+  obj.status = 'error';
+  obj.msg = msg;
+  return obj;
+}
