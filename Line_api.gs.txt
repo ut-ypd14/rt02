@@ -7,7 +7,7 @@ function setupLineTokenAndTargetsAndCheck() {
 
   // 聊天室 / 群組 / 個人 ID，可放多個
   const TARGET_IDS = [
-    'C54852800a5498a0a4ac15466ec81c40a'
+    'C967885a128db33a0fde325a6a45da7aa'
 
   ];
 
