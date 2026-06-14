@@ -364,19 +364,24 @@
         return;
       }
 
-      const mode = record.muted ? 'unmute' : 'mute';
+      const pushValue = record.muted ? 'T' : 'F';
       btn.disabled = true;
       setMsg(el.alertMsg, 'warn', record.muted ? '重新開啟中...' : '關閉中...');
 
       try{
         const params = new URLSearchParams();
         params.set('action', 'line_alert');
-        params.set('mode', mode);
+        params.set('mode', 'control');
         params.set('record_id', record.record_id);
+        params.set('push', pushValue);
         const data = await postWithTimeout(params, POST_TIMEOUT_MS);
         if (!data || data.status !== 'ok') throw new Error(data && data.msg ? data.msg : '回應異常');
-        setMsg(el.alertMsg, 'ok', record.muted ? '已再次開啟提醒' : '已關閉提醒');
-        await loadLineAlertList();
+        if (data.record_id && String(data.record_id) !== String(record.record_id)) throw new Error('record_id_mismatch');
+
+        const effectivePush = data.effective_push === true || String(data.effective_push || '').toUpperCase() === 'TRUE';
+        record.muted = !effectivePush;
+        setMsg(el.alertMsg, 'ok', effectivePush ? '已再次開啟提醒' : '已關閉提醒');
+        renderLineAlerts();
       }catch(err){
         btn.disabled = false;
         setMsg(el.alertMsg, 'bad', '操作失敗：' + formatError(err));
