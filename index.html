@@ -609,7 +609,7 @@
       bindEvents();
       renderCurrentId();
       startClock();
-      pingGasByGet();
+      updateGasStatus();
       loadAndRenderHistory();
     }
 
@@ -832,33 +832,21 @@
       el.gasStatusText.textContent = 'GAS';
     }
 
-    function pingGasByGet(){
-      const statusUrl = getStatusApiUrl();
+    function updateGasStatus(){
+      setGasStatus('warn');
 
-      if (!statusUrl){
+      if (typeof window.gasStatus !== 'function') {
         setGasStatus('bad');
         return;
       }
 
-      setGasStatus('warn');
-
-      fetch(statusUrl, { method:'GET', cache:'no-store' })
-        .then(function(res){ return res.text(); })
-        .then(function(text){
-          setGasStatus(isHealthyProxyStatus(parseJsonSafe(text)) ? 'ok' : 'bad');
+      window.gasStatus()
+        .then(function(result){
+          setGasStatus(result && result.ok ? 'ok' : 'bad');
         })
         .catch(function(){
           setGasStatus('bad');
         });
-    }
-
-    function getStatusApiUrl(){
-      return (typeof window.status_api_url === 'string' && window.status_api_url.trim()) ? window.status_api_url.trim() : '';
-    }
-
-    function isHealthyProxyStatus(data){
-      if (!data || String(data.status || '').toLowerCase() !== 'ok') return false;
-      return data.proxy_ok === true && data.main_ok === true;
     }
 
     function parseJsonSafe(text){
