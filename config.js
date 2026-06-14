@@ -1,8 +1,6 @@
 	/* ===== API_URL ===== */
 	window.api_url = "https://script.google.com/macros/s/AKfycbyjWHFBi-mroT1O2CbwpehxVVx0VCdFhsWiZL162ZhT38Xyf3PqfRJlSa8v0W7CZY45Yg/exec";
 
-	window.status_api_url = "https://script.google.com/macros/s/AKfycbzRWO2yy2qsck9qPufqDgrXuFlfUjGa_dZwOyJts5GQsIrbDVi_pmabK_aew7EERUAB/exec";
-
 	/* ===== min Tools ===== */
 	window.epoch = Date.UTC(1899,11,30);
  window.CFG_time = 0;
@@ -55,3 +53,80 @@
 	  const [y, m, d] = Ntime.split('/');
 	  return Number(y + m.padStart(2,'0'));
 	}
+
+
+	// GAS 2號機 ping 狀態燈
+	window.status_api_url = "https://script.google.com/macros/s/AKfycbzRWO2yy2qsck9qPufqDgrXuFlfUjGa_dZwOyJts5GQsIrbDVi_pmabK_aew7EERUAB/exec";
+
+window.gasStatus = async function(){
+  const key = 'PI_GAS_STATUS_CACHE_V001';
+  const ttl = 60000;
+  const now = Date.now();
+
+  try{
+    const old = JSON.parse(localStorage.getItem(key) || 'null');
+    if (old && old.r && now - Number(old.t || 0) < ttl){
+      old.r.cached = true;
+      return old.r;
+    }
+  }catch(err){}
+
+  const start = performance.now();
+  const controller = new AbortController();
+  const timer = setTimeout(function(){
+    controller.abort();
+  }, 6000);
+
+  try{
+    const res = await fetch(window.status_api_url, {
+      method:'GET',
+      cache:'no-store',
+      signal:controller.signal
+    });
+
+    const ms = Math.round(performance.now() - start);
+    const data = JSON.parse(await res.text());
+
+    const ok = !!(
+      res.ok &&
+      String(data.status || '').toLowerCase() === 'ok' &&
+      data.proxy_ok === true &&
+      data.main_ok === true
+    );
+
+    const result = {
+      ok: ok,
+      state: ok ? 'ok' : 'bad',
+      text: ok ? ('GAS 正常 ' + ms + 'ms') : 'GAS 異常',
+      ms: ms,
+      data: data,
+      cached: false
+    };
+
+    localStorage.setItem(key, JSON.stringify({
+      t: Date.now(),
+      r: result
+    }));
+
+    return result;
+
+  }catch(err){
+    const result = {
+      ok:false,
+      state:'bad',
+      text:'GAS 無回應或逾時',
+      ms:Math.round(performance.now() - start),
+      cached:false
+    };
+
+    localStorage.setItem(key, JSON.stringify({
+      t:Date.now(),
+      r:result
+    }));
+
+    return result;
+
+  }finally{
+    clearTimeout(timer);
+  }
+};
