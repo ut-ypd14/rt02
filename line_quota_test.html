@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LINE 額度查詢測試</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb}
+    body{margin:0;padding:18px}
+    .card{max-width:920px;margin:0 auto;background:#fff;border:1px solid #d9e0ec;border-radius:16px;box-shadow:0 6px 24px rgba(20,35,60,.08);padding:18px}
+    h1{font-size:22px;margin:0 0 8px}
+    .muted{color:#667085;font-size:14px;line-height:1.5}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+    button{appearance:none;border:0;border-radius:12px;background:#1463ff;color:#fff;font-weight:700;padding:12px 16px;font-size:16px;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:8px 12px;background:#eef4ff;color:#194185;font-weight:700}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+    .box{border:1px solid #e4e7ec;border-radius:14px;padding:14px;background:#fcfcfd}
+    .label{font-size:13px;color:#667085;margin-bottom:8px}
+    .value{font-size:24px;font-weight:800;color:#101828;word-break:break-all}
+    .ok{color:#067647}.bad{color:#b42318}.warn{color:#b54708}
+    pre{white-space:pre-wrap;word-break:break-word;background:#101828;color:#e4e7ec;border-radius:12px;padding:12px;overflow:auto;font-size:13px;line-height:1.45}
+    .section-title{font-weight:800;margin:18px 0 8px}
+    code{background:#eef2f6;border-radius:6px;padding:2px 5px}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}.value{font-size:21px}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>LINE Messaging API 額度查詢測試</h1>
+    <div class="muted">
+      token 已改成程式碼內固定常數。請直接打開本檔，用文字編輯器搜尋 <code>LINE_TOKEN</code>，把佔位字串替換成你的 Channel access token。
+    </div>
+
+    <div class="row">
+      <button id="btnQuery" type="button">查詢目前額度</button>
+      <span id="status" class="pill">尚未查詢</span>
+    </div>
+
+    <div class="grid">
+      <div class="box">
+        <div class="label">本月上限</div>
+        <div id="quotaValue" class="value">-</div>
+      </div>
+      <div class="box">
+        <div class="label">目前使用</div>
+        <div id="usageValue" class="value">-</div>
+      </div>
+      <div class="box">
+        <div class="label">剩餘額度</div>
+        <div id="remainValue" class="value">-</div>
+      </div>
+    </div>
+
+    <div class="section-title">帳號資訊</div>
+    <pre id="infoBox">-</pre>
+
+    <div class="section-title">API 原始回覆</div>
+    <pre id="rawBox">-</pre>
+
+    <div class="section-title">若瀏覽器被 CORS 擋住</div>
+    <div class="muted">瀏覽器直接呼叫 LINE API 可能被 CORS 擋。這不是 token 寫死問題，是瀏覽器限制。下方會依同一個寫死 token 自動產生本機 curl 指令。</div>
+    <pre id="curlBox">-</pre>
+  </div>
+
+<script>
+/*
+  直接把你的 Channel access token 寫死在這裡。
+  範例：const LINE_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.xxxxx';
+*/
+const LINE_TOKEN = 'REPLACE_WITH_YOUR_LINE_CHANNEL_ACCESS_TOKEN';
+
+const API_BASE = 'https://api.line.me';
+const el = {
+  btn: document.getElementById('btnQuery'),
+  status: document.getElementById('status'),
+  quota: document.getElementById('quotaValue'),
+  usage: document.getElementById('usageValue'),
+  remain: document.getElementById('remainValue'),
+  info: document.getElementById('infoBox'),
+  raw: document.getElementById('rawBox'),
+  curl: document.getElementById('curlBox')
+};
+
+function setStatus(text, cls){
+  el.status.textContent = text;
+  el.status.className = 'pill ' + (cls || '');
+}
+
+function maskToken(token){
+  const s = String(token || '');
+  if (s.length <= 12) return s ? '****' : '';
+  return s.slice(0, 6) + '...' + s.slice(-6);
+}
+
+function buildCurl(){
+  const token = LINE_TOKEN;
+  return [
+    'curl -s -H "Authorization: Bearer ' + token + '" https://api.line.me/v2/bot/info',
+    '',
+    'curl -s -H "Authorization: Bearer ' + token + '" https://api.line.me/v2/bot/message/quota',
+    '',
+    'curl -s -H "Authorization: Bearer ' + token + '" https://api.line.me/v2/bot/message/quota/consumption'
+  ].join('\n');
+}
+
+async function lineGet(path){
+  const res = await fetch(API_BASE + path, {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + LINE_TOKEN
+    },
+    cache: 'no-store'
+  });
+
+  const text = await res.text();
+  let data;
+  try{
+    data = JSON.parse(text || '{}');
+  }catch(err){
+    data = { parse_error: String(err && err.message || err), raw: text };
+  }
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    path: path,
+    data: data
+  };
+}
+
+function getQuotaNumber(quotaData){
+  if (!quotaData) return null;
+  if (typeof quotaData.value === 'number') return quotaData.value;
+  if (typeof quotaData.limit === 'number') return quotaData.limit;
+  return null;
+}
+
+function getUsageNumber(consumptionData){
+  if (!consumptionData) return null;
+  if (typeof consumptionData.totalUsage === 'number') return consumptionData.totalUsage;
+  if (typeof consumptionData.value === 'number') return consumptionData.value;
+  return null;
+}
+
+async function queryLineQuota(){
+  el.raw.textContent = '-';
+  el.info.textContent = '-';
+  el.quota.textContent = '-';
+  el.usage.textContent = '-';
+  el.remain.textContent = '-';
+  el.curl.textContent = buildCurl();
+
+  if (!LINE_TOKEN || LINE_TOKEN === 'REPLACE_WITH_YOUR_LINE_CHANNEL_ACCESS_TOKEN'){
+    setStatus('尚未替換 LINE_TOKEN', 'bad');
+    el.raw.textContent = '請先用文字編輯器打開本檔，搜尋 LINE_TOKEN，替換成實際 token。';
+    return;
+  }
+
+  el.btn.disabled = true;
+  setStatus('查詢中... token=' + maskToken(LINE_TOKEN), 'warn');
+
+  try{
+    const info = await lineGet('/v2/bot/info');
+    const quota = await lineGet('/v2/bot/message/quota');
+    const consumption = await lineGet('/v2/bot/message/quota/consumption');
+
+    const q = getQuotaNumber(quota.data);
+    const u = getUsageNumber(consumption.data);
+    const remain = (typeof q === 'number' && typeof u === 'number') ? q - u : null;
+
+    el.info.textContent = JSON.stringify(info, null, 2);
+    el.raw.textContent = JSON.stringify({ info, quota, consumption }, null, 2);
+
+    el.quota.textContent = (q === null) ? JSON.stringify(quota.data) : String(q);
+    el.usage.textContent = (u === null) ? JSON.stringify(consumption.data) : String(u);
+    el.remain.textContent = (remain === null) ? '-' : String(remain);
+
+    if (info.ok && quota.ok && consumption.ok){
+      setStatus('查詢成功', 'ok');
+    }else{
+      setStatus('API 回覆異常', 'bad');
+    }
+  }catch(err){
+    setStatus('查詢失敗', 'bad');
+    el.raw.textContent = String(err && err.stack || err);
+    el.info.textContent = '若錯誤訊息含 CORS / Failed to fetch，請改用下方 curl 指令查詢。';
+  }finally{
+    el.btn.disabled = false;
+  }
+}
+
+el.btn.addEventListener('click', queryLineQuota);
+el.curl.textContent = buildCurl();
+</script>
+</body>
+</html>
