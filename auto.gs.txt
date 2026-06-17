@@ -15,17 +15,12 @@ function setupMailTriggers() {
   clearMailTriggers_();
 
   // 每班下班前 10 分鐘
-  makeDailyTrigger_('mailAuto_', 7, 50);
+  makeDailyTrigger_('mailAuto_', 7, 45);
   makeDailyTrigger_('mailAuto_', 15, 50);
-  makeDailyTrigger_('mailAuto_', 23, 50);
+  makeDailyTrigger_('mailAuto_', 23, 45);
 
   // 每班中場續命
-  makeDailyTrigger_('laRen_', 04, 20);
-  makeDailyTrigger_('laRen_', 04, 35);
-  makeDailyTrigger_('laRen_', 12, 05);
-  makeDailyTrigger_('laRen_', 12, 15);
-  makeDailyTrigger_('laRen_', 18, 20);
-  makeDailyTrigger_('laRen_', 18, 35);
+  makeDailyTrigger_('laPing', 04, 20);
 
   // 每月 2 號寄上個月資料
   makeMonthlyTrigger_('mailMonth_', 2, 4, 10);
@@ -38,7 +33,7 @@ function setupMailTriggers() {
 
 function clearMailTriggers_() {
   const names = {
-    laRen_: true,
+    laPing: true,
     mailAuto_: true,  
     mailMonth_: true,
     cleanData_: true
