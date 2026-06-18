@@ -1,40 +1,32 @@
 /**
- * 建立 排程
- * Version: trigger_v0.1.2
- *
- * 每班自動：
- * 07:50 / 15:50 / 23:50 → mailAuto_()
- *
- * 月報：
- * 每月 2 號 04:10 → mailMonth_()
- *
- * 定時清理：
- * 每月 3 號 04:10 → cleanData_()
+ * 建立排程
+ * Version: trigger_v0.1.3
  */
-function setupMailTriggers() {
-  clearMailTriggers_();
 
-  // 每班下班前 10 分鐘
-  makeDailyTrigger_('mailAuto_', 7, 45);
-  makeDailyTrigger_('mailAuto_', 15, 50);
-  makeDailyTrigger_('mailAuto_', 23, 45);
+function setTrig() {
+  clrTrig_();
 
-  // 每班中場續命
-  makeDailyTrigger_('laPing', 04, 20);
+  // 每班下班前
+  dayTrig_('mailAuto_', 7, 45);
+  dayTrig_('mailAuto_', 15, 50);
+  dayTrig_('mailAuto_', 23, 45);
+
+  // 每 5 分鐘重建 LINE VIEW
+  minTrig_('laPing', 5);
 
   // 每月 2 號寄上個月資料
-  makeMonthlyTrigger_('mailMonth_', 2, 4, 10);
+  monTrig_('mailMonth_', 2, 4, 10);
 
   // 每月 3 號定時清理表數據
-  makeMonthlyTrigger_('cleanData_', 3, 4, 10);
+  monTrig_('cleanData_', 3, 4, 10);
 
   return 'triggers created';
 }
 
-function clearMailTriggers_() {
+function clrTrig_() {
   const names = {
     laPing: true,
-    mailAuto_: true,  
+    mailAuto_: true,
     mailMonth_: true,
     cleanData_: true
   };
@@ -50,7 +42,7 @@ function clearMailTriggers_() {
   }
 }
 
-function makeDailyTrigger_(fnName, hour, minute) {
+function dayTrig_(fnName, hour, minute) {
   ScriptApp.newTrigger(fnName)
     .timeBased()
     .inTimezone(APP_TZ)
@@ -60,12 +52,26 @@ function makeDailyTrigger_(fnName, hour, minute) {
     .create();
 }
 
-function makeMonthlyTrigger_(fnName, day, hour, minute) {
+function monTrig_(fnName, day, hour, minute) {
   ScriptApp.newTrigger(fnName)
     .timeBased()
     .inTimezone(APP_TZ)
     .onMonthDay(day)
     .atHour(hour)
     .nearMinute(minute)
+    .create();
+}
+
+function minTrig_(fnName, minutes) {
+  ScriptApp.newTrigger(fnName)
+    .timeBased()
+    .everyMinutes(minutes)
+    .create();
+}
+
+function hourTrig_(fnName, hours) {
+  ScriptApp.newTrigger(fnName)
+    .timeBased()
+    .everyHours(hours)
     .create();
 }
