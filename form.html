@@ -934,7 +934,7 @@
       </form>
     </section>
 
-    <footer class="footer-version">巡檢人員點檢確認表 form3 v0.1.5（config狀態共用版）</footer>
+    <footer class="footer-version">巡檢人員點檢確認表 form3 v0.1.6（掃描機台修正版）</footer>
   </main>
 
   <section class="app" id="authGate">
@@ -1645,10 +1645,10 @@ function setTime(date, hour, minute) {
         showToast('機台碼格式不符，請直接輸入 A6 或 N57 這類機台碼。', 'bad');
         return;
       }
-      applyQrMachineId(parsed);
+      const applied = applyQrMachineId(parsed);
       el.manualQrText.value = '';
       await closeQrBox();
-      showToast(`已取得機台 ID：${parsed}`, 'ok');
+      showToast(`已取得機台 ID：${applied}`, 'ok');
     });
     el.checkForm.addEventListener('submit', submitForm);
     el.routineCheck.addEventListener('change', handleRoutineCheckChange);
@@ -1824,8 +1824,8 @@ function setTime(date, hour, minute) {
         const parsed = parseMachineId(decodedText);
         if (!parsed) return false;
         scanLocked = true;
-		applyQrMachineId(parsed);
-        showToast(`已取得機台 ID：${parsed}`, 'ok');
+        const applied = applyQrMachineId(parsed);
+        showToast(`已取得機台 ID：${applied}`, 'ok');
         await closeQrBox();
         return true;
       };
@@ -1898,6 +1898,16 @@ function setTime(date, hour, minute) {
     return /^[A-Z][A-Z0-9]*$/.test(mid) ? mid : '';
   }
 
+  function fixMachineIdAfterScan_(value) {
+    const mid = String(value || '').trim().toUpperCase();
+
+    if (mid === 'S75') {
+      return 'B75';
+    }
+
+    return mid;
+  }
+
   function setMachineId(value) {
     machineId = String(value || '').trim().toUpperCase();
     el.machineIdText.textContent = machineId || '未掃描';
@@ -1906,8 +1916,10 @@ function setTime(date, hour, minute) {
   }
 
   function applyQrMachineId(value) {
-    setMachineId(value);
+    const fixed = fixMachineIdAfterScan_(value);
+    setMachineId(fixed);
     resetItem11ByMachine();
+    return fixed;
   }
 
   function resetItem11ByMachine() {
